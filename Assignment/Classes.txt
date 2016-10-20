@@ -1,0 +1,50 @@
+/*
+ * Don't make remote functions, make the functions local and then use them in the remote function
+ */
+
+User
+	- Connect to controller (server or client if server is down) and have unique name/ID
+	+ User can enter or exit the system (== the house)
+	- Ask the controller for a list of clients
+	- Ask the controller for the state of all the lights
+	- Modify the state of a light
+	- Ask for an overview of the inventory of a fridge
+	- Open a fridge, take stuff (interact directly with fridge), close the fridge when ready (while interracting with the fridge, the user can't do stuff with other cliets)
+	- Take item from fridge (requires socket)
+	- Ask for temperature of a sensor
+	- Ask for a history of the temperature
+
+Sensor
+	- Connect to server + get ID/name
+	+ On startup, give the sensor a range from which it will pick a temperature (provided as arguments)
+	+ Generate (every x seconds) random value between -1 and 1 and add it to the previous temperature
+	- Send the new temperature to server
+
+Smart fridge
+	- Connect to server + get ID/name
+	+ Inventory: list of items (unique strings)
+	+ add/remove item (requires action from User) (see first comment!!!)
+	+ open/close (see first comment)
+	- If the fridge is empty => notify controller
+
+Light
+	- Connect to server + get ID/name
+	+  Switch state (see first comment) (print in terminal)
+	+ Get current state (see first comment)
+
+Controller/server
+	+ Give ID to newly connected clients (see first comment)
+	- Interface between user and light
+	- registering users using EID (just use lowercase unique name for now)
+	- get inventory froml fridge and send it to a User
+	- inform users if a fridge is empty (see fridge)
+	+ keep x most recent temperature measurements
+	+ Give current temperature (average if there are multiple sensors) (see first comment)
+	+ History of temperature (average if there are multiple sensors) (see first comment)
+	
+
+EID reader / RFID	
+
+fridge empty => broadcast to users
+		
+	
