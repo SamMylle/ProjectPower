@@ -19,9 +19,18 @@ public class Logger {
 		}
 	}
 
-	void log(String arg){
+	public void log(String arg){
 		/// Writes your string to the terminal (at least for now)
-		System.out.print(arg);
+		System.out.print(arg + "\n");
+	}
+
+	public void log(String arg, boolean newLine){
+		/// Writes your string to the terminal (at least for now)
+		if (newLine){
+			System.out.print(arg + "\n");
+		}else{
+			System.out.print(arg);
+		}
 	}
 
 }

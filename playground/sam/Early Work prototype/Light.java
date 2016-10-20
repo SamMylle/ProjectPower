@@ -39,9 +39,22 @@ public class Light {
 		/// _status must be non-negative
 		if(_status >= 0){
 			status = _status;
+			util.Logger.getLogger().log("Status set to " + status + "\n");
 			return true;
 		}else{
 			return false;
 		}
+	}
+	
+	public String toString(boolean newLine){
+		if (newLine){
+			return "Light:\n\tID = " + ID + "\n\tStatus = " + status + "\n";
+		}else{
+			return "Light:\n\tID = " + ID + "\n\tStatus = " + status;
+		}
+	}
+	
+	public String toString(){
+		return "Light:\n\tID = " + ID + "\n\tStatus = " + status + "\n";
 	}
 }
