@@ -1,0 +1,20 @@
+{
+	"namespace" : "avro.client.proto",
+	"protocol" : "communicationFridge",
+	"doc" : "Methods for the SmartFridge class",
+
+	"messages" : {
+		"addItemRemote" : {
+			"request" : [{"name": "itemName", "type" : "string"}],
+			"response" : "boolean"
+		},
+		"openFridgeRemote" : {
+			"request" : [],
+			"response" : "boolean"
+		},
+		"closeFridgeRemote" : {
+			"request" : [],
+			"response" : "boolean"
+		}
+	}
+}

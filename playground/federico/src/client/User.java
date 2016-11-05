@@ -1,10 +1,18 @@
 package client;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+import org.apache.avro.ipc.SaslSocketTransceiver;
+import org.apache.avro.ipc.Transceiver;
+import org.apache.avro.ipc.specific.SpecificRequestor;
+
+import avro.client.proto.communicationFridge;
 import util.Logger;
 
 enum UserStatus {present, absent};
-public class User {
 
+public class User {
 	private int ID;
 	private UserStatus status;
 	
@@ -31,12 +39,39 @@ public class User {
 
 	
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		
+		try {
+			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(6789));
+			communicationFridge proxy = (communicationFridge) SpecificRequestor.getClient(communicationFridge.class, client);
+			
+			proxy.openFridgeRemote();
+			
+//			String[] itemlist = {"Cheese", "Butter", "Pizza", "Milk", "Carrots"};
+			String[] itemlist = {"Bacon", "Cola", "Chocolate bars", "Eggs", "Pancakes"};
+			
+			for (int i = 0; i < itemlist.length; i++) {
+				if (proxy.addItemRemote(itemlist[i]) == false) {
+					System.out.println("item '" + itemlist[i] + "' is already in the fridge.");
+				}
+			}
+			
+			proxy.closeFridgeRemote();
+			
+			client.close();
+		}
+		catch (IOException e) {
+			System.err.println("Error connecting to the smartFridge server...");
+			e.printStackTrace(System.err);
+			System.exit(1);
+		}
+		
+		
+		/*
 		User user = new User();
 		user.setID(5);
 		user.enter();
 		user.leave();
-
+		 */
 	}
 
 }
