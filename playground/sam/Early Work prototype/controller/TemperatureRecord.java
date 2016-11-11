@@ -4,12 +4,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class TemperatureRecord {
-	public TemperatureRecord(int maxSize){
+	public TemperatureRecord(int maxSize, int ID){
 		f_maxSize = maxSize;
 		f_record = new LinkedList<Double>();
+		f_ID = ID;
 	}
 	
-	public Queue<Double> getRecord(){
+	public LinkedList<Double> getRecord(){
 		return f_record;
 	}
 	
@@ -20,6 +21,11 @@ public class TemperatureRecord {
 		f_record.add(new Double(value));
 	}
 	
+	public int getID(){
+		return f_ID;
+	}
+	
 	private int f_maxSize;
-	private Queue<Double> f_record;
+	private LinkedList<Double> f_record;
+	private int f_ID;
 }

@@ -9,7 +9,6 @@ import controller.Controller;
 
 public class ControllerTest {
 
-	String message = "Hello World";	
 	Controller ctrl = new Controller(10);
 
 	@Test
@@ -43,6 +42,19 @@ public class ControllerTest {
 		ctrl.removeID(1);
 		assertEquals(ClientType.User, ctrl.getClientType(3));
 		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(2));
+		assertEquals(null, ctrl.getClientType(1));
+		assertEquals(ClientType.Fridge, ctrl.getClientType(0));
+
+		ctrl.removeID(2);
+		assertEquals(ClientType.User, ctrl.getClientType(3));
+		assertEquals(null, ctrl.getClientType(2));
+		assertEquals(null, ctrl.getClientType(1));
+		assertEquals(ClientType.Fridge, ctrl.getClientType(0));
+		/// TODO add test for temperature
+
+		ctrl.removeID(2);
+		assertEquals(ClientType.User, ctrl.getClientType(3));
+		assertEquals(null, ctrl.getClientType(2));
 		assertEquals(null, ctrl.getClientType(1));
 		assertEquals(ClientType.Fridge, ctrl.getClientType(0));
 	}

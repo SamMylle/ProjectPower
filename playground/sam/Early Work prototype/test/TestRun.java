@@ -13,7 +13,6 @@ public class TestRun{
 		}
 		System.out.print("ControllerTest: ");
 		System.out.println(result.wasSuccessful());
-		System.out.print("\n");
 
 
 
@@ -24,6 +23,5 @@ public class TestRun{
 		}
 		System.out.print("TemperatureRecordTest: ");
 		System.out.println(result.wasSuccessful());
-		System.out.print("\n");
 	}
 }
