@@ -1,0 +1,11 @@
+{
+	"namespace": "avro.utils",
+	"protocol": "CLType",
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		}
+	]
+}

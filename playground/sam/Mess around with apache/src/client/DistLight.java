@@ -9,10 +9,11 @@ import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
-import controller.avro.proto.IDAssignment;
+import avro.proto.ControllerComm;
+import avro.proto.ClientType;
 
 public class DistLight {
-	private Light light;
+	public Light light;
 	
 	DistLight(){
 		light = new Light();
@@ -21,10 +22,15 @@ public class DistLight {
 	public static void main(String[] args) {
 		try{
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(6789));
-			IDAssignment.Callback proxy = SpecificRequestor.getClient(IDAssignment.Callback.class,client);
+			ControllerComm.Callback proxy = SpecificRequestor.getClient(ControllerComm.Callback.class,client);
 			CallFuture<Integer> future = new CallFuture<Integer>(); 
-			proxy.getID("Light", future);
-			System.out.println(future.get());
+			proxy.getID(ClientType.Light, future);
+			
+			proxy.averageCurrentTemperature(null);
+			
+			DistLight distLight = new DistLight();
+			distLight.light.setID(future.get());
+			
 			client.close();
 		}catch(ExecutionException e){
 			System.err.println("Error executing command on server...");

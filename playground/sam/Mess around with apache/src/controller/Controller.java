@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.HashMap;
 
-import util.ClientType;
+import avro.proto.ClientType;
 
 public class Controller {
 	public Controller(int maxTemperatures){
@@ -63,14 +63,20 @@ public class Controller {
 	public double averageCurrentTemp(){
 		/// In a non-distributed system i would throw an exception for an empty list or records
 		double avg = 0;
+		double count = 0;
 		
 		for (int i = 0; i < f_temperatures.size(); i++){
 			LinkedList<Double> list = f_temperatures.elementAt(i).getRecord();
 			if (list.size() >= 1){
 				avg += list.get(list.size() - 1);
+				count++;
 			}
 		}
-		return avg;
+		
+		if (count == 0){
+			return 0;
+		}
+		return avg/count;
 	}
 	
 	public boolean hasValidTemperatures(){		

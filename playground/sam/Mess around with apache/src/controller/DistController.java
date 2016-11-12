@@ -6,12 +6,11 @@ import org.apache.avro.AvroRemoteException ;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
-import controller.avro.proto.IDAssignment;
+import avro.proto.ControllerComm;
 
-import util.ClientType;
-import util.Logger;
+import avro.proto.ClientType;
 
-public class DistController implements IDAssignment{
+public class DistController implements ControllerComm{
 	
 		private Controller controller;
 		
@@ -19,39 +18,43 @@ public class DistController implements IDAssignment{
 			controller = new Controller(10);
 		}
 		
-		public ClientType getClientType(String type){
-			if (type.equals("Light")){
-				return ClientType.Light;
-			}
-			if (type.equals("User")){
-				return ClientType.User;
-			}
-			if (type.equals("Fridge")){
-				return ClientType.Fridge;
-			}
-			if (type.equals("TemperatureSensor")){
-				return ClientType.TemperatureSensor;
-			}
-			
+		@Override
+		public int getID(ClientType clientType) throws AvroRemoteException{
+			return controller.giveNextID(clientType);
+		}
+		
+		@Override
+		public ClientType getClientType(int ID) throws AvroRemoteException{
+			return controller.getClientType(ID);
+		}
+		
+		@Override
+		public boolean logOff(int ID) throws AvroRemoteException{
+			controller.removeID(ID);
+			return true;
+		}
+		
+		@Override
+		public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
+			controller.addTemperature(temperature, ID);
 			return null;
 		}
 		
 		@Override
-		public int getID(CharSequence clientType) throws AvroRemoteException{
-			int ID = -1;
-			ClientType type = this.getClientType(clientType.toString());
-			
-			if (type != null){
-				ID = controller.giveNextID(type);
-			}
-			
-			return ID;
+		public double averageCurrentTemperature(java.lang.Void nullVal) throws AvroRemoteException{
+			return controller.averageCurrentTemp();
 		}
+		
+		@Override
+		public boolean hasValidTemperatures(java.lang.Void nullVal) throws AvroRemoteException{
+			return controller.hasValidTemperatures();
+		}
+		
 		public static void main(String[] args) {
 			Server server = null;
 			try{
 				server = new SaslSocketServer(
-						new SpecificResponder(IDAssignment.class,
+						new SpecificResponder(ControllerComm.class,
 						new DistController()), new InetSocketAddress(6789));
 			}catch(IOException e){
 				System.err.println("[error]Failed to start server");
