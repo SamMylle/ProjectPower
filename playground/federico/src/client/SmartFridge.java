@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
+import java.lang.Void;
 import util.Logger;
 
+import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
+import avro.client.proto.ClientType;
 import avro.client.proto.communicationFridge;
 
 
@@ -19,11 +22,13 @@ public class SmartFridge implements communicationFridge{
 
 	private Set<String> items;
 	private FridgeStatus status;
+	private Server fridgeserver;
 	
 	
 	public SmartFridge() {
 		items = new HashSet<String>();
 		status = FridgeStatus.closed;
+		fridgeserver = null;
 	}
 	
 	public void addItem(String newItem) {
@@ -90,6 +95,47 @@ public class SmartFridge implements communicationFridge{
 		return true;
 	}
 	
+	@Override
+	public Void setupServer(int port) {
+		assert fridgeserver == null;
+		
+		try {
+			fridgeserver = new SaslSocketServer(new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(port));
+		} catch(IOException e) {
+			System.err.println("[error] Failed to start SmartFridge server");
+			e.printStackTrace(System.err);
+			System.exit(1);
+		}
+		
+		fridgeserver.start();
+		try {
+			fridgeserver.join();
+		} catch (InterruptedException e) {
+			System.err.println("Couldn't join the SmartFridge server.");
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public Void closeServer() {
+		assert fridgeserver != null;
+		
+		fridgeserver.close();
+		return null;
+	}
+
+	@Override
+	public boolean testMethod(ClientType clienttype) throws AvroRemoteException {
+		// TODO Auto-generated method stub
+		
+		if (clienttype == ClientType.User) {
+			System.out.println("User used this method.");
+		}
+		
+		return false;
+	}
+	
 	public static void main(String[] args) {
 		
 		
@@ -97,6 +143,14 @@ public class SmartFridge implements communicationFridge{
 		/// temporarily to test functionality
 		/// 
 		/// server should be opened in separate remote method, invoked by the server to allow direct communication with a user
+		
+		
+		SmartFridge fridge = new SmartFridge();
+		
+		fridge.setupServer(6789);
+		
+		
+		/*
 		SmartFridge fridge = new SmartFridge();
 		
 		Server server = null;
@@ -113,7 +167,7 @@ public class SmartFridge implements communicationFridge{
 			server.join();
 		}
 		catch (InterruptedException e) {}
-		
+		*/
 		
 		
 		/*
@@ -126,5 +180,6 @@ public class SmartFridge implements communicationFridge{
 		System.out.println(fridge);
 		*/
 	}
+
 
 }

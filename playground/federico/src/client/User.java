@@ -7,6 +7,7 @@ import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
+import avro.client.proto.ClientType;
 import avro.client.proto.communicationFridge;
 import util.Logger;
 
@@ -54,7 +55,7 @@ public class User {
 					System.out.println("item '" + itemlist[i] + "' is already in the fridge.");
 				}
 			}
-			
+			proxy.testMethod(ClientType.User);
 			proxy.closeFridgeRemote();
 			
 			client.close();
