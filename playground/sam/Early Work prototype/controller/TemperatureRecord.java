@@ -1,7 +1,6 @@
 package controller;
 
 import java.util.LinkedList;
-import java.util.Queue;
 
 public class TemperatureRecord {
 	public TemperatureRecord(int maxSize, int ID){

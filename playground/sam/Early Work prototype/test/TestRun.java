@@ -23,5 +23,14 @@ public class TestRun{
 		}
 		System.out.print("TemperatureRecordTest: ");
 		System.out.println(result.wasSuccessful());
+		
+
+		result = JUnitCore.runClasses(LightTest.class);
+
+		for (Failure failure : result.getFailures()) {
+			System.out.println(failure.toString());
+		}
+		System.out.print("LightTest: ");
+		System.out.println(result.wasSuccessful());
 	}
 }
