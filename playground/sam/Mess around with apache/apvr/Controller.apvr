@@ -1,0 +1,15 @@
+{
+	"namespace": "avro.proto",
+	"protocol": "IDAssignment",
+
+	"messages":{
+		"getID":{
+			"request": [{
+				"name": "type",
+				"type": "string"
+			}],
+			"response": "int"
+		}
+	}
+
+}
