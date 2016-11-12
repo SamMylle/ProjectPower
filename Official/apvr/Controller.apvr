@@ -1,5 +1,5 @@
 {
-	"namespace": "avro.proto",
+	"namespace": "avro.ProjectPower",
 	"protocol": "ControllerComm",
 
 	"types" : [

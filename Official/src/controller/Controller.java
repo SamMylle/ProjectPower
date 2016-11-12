@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.HashMap;
 
-import avro.proto.ClientType;
+import avro.ProjectPower.ClientType;
 
 public class Controller {
 	public Controller(int maxTemperatures){

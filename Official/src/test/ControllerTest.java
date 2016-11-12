@@ -2,7 +2,7 @@ package test;
 
 import org.junit.Test;
 
-import avro.proto.ClientType;
+import avro.ProjectPower.ClientType;
 import static org.junit.Assert.assertEquals;
 
 import controller.Controller;

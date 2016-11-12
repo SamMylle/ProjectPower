@@ -1,5 +1,5 @@
 {
-	"namespace" : "avro.client.proto",
+	"namespace" : "avro.ProjectPower",
 	"protocol" : "communicationFridge",
 	"doc" : "Methods for the SmartFridge class",
 

@@ -7,8 +7,7 @@ import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
-import avro.client.proto.ClientType;
-import avro.client.proto.communicationFridge;
+import avro.ProjectPower.*;
 import util.Logger;
 
 enum UserStatus {present, absent};

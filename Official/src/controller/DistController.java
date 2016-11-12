@@ -6,9 +6,8 @@ import org.apache.avro.AvroRemoteException ;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
-import avro.proto.ControllerComm;
 
-import avro.proto.ClientType;
+import avro.ProjectPower.*;
 
 public class DistController implements ControllerComm{
 	

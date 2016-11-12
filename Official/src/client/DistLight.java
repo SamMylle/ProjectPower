@@ -9,8 +9,7 @@ import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
-import avro.proto.ControllerComm;
-import avro.proto.ClientType;
+import avro.ProjectPower.*;
 
 public class DistLight {
 	public Light light;

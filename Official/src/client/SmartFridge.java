@@ -12,8 +12,7 @@ import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
-import avro.client.proto.ClientType;
-import avro.client.proto.communicationFridge;
+import avro.ProjectPower.*;;
 
 
 enum FridgeStatus {closed, open};
