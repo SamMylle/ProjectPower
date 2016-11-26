@@ -134,6 +134,12 @@ public class SmartFridge implements communicationFridge{
 		
 		return false;
 	}
+
+	@Override
+	public boolean requestFridgeCommunication() throws AvroRemoteException {
+		/// TODO return if a user is already using this fridge (true == available)
+		return true;
+	}
 	
 	public static void main(String[] args) {
 		

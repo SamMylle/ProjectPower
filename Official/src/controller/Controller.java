@@ -4,11 +4,14 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.HashMap;
 
+import util.Logger;
+
 import avro.ProjectPower.ClientType;
 
 public class Controller {
-	public Controller(int maxTemperatures){
-		f_nextID = 0;
+	public Controller(int startID, int maxTemperatures){
+		/// TODO dynamic starting ID
+		f_nextID = startID;
 		f_maxTemperatures = maxTemperatures;
 		f_names = new HashMap<Integer, ClientType>();
 		f_temperatures = new Vector<TemperatureRecord>();
@@ -16,6 +19,7 @@ public class Controller {
 	
 	public int giveNextID(ClientType type){
 		f_names.put(f_nextID, type);
+		Logger.getLogger().log("Adding " + new Integer(f_nextID).toString() + " with type " + type.toString());
 		int ID = f_nextID;
 		f_nextID++;
 		

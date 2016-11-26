@@ -45,22 +45,34 @@
 			"response": "null"
 		},
 		"averageCurrentTemperature":{
-			"request": [
-			{
-				"name": "null",
-				"type": "null"
-			}
-			],
+			"request": [],
 			"response": "double"
 		},
 		"hasValidTemperatures":{
+			"request": [],
+			"response": "boolean"
+		},
+		"setupFridgeCommunication":{
 			"request": [
 			{
-				"name": "null",
-				"type": "null"
+				"name": "ID",
+				"type": "int"
 			}
 			],
-			"response": "boolean"
+			"response": "int"
+		},
+		"listenToMe":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			},
+			{
+				"name": "type",
+				"type": "ClientType"
+			}
+			],
+			"response": "null"
 		}
 	}
 

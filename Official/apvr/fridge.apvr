@@ -35,6 +35,10 @@
 		"testMethod" : {
 			"request" : [{"name" : "clienttype", "type" : "ClientType"}],
 			"response" : "boolean"
+		},
+		"requestFridgeCommunication":{
+			"request": [],
+			"response": "boolean"
 		}
 	}
 }

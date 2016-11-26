@@ -9,13 +9,14 @@ package avro.ProjectPower;
 /** Methods for the SmartFridge class */
 @org.apache.avro.specific.AvroGenerated
 public interface communicationFridge {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationFridge\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the SmartFridge class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"addItemRemote\":{\"request\":[{\"name\":\"itemName\",\"type\":\"string\"}],\"response\":\"boolean\"},\"openFridgeRemote\":{\"request\":[],\"response\":\"boolean\"},\"closeFridgeRemote\":{\"request\":[],\"response\":\"boolean\"},\"setupServer\":{\"request\":[{\"name\":\"port\",\"type\":\"int\"}],\"response\":\"null\"},\"closeServer\":{\"request\":[],\"response\":\"null\"},\"testMethod\":{\"request\":[{\"name\":\"clienttype\",\"type\":\"ClientType\"}],\"response\":\"boolean\"}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationFridge\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the SmartFridge class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"addItemRemote\":{\"request\":[{\"name\":\"itemName\",\"type\":\"string\"}],\"response\":\"boolean\"},\"openFridgeRemote\":{\"request\":[],\"response\":\"boolean\"},\"closeFridgeRemote\":{\"request\":[],\"response\":\"boolean\"},\"setupServer\":{\"request\":[{\"name\":\"port\",\"type\":\"int\"}],\"response\":\"null\"},\"closeServer\":{\"request\":[],\"response\":\"null\"},\"testMethod\":{\"request\":[{\"name\":\"clienttype\",\"type\":\"ClientType\"}],\"response\":\"boolean\"},\"requestFridgeCommunication\":{\"request\":[],\"response\":\"boolean\"}}}");
   boolean addItemRemote(java.lang.CharSequence itemName) throws org.apache.avro.AvroRemoteException;
   boolean openFridgeRemote() throws org.apache.avro.AvroRemoteException;
   boolean closeFridgeRemote() throws org.apache.avro.AvroRemoteException;
   java.lang.Void setupServer(int port) throws org.apache.avro.AvroRemoteException;
   java.lang.Void closeServer() throws org.apache.avro.AvroRemoteException;
   boolean testMethod(avro.ProjectPower.ClientType clienttype) throws org.apache.avro.AvroRemoteException;
+  boolean requestFridgeCommunication() throws org.apache.avro.AvroRemoteException;
 
   @SuppressWarnings("all")
   /** Methods for the SmartFridge class */
@@ -27,5 +28,6 @@ public interface communicationFridge {
     void setupServer(int port, org.apache.avro.ipc.Callback<java.lang.Void> callback) throws java.io.IOException;
     void closeServer(org.apache.avro.ipc.Callback<java.lang.Void> callback) throws java.io.IOException;
     void testMethod(avro.ProjectPower.ClientType clienttype, org.apache.avro.ipc.Callback<java.lang.Boolean> callback) throws java.io.IOException;
+    void requestFridgeCommunication(org.apache.avro.ipc.Callback<java.lang.Boolean> callback) throws java.io.IOException;
   }
 }

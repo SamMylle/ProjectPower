@@ -9,53 +9,61 @@ import controller.Controller;
 
 public class ControllerTest {
 
-	Controller ctrl = new Controller(10);
+	Controller ctrl = new Controller(5001, 10);
 
 	@Test
 	public void testID() {
+		int ID = 1001;
+		
 		assertEquals(null, ctrl.getClientType(10));
 
-		assertEquals(ctrl.giveNextID(ClientType.SmartFridge), 0);
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		assertEquals(ctrl.giveNextID(ClientType.SmartFridge), ID);
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID));
 
-		assertEquals(1, ctrl.giveNextID(ClientType.Light));
-		assertEquals(ClientType.Light, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		ID++;
 		
-		assertEquals(2, ctrl.giveNextID(ClientType.TemperatureSensor));
-		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(2));
-		assertEquals(ClientType.Light, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		assertEquals(ID, ctrl.giveNextID(ClientType.Light));
+		assertEquals(ClientType.Light, ctrl.getClientType(ID));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 1));
+
+		ID++;
 		
-		assertEquals(3, ctrl.giveNextID(ClientType.User));
-		assertEquals(ClientType.User, ctrl.getClientType(3));
-		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(2));
-		assertEquals(ClientType.Light, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		assertEquals(ID, ctrl.giveNextID(ClientType.TemperatureSensor));
+		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(ID));
+		assertEquals(ClientType.Light, ctrl.getClientType(ID - 1));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 2));
 
-		ctrl.removeID(1);
-		assertEquals(ClientType.User, ctrl.getClientType(3));
-		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(2));
-		assertEquals(null, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		ID++;
+		
+		assertEquals(ID, ctrl.giveNextID(ClientType.User));
+		assertEquals(ClientType.User, ctrl.getClientType(ID));
+		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(ID - 1));
+		assertEquals(ClientType.Light, ctrl.getClientType(ID - 2));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 3));
 
-		ctrl.removeID(1);
-		assertEquals(ClientType.User, ctrl.getClientType(3));
-		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(2));
-		assertEquals(null, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		ctrl.removeID(ID - 2);
+		assertEquals(ClientType.User, ctrl.getClientType(ID));
+		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(ID - 1));
+		assertEquals(null, ctrl.getClientType(ID - 2));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 3));
 
-		ctrl.removeID(2);
-		assertEquals(ClientType.User, ctrl.getClientType(3));
-		assertEquals(null, ctrl.getClientType(2));
-		assertEquals(null, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		ctrl.removeID(ID - 2);
+		assertEquals(ClientType.User, ctrl.getClientType(ID));
+		assertEquals(ClientType.TemperatureSensor, ctrl.getClientType(ID - 1));
+		assertEquals(null, ctrl.getClientType(ID - 2));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 3));
+
+		ctrl.removeID(ID - 1);
+		assertEquals(ClientType.User, ctrl.getClientType(ID));
+		assertEquals(null, ctrl.getClientType(ID - 1));
+		assertEquals(null, ctrl.getClientType(ID - 2));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 3));
 		/// TODO add test for temperature
 
-		ctrl.removeID(2);
-		assertEquals(ClientType.User, ctrl.getClientType(3));
-		assertEquals(null, ctrl.getClientType(2));
-		assertEquals(null, ctrl.getClientType(1));
-		assertEquals(ClientType.SmartFridge, ctrl.getClientType(0));
+		ctrl.removeID(ID - 1);
+		assertEquals(ClientType.User, ctrl.getClientType(ID));
+		assertEquals(null, ctrl.getClientType(ID - 1));
+		assertEquals(null, ctrl.getClientType(ID - 2));
+		assertEquals(ClientType.SmartFridge, ctrl.getClientType(ID - 3));
 	}
 }
