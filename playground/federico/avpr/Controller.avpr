@@ -1,0 +1,67 @@
+{
+	"namespace": "avro.ProjectPower",
+	"protocol": "ControllerComm",
+
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		}
+	],
+
+	"messages":{
+		"getID":{
+			"request": [{
+				"name": "type",
+				"type": "ClientType"
+			}],
+			"response": "int"
+		},
+		"getClientType":{
+			"request": [{
+				"name": "ID",
+				"type": "int"
+			}],
+			"response": "ClientType"
+		},
+		"logOff":{
+			"request": [{
+				"name": "ID",
+				"type": "int"
+			}],
+			"response": "boolean"
+		},
+		"addTemperature":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			},
+			{
+				"name": "temperature",
+				"type": "double"
+			}],
+			"response": "null"
+		},
+		"averageCurrentTemperature":{
+			"request": [
+			{
+				"name": "null",
+				"type": "null"
+			}
+			],
+			"response": "double"
+		},
+		"hasValidTemperatures":{
+			"request": [
+			{
+				"name": "null",
+				"type": "null"
+			}
+			],
+			"response": "boolean"
+		}
+	}
+
+}

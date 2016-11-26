@@ -32,5 +32,13 @@ public class TestRun{
 		}
 		System.out.print("LightTest: ");
 		System.out.println(result.wasSuccessful());
+		
+		result = JUnitCore.runClasses(SmartFridgeTest.class);
+		
+		for (Failure failure : result.getFailures()) {
+			System.out.println(failure.toString());
+		}
+		System.out.print("SmartFridgeTest: ");
+		System.out.println(result.wasSuccessful());
 	}
 }

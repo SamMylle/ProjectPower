@@ -1,6 +1,5 @@
 package util;
 
-
 public class Logger {
 	/// Instead of writing to the output medium yourself, use this logger
 	/// That way you can write to e.g. a file instead of the terminal without changing a lot of code
@@ -35,4 +34,3 @@ public class Logger {
 	}
 
 }
-

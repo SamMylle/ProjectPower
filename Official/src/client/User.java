@@ -50,9 +50,7 @@ public class User {
 			String[] itemlist = {"Bacon", "Cola", "Chocolate bars", "Eggs", "Pancakes"};
 			
 			for (int i = 0; i < itemlist.length; i++) {
-				if (proxy.addItemRemote(itemlist[i]) == false) {
-					System.out.println("item '" + itemlist[i] + "' is already in the fridge.");
-				}
+				proxy.addItemRemote(itemlist[i]);
 			}
 			proxy.testMethod(ClientType.User);
 			proxy.closeFridgeRemote();

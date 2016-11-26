@@ -5,29 +5,36 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 import java.lang.Void;
+
+import avro.ProjectPower.ClientType;
 import util.Logger;
 
-import org.apache.avro.AvroRemoteException;
-import org.apache.avro.ipc.SaslSocketServer;
-import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificResponder;
-
-import avro.ProjectPower.*;;
 
 
 enum FridgeStatus {closed, open};
 
-public class SmartFridge implements communicationFridge{
+public class SmartFridge {
 
 	private Set<String> items;
 	private FridgeStatus status;
-	private Server fridgeserver;
+	private int f_ID;
+	public static final ClientType type = ClientType.SmartFridge;
 	
 	
 	public SmartFridge() {
 		items = new HashSet<String>();
 		status = FridgeStatus.closed;
-		fridgeserver = null;
+		f_ID = 0;
+	}
+	
+	public void setID(int ID) {
+		assert ID != 0;
+		
+		f_ID = ID;
+	}
+	
+	public int getID() {
+		return f_ID;
 	}
 	
 	public void addItem(String newItem) {
@@ -49,6 +56,12 @@ public class SmartFridge implements communicationFridge{
 		}
 	}
 	
+	public boolean hasItem(String item) {
+		assert item != "";
+		
+		return items.contains(item);
+	}
+	
 	public void openFridge() {
 		status = FridgeStatus.open;
 	}
@@ -57,88 +70,12 @@ public class SmartFridge implements communicationFridge{
 		status = FridgeStatus.closed;
 	}
 	
+	public boolean isOpen() {
+		return status == FridgeStatus.open;
+	}
+	
 	public String toString() {
 		return "items: " + items;
-	}
-	
-	@Override
-	public boolean addItemRemote(CharSequence itemName) {
-		try {
-			this.addItem(itemName.toString());
-		} catch(Exception e) {
-			return false;
-		}
-		Logger.getLogger().log(this.toString());
-		return true;
-	}
-	
-	@Override
-	public boolean openFridgeRemote() {
-		try {
-			this.openFridge();
-		} catch(Exception e) {
-			return false;
-		}
-		Logger.getLogger().log("The fridge has been opened.");
-		return true;
-	}
-	
-	@Override
-	public boolean closeFridgeRemote() {
-		try {
-			this.closeFridge();
-		} catch(Exception e) {
-			return false;
-		}
-		Logger.getLogger().log("The fridge has been closed.");
-		return true;
-	}
-	
-	@Override
-	public Void setupServer(int port) {
-		assert fridgeserver == null;
-		
-		try {
-			fridgeserver = new SaslSocketServer(new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(port));
-		} catch(IOException e) {
-			System.err.println("[error] Failed to start SmartFridge server");
-			e.printStackTrace(System.err);
-			System.exit(1);
-		}
-		
-		fridgeserver.start();
-		try {
-			fridgeserver.join();
-		} catch (InterruptedException e) {
-			System.err.println("Couldn't join the SmartFridge server.");
-		}
-		
-		return null;
-	}
-	
-	@Override
-	public Void closeServer() {
-		assert fridgeserver != null;
-		
-		fridgeserver.close();
-		return null;
-	}
-
-	@Override
-	public boolean testMethod(ClientType clienttype) throws AvroRemoteException {
-		// TODO Auto-generated method stub
-		
-		if (clienttype == ClientType.User) {
-			System.out.println("User used this method.");
-		}
-		
-		return false;
-	}
-
-	@Override
-	public boolean requestFridgeCommunication() throws AvroRemoteException {
-		/// TODO return if a user is already using this fridge (true == available)
-		return true;
 	}
 	
 	public static void main(String[] args) {
@@ -148,11 +85,6 @@ public class SmartFridge implements communicationFridge{
 		/// temporarily to test functionality
 		/// 
 		/// server should be opened in separate remote method, invoked by the server to allow direct communication with a user
-		
-		
-		SmartFridge fridge = new SmartFridge();
-		
-		fridge.setupServer(6789);
 		
 		
 		/*
@@ -174,8 +106,6 @@ public class SmartFridge implements communicationFridge{
 		catch (InterruptedException e) {}
 		*/
 		
-		
-		/*
 		SmartFridge fridge = new SmartFridge();
 		fridge.openFridge();
 		fridge.addItem("a");
@@ -183,7 +113,6 @@ public class SmartFridge implements communicationFridge{
 		fridge.addItem("a");
 		fridge.addItem("c");
 		System.out.println(fridge);
-		*/
 	}
 
 

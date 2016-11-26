@@ -12,13 +12,13 @@ import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.Server;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
-import avro.client.proto.ClientType;
-import avro.client.proto.communicationFridge;
+import avro.ProjectPower.communicationFridge;
+import avro.ProjectPower.ClientType;
 
 
 enum FridgeStatus {closed, open};
 
-public class SmartFridge implements communicationFridge{
+public class SmartFridge implements communicationFridge {
 
 	private Set<String> items;
 	private FridgeStatus status;

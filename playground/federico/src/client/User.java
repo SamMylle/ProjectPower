@@ -7,8 +7,7 @@ import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
-import avro.client.proto.ClientType;
-import avro.client.proto.communicationFridge;
+import avro.ProjectPower.*;
 import util.Logger;
 
 enum UserStatus {present, absent};
@@ -19,7 +18,7 @@ public class User {
 	
 	public User() {
 		ID = -1;
-		status = UserStatus.absent; //the user is not present untill he is connected to the system
+		status = UserStatus.absent; //the user is not present until he is connected to the system
 	}
 	
 	public void setID(int _ID) {

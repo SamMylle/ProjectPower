@@ -14,7 +14,7 @@
 	"messages" : {
 		"addItemRemote" : {
 			"request" : [{"name" : "itemName", "type" : "string"}],
-			"response" : "boolean"
+			"response" : "null"
 		},
 		"openFridgeRemote" : {
 			"request" : [],
