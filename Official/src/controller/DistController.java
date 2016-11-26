@@ -28,17 +28,22 @@ public class DistController implements ControllerComm, Runnable{
 		public DistController(int port){
 			f_controller = new Controller(port + 1, 10);
 			f_transceivers = new HashMap<Integer, Transceiver>();
-			f_serverThread = new Thread(this);
 			f_myPort = port;
+			
+			/// Make a thread, the "run" method will execute in a new thread
+			/// The run method must be implemented by a Runnable object (see implements in this class)
+			/// Since the server must run on this object, "this" is passed to the thread
+			/// Below, when starting the thread (thread.start()), the thread will call this.run()
+			/// This has to be this way because the server doesn't get out of the eternal loop
+			/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
+			f_serverThread = new Thread(this);
 			f_serverThread.start();
 			
 		}
 		
-
-
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
+			/// when thread.start() is invoked, this method is ran
 			try{
 				f_server = new SaslSocketServer(
 						new SpecificResponder(ControllerComm.class,
