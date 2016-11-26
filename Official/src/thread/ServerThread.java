@@ -36,4 +36,10 @@ public class ServerThread implements Runnable{
 	public void setPort(int port){
 		f_port = port;
 	}
+	
+	public void stopServer(){
+		if (server != null){
+			server.close();
+		}
+	}
 }

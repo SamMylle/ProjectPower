@@ -9,28 +9,84 @@ import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
+import thread.ServerThread;
+import util.Logger;
+
 import avro.ProjectPower.*;
 
 public class DistLight {
-	public Light light;
+	public Light f_light;
+	public Transceiver f_transceiver;
+	private ServerThread f_server;
+	private Thread f_serverThread;
+	
 	
 	DistLight(){
-		light = new Light();
+		f_light = new Light();
+		f_transceiver = null;
+		f_server = null;
+		f_serverThread = null;
 	}
 	
-	public static void main(String[] args) {
+	public void connectToServer(int port){
 		try{
-			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(6789));
-			ControllerComm.Callback proxy = SpecificRequestor.getClient(ControllerComm.Callback.class,client);
+			/// Setup connection
+			f_transceiver = new SaslSocketTransceiver(new InetSocketAddress(port));
+			
+			/// Get your ID
+			ControllerComm.Callback proxy =
+					SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
 			CallFuture<Integer> future = new CallFuture<Integer>(); 
 			proxy.getID(ClientType.Light, future);
+			int ID = future.get();
+			this.f_light.setID(ID);
 			
-			proxy.averageCurrentTemperature(null);
+			this.setupServer(ID);
 			
-			DistLight distLight = new DistLight();
-			distLight.light.setID(future.get());
+		}catch(ExecutionException e){
+			System.err.println("Error executing command on server (light)...");
+			e.printStackTrace(System.err);
+			System.exit(1);
+		}catch(InterruptedException e){
+			System.err.println("Interrupted...");
+			e.printStackTrace(System.err);
+			System.exit(1);
+		}catch(IOException e){
+			System.err.println("Error connecting to server...");
+			e.printStackTrace(System.err);
+			System.exit(1);
+		}
+	}
+	
+	public void setupServer(int port){
+		f_server = new ServerThread();
+		f_server.setPort(port);
+		f_serverThread = new Thread(f_server);
+		f_serverThread.start();
+	}
+	
+	public void disconnect(){
+		try{
+			if (f_transceiver != null){
+				ControllerComm.Callback proxy =
+						SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
+				CallFuture<Boolean> future = new CallFuture<Boolean>();
+				proxy.logOff(f_light.getID(), future);
+				
+				future.get();
+				
+				f_transceiver.close();
+			}
 			
-			client.close();
+			if (f_serverThread != null){
+				f_serverThread.wait();
+				/// Garbage collection fixes this?
+				f_serverThread = null;
+				
+			}
+			if (f_server != null){
+				f_server = null;
+			}
 		}catch(ExecutionException e){
 			System.err.println("Error executing command on server...");
 			e.printStackTrace(System.err);
@@ -44,5 +100,17 @@ public class DistLight {
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}
+	}
+	
+	public static void main(String[] args) {
+		DistLight newLight = new DistLight();
+		newLight.connectToServer(5000);
+		try {
+			System.in.read();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		newLight.disconnect();
 	}
 }
