@@ -2,6 +2,9 @@ package client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.avro.AvroRemoteException;
@@ -68,7 +71,6 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		
 		// the smartfridge needs an ID to function -> ask the controller for the id
 		this.setupSmartFridge();
-		
 		// The smartfridge should also start a server on the port number equal to his given ID
 		// This will be done in a thread
 		f_smartfridgeThread = new Thread(this);
@@ -79,10 +81,19 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+		
+		try {
+			f_controllerTransceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, f_controllerTransceiver);
+			proxy.listenToMe(f_smartfridge.getID(), SmartFridge.type);
+		}
+		catch (IOException e) {
+			System.err.println("IOException thrown at DistSmartFridge constructor: listonToMe to controller");
+		}
+		
 	}
 	
 	/*
@@ -97,6 +108,11 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 			
 			proxy.getID(SmartFridge.type, futureID);
 			f_smartfridge.setID(futureID.get());
+			
+//			f_controllerTransceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+//			ControllerComm proxy = (ControllerComm) 
+//					SpecificRequestor.getClient(ControllerComm.class, f_controllerTransceiver);
+//			f_smartfridge.setID(proxy.getID(SmartFridge.type));
 		}
 		catch (ExecutionException e) {
 			//TODO handle exception properly
@@ -109,6 +125,32 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}
+	}
+	
+	public boolean logOffController() {
+		if (f_controllerTransceiver != null) {
+			try {
+				ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, f_controllerTransceiver);
+				proxy.logOff(f_smartfridge.getID());
+				return true;
+			}
+			catch (AvroRemoteException e) {
+				System.out.println("AvroRemoteException at logOff() in DistSmartFridge.");
+				return false;
+			}
+			catch (IOException e) {
+				System.out.println("IOException at logOff() in DistSmartFridge.");
+				return false;
+			}
+		}
+		return false;
+	}
+	
+	public void stopServer() {
+		f_fridgeuserThread.stop();
+		f_fridgeuserThread.destroy();
+		
+		f_fridgeServer.close();		
 	}
 	
 	@Override
@@ -127,7 +169,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 			System.exit(1);
 		}
 		f_isReady = true;
-		
+
 		try {
 			f_fridgeServer.join();
 		}
@@ -183,6 +225,19 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		return true;
 	}
 	
+	@Override
+	public List<CharSequence> getItemsRemote() throws AvroRemoteException {
+		List<CharSequence> items = new ArrayList<CharSequence>();
+		
+		Set<String> fridgeItems = f_smartfridge.getItems();
+		
+		for (String item : fridgeItems) {
+			items.add(item);
+		}
+		return items;
+	}
+	
+	
 	public String toString() {
 		return f_smartfridge.toString();
 	}
@@ -192,26 +247,42 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		
 		// temporarly fix?
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(2000);
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
 		
 		DistSmartFridge remoteFridge = new DistSmartFridge(6789);
 		
+		System.out.println("testing");
 		try {
 			remoteFridge.addItemRemote("bacon");
 			remoteFridge.addItemRemote("parmesan cheese");
 			Logger logger = Logger.getLogger();
 			
 			logger.log(remoteFridge.toString());
+			List<CharSequence> items = remoteFridge.getItemsRemote();
+			logger.log("Items retrieved from remote function: ");
+			for (CharSequence item : items) {
+				logger.log("\t" + item.toString());
+			}
+			
+			if (remoteFridge.logOffController() == true) {
+				logger.log("Logged off succesfully.");
+			}
+			else {
+				logger.log("Could not log off.");
+			}
+			remoteFridge.stopServer();
 		}
 		catch (AvroRemoteException e) {
-			System.err.println("");
+			System.err.println("AvroRemoteException at main class in DistSmartFridge.");
 		}
+		
+		
 		
 //		String fridgeContents = "items: [\"bacon\", \"parmesan cheese\"]";
 		
 	}
-	
+
 }
