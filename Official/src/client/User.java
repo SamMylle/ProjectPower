@@ -10,11 +10,13 @@ import org.apache.avro.ipc.specific.SpecificRequestor;
 import avro.ProjectPower.*;
 import util.Logger;
 
-enum UserStatus {present, absent};
+//enum UserStatus {present, absent};
 
 public class User {
 	private int ID;
 	private UserStatus status;
+	public static final ClientType type = ClientType.User;
+	
 	
 	public User() {
 		ID = -1;
@@ -27,6 +29,10 @@ public class User {
 		ID = _ID;
 	}
 	
+	public int getID() {
+		return ID;
+	}
+	
 	public void enter() {
 		status = UserStatus.present;
 		Logger.getLogger().log("User with ID " + ID + " has entered the system.");
@@ -37,6 +43,9 @@ public class User {
 		Logger.getLogger().log("User with ID " + ID + " has left the system.");
 	}
 
+	public UserStatus getStatus() {
+		return status;
+	}
 	
 	public static void main(String[] args) {
 		
