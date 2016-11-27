@@ -30,7 +30,7 @@
 				"name": "ID",
 				"type": "int"
 			}],
-			"response": "boolean"
+			"response": "null"
 		},
 		"addTemperature":{
 			"request": [

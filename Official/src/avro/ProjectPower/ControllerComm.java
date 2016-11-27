@@ -8,10 +8,10 @@ package avro.ProjectPower;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public interface ControllerComm {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"ControllerComm\",\"namespace\":\"avro.ProjectPower\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"getID\":{\"request\":[{\"name\":\"type\",\"type\":\"ClientType\"}],\"response\":\"int\"},\"getClientType\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"}],\"response\":\"ClientType\"},\"logOff\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"}],\"response\":\"boolean\"},\"addTemperature\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"},{\"name\":\"temperature\",\"type\":\"double\"}],\"response\":\"null\"},\"averageCurrentTemperature\":{\"request\":[],\"response\":\"double\"},\"hasValidTemperatures\":{\"request\":[],\"response\":\"boolean\"},\"setupFridgeCommunication\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"}],\"response\":\"int\"},\"listenToMe\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"},{\"name\":\"type\",\"type\":\"ClientType\"}],\"response\":\"null\"}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"ControllerComm\",\"namespace\":\"avro.ProjectPower\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"getID\":{\"request\":[{\"name\":\"type\",\"type\":\"ClientType\"}],\"response\":\"int\"},\"getClientType\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"}],\"response\":\"ClientType\"},\"logOff\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"}],\"response\":\"null\"},\"addTemperature\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"},{\"name\":\"temperature\",\"type\":\"double\"}],\"response\":\"null\"},\"averageCurrentTemperature\":{\"request\":[],\"response\":\"double\"},\"hasValidTemperatures\":{\"request\":[],\"response\":\"boolean\"},\"setupFridgeCommunication\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"}],\"response\":\"int\"},\"listenToMe\":{\"request\":[{\"name\":\"ID\",\"type\":\"int\"},{\"name\":\"type\",\"type\":\"ClientType\"}],\"response\":\"null\"}}}");
   int getID(avro.ProjectPower.ClientType type) throws org.apache.avro.AvroRemoteException;
   avro.ProjectPower.ClientType getClientType(int ID) throws org.apache.avro.AvroRemoteException;
-  boolean logOff(int ID) throws org.apache.avro.AvroRemoteException;
+  java.lang.Void logOff(int ID) throws org.apache.avro.AvroRemoteException;
   java.lang.Void addTemperature(int ID, double temperature) throws org.apache.avro.AvroRemoteException;
   double averageCurrentTemperature() throws org.apache.avro.AvroRemoteException;
   boolean hasValidTemperatures() throws org.apache.avro.AvroRemoteException;
@@ -23,7 +23,7 @@ public interface ControllerComm {
     public static final org.apache.avro.Protocol PROTOCOL = avro.ProjectPower.ControllerComm.PROTOCOL;
     void getID(avro.ProjectPower.ClientType type, org.apache.avro.ipc.Callback<java.lang.Integer> callback) throws java.io.IOException;
     void getClientType(int ID, org.apache.avro.ipc.Callback<avro.ProjectPower.ClientType> callback) throws java.io.IOException;
-    void logOff(int ID, org.apache.avro.ipc.Callback<java.lang.Boolean> callback) throws java.io.IOException;
+    void logOff(int ID, org.apache.avro.ipc.Callback<java.lang.Void> callback) throws java.io.IOException;
     void addTemperature(int ID, double temperature, org.apache.avro.ipc.Callback<java.lang.Void> callback) throws java.io.IOException;
     void averageCurrentTemperature(org.apache.avro.ipc.Callback<java.lang.Double> callback) throws java.io.IOException;
     void hasValidTemperatures(org.apache.avro.ipc.Callback<java.lang.Boolean> callback) throws java.io.IOException;

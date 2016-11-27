@@ -3,6 +3,7 @@ package controller;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.apache.avro.AvroRemoteException ;
+import org.apache.avro.ipc.CallFuture;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Server;
@@ -11,9 +12,9 @@ import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
 import util.Logger;
-import thread.ServerThread;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 import avro.ProjectPower.*;
 
@@ -24,11 +25,13 @@ public class DistController implements ControllerComm, Runnable{
 		private Server f_server;
 		private Thread f_serverThread;
 		private int f_myPort;
+		private boolean f_serverActive;
 		
 		public DistController(int port){
 			f_controller = new Controller(port + 1, 10);
 			f_transceivers = new HashMap<Integer, Transceiver>();
 			f_myPort = port;
+			f_serverActive = false;
 			
 			/// Make a thread, the "run" method will execute in a new thread
 			/// The run method must be implemented by a Runnable object (see implements in this class)
@@ -38,7 +41,10 @@ public class DistController implements ControllerComm, Runnable{
 			/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
 			f_serverThread = new Thread(this);
 			f_serverThread.start();
-			
+		}
+		
+		public boolean serverIsActive(){
+			return f_serverActive;
 		}
 		
 		@Override
@@ -54,16 +60,16 @@ public class DistController implements ControllerComm, Runnable{
 				System.exit(1);
 			}
 			f_server.start();
+			f_serverActive = true;
 			try{
 				f_server.join();
-			}catch(InterruptedException e){}			
+			}catch(InterruptedException e){}
 		}
+		
 		public void setupTransceiver(ClientType type, int ID){
 			try{
 				Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(ID));
 				f_transceivers.put(new Integer(ID), client);
-				Logger.getLogger().log("putting ");
-				Logger.getLogger().log(f_transceivers.toString());
 			}catch(IOException e){
 				System.err.println("Error connecting to the smartFridge server...");
 				e.printStackTrace(System.err);
@@ -85,26 +91,33 @@ public class DistController implements ControllerComm, Runnable{
 		}
 		
 		@Override
-		public boolean logOff(int ID) throws AvroRemoteException{
+		public Void logOff(int ID) throws AvroRemoteException{
 			/// Remove ID from the system
 			/// TODO, special case when the client is a temperatureSensor
 			f_controller.removeID(ID);
 			
 			/// If there's a transceiver present, remove it
 			Transceiver toRemove = f_transceivers.get(ID);
+			
 			if (toRemove != null){
 				try {
+					Logger.getLogger().log("k");
 					toRemove.close();
+					Logger.getLogger().log("k2");
 				} catch (IOException e) {
 					System.err.println("[error]Failed to disconnect client from server");
 					e.printStackTrace(System.err);
 					/// TODO return false?
 					System.exit(1);
 				}
+				Logger.getLogger().log("k3");
 				f_transceivers.remove(ID);
+				Logger.getLogger().log("k4");
+			}else{
+
+				Logger.getLogger().log("NOT");
 			}
-			
-			return true;
+			return null;
 		}
 		
 		@Override
@@ -157,6 +170,35 @@ public class DistController implements ControllerComm, Runnable{
 		
 		public static void main(String[] args) {
 			DistController controller = new DistController(5000);
+			
+			while(! controller.serverIsActive()){
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					Logger.getLogger().log("Server startup error");
+					e.printStackTrace();
+				}
+			}
+			Logger.getLogger().log("Server started");
+			try {
+				System.in.read();
+				controller.f_transceivers.clear();
+				Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(5001));
+
+				LightComm.Callback proxy =
+						SpecificRequestor.getClient(LightComm.Callback.class, client);
+				
+				CallFuture<Integer> future = new CallFuture<Integer>(); 
+				proxy.getState(future);
+				int ID = future.get();
+				
+				Logger.getLogger().log(new Integer(ID).toString());
+			} catch (IOException | InterruptedException | ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		
 
 }
