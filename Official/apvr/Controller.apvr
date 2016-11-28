@@ -73,6 +73,37 @@
 			}
 			],
 			"response": "null"
+		},
+		"getFridgeInventory":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": {"type": "array", "items": "string"}
+		},
+		"setLight":{
+			"request": [
+			{
+				"name": "newState",
+				"type": "int"
+			},
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": "int"
+		},
+		"getLightState":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": "int"
 		}
 	}
 

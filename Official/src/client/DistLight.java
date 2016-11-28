@@ -58,9 +58,11 @@ public class DistLight implements Runnable, LightComm {
 			/// Setup connection
 			f_transceiver = new SaslSocketTransceiver(new InetSocketAddress(port));
 			
-			/// Get your ID
+			/// Get the proxy
 			ControllerComm.Callback proxy =
 					SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
+			
+			/// Get your ID from the server
 			CallFuture<Integer> future = new CallFuture<Integer>(); 
 			proxy.getID(ClientType.Light, future);
 			int ID = future.get();
@@ -68,10 +70,9 @@ public class DistLight implements Runnable, LightComm {
 			
 			f_serverThread = new Thread(this);
 			f_serverThread.start();
-			
 
 			while(! f_serverActive){
-				Thread.sleep(1000);
+				Thread.sleep(50);
 			}
 
 			//Logger.getLogger().log("j21");
@@ -125,19 +126,21 @@ public class DistLight implements Runnable, LightComm {
 
 	@Override
 	public int getState() throws AvroRemoteException {
+		Logger.getLogger().log("returning: ", false);
+		Logger.getLogger().log(new Integer(f_light.getState()).toString());
 		return f_light.getState();
 	}
 	
 	public static void main(String[] args) {
 		DistLight newLight = new DistLight();
 		newLight.connectToServer(5000);
-		/*try {
+		try {
 			System.in.read();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		newLight.disconnect();
-		Logger.getLogger().log("disconnected\n");*/
+		Logger.getLogger().log("disconnected\n");
 	}
 }

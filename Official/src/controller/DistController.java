@@ -14,6 +14,7 @@ import org.apache.avro.ipc.specific.SpecificResponder;
 import util.Logger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import avro.ProjectPower.*;
@@ -41,6 +42,16 @@ public class DistController implements ControllerComm, Runnable{
 			/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
 			f_serverThread = new Thread(this);
 			f_serverThread.start();
+			
+			while (!f_serverActive){
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					Logger.getLogger().log("Server startup failed");
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		public boolean serverIsActive(){
@@ -167,33 +178,154 @@ public class DistController implements ControllerComm, Runnable{
 			this.setupTransceiver(type, port);
 			return null;
 		}
+
+		@Override
+		public List<CharSequence> getFridgeInventory(int ID) throws AvroRemoteException {
+			/// return null on invalid stuff and thangs
+			ClientType type = f_controller.f_names.get(ID);
+			
+			if(type != ClientType.SmartFridge){
+				return null;
+			}
+			
+			// We know the type is a fridge (AND it exists)
+			Transceiver fridge = f_transceivers.get(ID);
+			
+			if (fridge == null){
+				// This shouldn't happen actually, but you never know
+				this.setupTransceiver(ClientType.SmartFridge, ID);
+				fridge = f_transceivers.get(ID);
+			}
+			
+			if (fridge == null){
+				// If connection can't be established, just say no to the other guy
+				return null;
+			}
+			
+			/// get the inventory and return it
+			
+			return null;
+		}
+
+		@Override
+		public int setLight(int newState, int ID) throws AvroRemoteException {
+			/// return -1 on invalid stuff and thangs
+			/// return 0 on success
+			
+			ClientType type = f_controller.f_names.get(ID);
+			
+			if(type != ClientType.Light){
+				return -1;
+			}
+			
+			// We know the type is a light (AND it exists)
+			Transceiver light = f_transceivers.get(ID);
+			
+			if (light == null){
+				// This shouldn't happen actually, but you never know
+				this.setupTransceiver(ClientType.Light, ID);
+				light = f_transceivers.get(ID);
+			}
+			
+			if (light == null){
+				// If connection can't be established, just say no to the other guy
+				return -1;
+			}
+
+			try {
+				/// set the state and thangs
+				LightComm.Callback proxy;
+					proxy = SpecificRequestor.getClient(LightComm.Callback.class, light);
+
+					proxy.setState(newState);
+
+					return 0;
+			} catch (IOException e) {
+				// TODO remove from system?
+				e.printStackTrace();
+				Logger.getLogger().log("IOEXCEPT for remote light setstate");
+				return -1;
+			}
+		}
+
+		@Override
+		public int getLightState(int ID) throws AvroRemoteException {
+			ClientType type = f_controller.f_names.get(ID);
+			
+			if(type != ClientType.Light){
+				return -1;
+			}
+			
+			// We know the type is a light (AND it exists)
+			SaslSocketTransceiver light = null;
+			try {
+				light = new SaslSocketTransceiver(new InetSocketAddress(ID));
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				
+				Logger.getLogger().log("EEK");
+				e1.printStackTrace();
+				System.exit(0);
+			}
+			
+			/*if (light == null){
+				// This shouldn't happen actually, but you never know
+				this.setupTransceiver(ClientType.Light, ID);
+				light = f_transceivers.get(ID);
+			}*/
+			
+			if (light == null){
+				// If connection can't be established, just say no to the other guy
+				return -1;
+			}
+
+			try {
+				/// set the state and thangs
+				LightComm.Callback proxy;
+					proxy = SpecificRequestor.getClient(LightComm.Callback.class, light);
+
+					
+
+					return proxy.getState();
+			} catch (IOException e) {
+				// TODO remove from system?
+				e.printStackTrace();
+				Logger.getLogger().log("IOEXCEPT for remote light setstate");
+				return -1;
+			}
+
+		}
 		
 		public static void main(String[] args) {
 			DistController controller = new DistController(5000);
 			
-			while(! controller.serverIsActive()){
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					Logger.getLogger().log("Server startup error");
-					e.printStackTrace();
-				}
-			}
+			
 			Logger.getLogger().log("Server started");
 			try {
 				System.in.read();
-				controller.f_transceivers.clear();
-				Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(5001));
-
-				LightComm.Callback proxy =
-						SpecificRequestor.getClient(LightComm.Callback.class, client);
+				int state = 0;
 				
-				CallFuture<Integer> future = new CallFuture<Integer>(); 
-				proxy.getState(future);
-				int ID = future.get();
+				Transceiver f_transceiver = new SaslSocketTransceiver(new InetSocketAddress(5000));
 				
-				Logger.getLogger().log(new Integer(ID).toString());
+				/// Get your ID
+				ControllerComm.Callback proxy =
+						SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
+				
+				CallFuture<Integer> future = new CallFuture<Integer>();
+				proxy.setLight(5, 5001, future);
+				state = future.get();
+				
+				Logger.getLogger().log("setting light to 5, retVal = ", false);
+				Logger.getLogger().log(new Integer(state).toString());
+				
+				Thread.sleep(1000);
+				
+				proxy.getLightState(5001, future);
+				state = future.get();
+				
+				Logger.getLogger().log("getting light, retVal = ", false);
+				Logger.getLogger().log(new Integer(state).toString());
+				
 			} catch (IOException | InterruptedException | ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

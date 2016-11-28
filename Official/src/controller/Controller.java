@@ -94,8 +94,8 @@ public class Controller {
 	
 	
 	
-	private int f_nextID;
-	private final int f_maxTemperatures;
-	private HashMap<Integer, ClientType> f_names;
-	private Vector<TemperatureRecord> f_temperatures;
+	protected int f_nextID;
+	protected final int f_maxTemperatures;
+	protected HashMap<Integer, ClientType> f_names;
+	protected Vector<TemperatureRecord> f_temperatures;
 }
