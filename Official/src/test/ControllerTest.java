@@ -13,7 +13,7 @@ public class ControllerTest {
 
 	@Test
 	public void testID() {
-		int ID = 1001;
+		int ID = 5001;
 		
 		assertEquals(null, ctrl.getClientType(10));
 
