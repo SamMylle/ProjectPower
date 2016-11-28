@@ -12,7 +12,7 @@ public class TemperatureSensor {
 	private Timer timer;
 	
 	public TemperatureSensor(double lowTempRange, double highTempRange) {
-		assert highTempRange > lowTempRange; //replace with normal check and possibly costum exception
+		assert highTempRange > lowTempRange; //replace with normal check and possibly custom exception
 		
 		ID = -1;
 		if (lowTempRange != highTempRange)
@@ -25,7 +25,7 @@ public class TemperatureSensor {
 	}
 	
 	public void setID(int _ID) {
-		assert _ID >= 0; //replace with normal check and possibly costum exception
+		assert _ID >= 0; //replace with normal check and possibly custom exception
 		ID = _ID;
 	}
 	
@@ -58,7 +58,6 @@ public class TemperatureSensor {
 	
 	
 	public static void main(String[] args) throws InterruptedException {
-		// TODO Auto-generated method stub
 		
 		TemperatureSensor test = new TemperatureSensor(10,15);
 		test.setID(1);

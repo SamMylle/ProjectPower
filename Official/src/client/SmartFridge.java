@@ -62,6 +62,10 @@ public class SmartFridge {
 		return items.contains(item);
 	}
 	
+	public Set<String> getItems() {
+		return items;
+	}
+	
 	public void openFridge() {
 		status = FridgeStatus.open;
 	}
