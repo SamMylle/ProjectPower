@@ -5,15 +5,11 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
 import org.apache.avro.AvroRemoteException;
 
 import avro.ProjectPower.ClientType;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.communicationFridge;
-import org.apache.avro.AvroRemoteException;
-import org.apache.avro.ipc.CallFuture;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Server;
@@ -28,10 +24,11 @@ import util.Logger;
 
 
 
-public class DistSmartFridge implements communicationFridge, Runnable {
+public class DistSmartFridge 
+	extends SmartFridge
+	implements communicationFridge, Runnable {
 
 	private int f_controllerPort;					// The port on which the controller runs
-	private SmartFridge f_smartfridge;				// The SmartFridge object itself
 	private boolean f_isReady;						// Boolean used to determine if the server has been finished setting up.
 	
 	private Server f_fridgeServer;					// The server for the SmartFridge itself
@@ -62,7 +59,6 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	public DistSmartFridge(int controllerPort) {
 		assert controllerPort > 1000; // the controller should not be running on a port lower (or equal) than 1000
 		
-		f_smartfridge = new SmartFridge();
 		f_controllerPort = controllerPort;
 		f_isReady = false;
 		f_fridgeuserThread = null;
@@ -87,7 +83,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			proxy.listenToMe(f_smartfridge.getID(), SmartFridge.type);
+			proxy.listenToMe(this.getID(), SmartFridge.type);
 		}
 		catch (IOException e) {
 			System.err.println("IOException thrown at DistSmartFridge constructor: listonToMe to controller");
@@ -96,14 +92,14 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	}
 	
 	/*
-	 * Sets up the transceiver to the controller, and gets an ID for the fridge itself.
+	 * Gets an ID for the fridge itself.
 	 */
 	private void setupSmartFridge() {
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) 
 					SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			f_smartfridge.setID(proxy.getID(SmartFridge.type));
+			this.setID(proxy.getID(SmartFridge.type));
 		}
 		catch (IOException e) {
 			System.err.println("Error connecting to the controller server, the port number might be wrong.");
@@ -116,7 +112,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			proxy.logOff(f_smartfridge.getID());
+			proxy.logOff(this.getID());
 			return true;
 		}
 		catch (AvroRemoteException e) {
@@ -141,7 +137,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		
 		try {
 			f_fridgeServer = new SaslSocketServer(
-					new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(f_smartfridge.getID()) );
+					new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(this.getID()) );
 			f_fridgeServer.start();
 		}
 		catch (IOException e) {
@@ -164,20 +160,20 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	@Override
 	public Void addItemRemote(CharSequence itemName)
 			throws AvroRemoteException {
-		f_smartfridge.addItem(itemName.toString());
+		this.addItem(itemName.toString());
 		return null;
 	}
 
 	@Override
 	public boolean openFridgeRemote() throws AvroRemoteException {
-		f_smartfridge.openFridge();
+		this.openFridge();
 		Logger.getLogger().log("The fridge has been opened.");
 		return true;
 	}
 
 	@Override
 	public boolean closeFridgeRemote() throws AvroRemoteException {
-		f_smartfridge.closeFridge();
+		this.closeFridge();
 		Logger.getLogger().log("The fridge has been closed.");
 		return true;
 	}
@@ -210,7 +206,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	public List<CharSequence> getItemsRemote() throws AvroRemoteException {
 		List<CharSequence> items = new ArrayList<CharSequence>();
 		
-		Set<String> fridgeItems = f_smartfridge.getItems();
+		Set<String> fridgeItems = this.getItems();
 		
 		for (String item : fridgeItems) {
 			items.add(item);
@@ -219,16 +215,12 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	}
 	
 	
-	public String toString() {
-		return f_smartfridge.toString();
-	}
 
 	public static void main(String[] args) {
 		DistController controller = new DistController(6789);
 		
 		DistSmartFridge remoteFridge = new DistSmartFridge(6789);
 		
-		System.out.println("testing");
 		try {
 			remoteFridge.addItemRemote("bacon");
 			remoteFridge.addItemRemote("parmesan cheese");

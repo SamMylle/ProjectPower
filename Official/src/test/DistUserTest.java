@@ -44,7 +44,7 @@ public class DistUserTest {
 		distuser = new DistUser(controllerPort);
 		
 		try {
-			assertEquals(distuser.getStatus(), UserStatus.absent);
+			assertEquals(distuser.getStatusRemote(), UserStatus.absent);
 		} catch (AvroRemoteException e) {
 			return;
 		}

@@ -16,9 +16,8 @@ import controller.DistController;
 
 import avro.ProjectPower.*;
 
-public class DistUser implements communicationUser, Runnable {
+public class DistUser extends User implements communicationUser, Runnable {
 	
-	private User f_user;
 	private int f_controllerPort;
 	
 	private Server f_server;
@@ -27,16 +26,16 @@ public class DistUser implements communicationUser, Runnable {
 	
 	
 	public DistUser(int controllerPort) {
+		super();
 		assert controllerPort >= 1000;
 		
-		f_user = new User();
 		f_controllerPort = controllerPort;
 		f_serverReady = false;
 		
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			f_user.setID(proxy.getID(User.type));
+			this.setID(proxy.getID(User.type));
 		}
 		catch (IOException e) {
 			System.err.println("IOException in constructor for DistUser (getID).");
@@ -61,7 +60,7 @@ public class DistUser implements communicationUser, Runnable {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			proxy.logOff(f_user.getID());
+			proxy.logOff(this.getID());
 			return true;
 		}
 		catch (AvroRemoteException e) {
@@ -83,7 +82,7 @@ public class DistUser implements communicationUser, Runnable {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			proxy.listenToMe(f_user.getID(), User.type);
+			proxy.listenToMe(this.getID(), User.type);
 		}
 		catch (IOException e) {
 			System.err.println("IOException in constructor for DistUser (listenToMe).");
@@ -95,7 +94,7 @@ public class DistUser implements communicationUser, Runnable {
 	public void run() {
 		try {
 			f_server = new SaslSocketServer(
-					new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_user.getID()) );
+					new SpecificResponder(communicationUser.class, this), new InetSocketAddress(this.getID()) );
 			f_server.start();
 		}
 		catch (IOException e) {
@@ -117,8 +116,8 @@ public class DistUser implements communicationUser, Runnable {
 	
 	
 	@Override
-	public UserStatus getStatus() throws AvroRemoteException {
-		return f_user.getStatus();
+	public UserStatus getStatusRemote() throws AvroRemoteException {
+		return this.getStatus();
 	}
 
 	/**
@@ -131,7 +130,7 @@ public class DistUser implements communicationUser, Runnable {
 		
 		try {
 			Logger logger = Logger.getLogger();
-			if (remoteUser.getStatus() == UserStatus.absent) {
+			if (remoteUser.getStatusRemote() == UserStatus.absent) {
 				logger.log("Should print this.");
 			}
 			
