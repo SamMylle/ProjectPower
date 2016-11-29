@@ -36,7 +36,6 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	
 	private Server f_fridgeServer;					// The server for the SmartFridge itself
 	private Thread f_smartfridgeThread;				// The thread used to run the server and handle the requests it gets.
-	private Transceiver f_controllerTransceiver;	// The transceiver which is used to send commands/queries to the controller
 
 	
 	// TODO decide what to for user/controller, in terms of different or shared fridge servers
@@ -86,8 +85,8 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		}
 		
 		try {
-			f_controllerTransceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
-			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, f_controllerTransceiver);
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.listenToMe(f_smartfridge.getID(), SmartFridge.type);
 		}
 		catch (IOException e) {
@@ -101,24 +100,10 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	 */
 	private void setupSmartFridge() {
 		try {
-			CallFuture<Integer> futureID = new CallFuture<Integer>();
-			f_controllerTransceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
-			ControllerComm.Callback proxy = (ControllerComm.Callback) 
-					SpecificRequestor.getClient(ControllerComm.Callback.class, f_controllerTransceiver);
-			
-			proxy.getID(SmartFridge.type, futureID);
-			f_smartfridge.setID(futureID.get());
-			
-//			f_controllerTransceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
-//			ControllerComm proxy = (ControllerComm) 
-//					SpecificRequestor.getClient(ControllerComm.class, f_controllerTransceiver);
-//			f_smartfridge.setID(proxy.getID(SmartFridge.type));
-		}
-		catch (ExecutionException e) {
-			//TODO handle exception properly
-		}
-		catch (InterruptedException e) {
-			//TODO handle exception properly
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			ControllerComm proxy = (ControllerComm) 
+					SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			f_smartfridge.setID(proxy.getID(SmartFridge.type));
 		}
 		catch (IOException e) {
 			System.err.println("Error connecting to the controller server, the port number might be wrong.");
@@ -128,29 +113,25 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	}
 	
 	public boolean logOffController() {
-		if (f_controllerTransceiver != null) {
-			try {
-				ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, f_controllerTransceiver);
-				proxy.logOff(f_smartfridge.getID());
-				return true;
-			}
-			catch (AvroRemoteException e) {
-				System.out.println("AvroRemoteException at logOff() in DistSmartFridge.");
-				return false;
-			}
-			catch (IOException e) {
-				System.out.println("IOException at logOff() in DistSmartFridge.");
-				return false;
-			}
+		try {
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.logOff(f_smartfridge.getID());
+			return true;
 		}
-		return false;
+		catch (AvroRemoteException e) {
+			System.out.println("AvroRemoteException at logOff() in DistSmartFridge.");
+			return false;
+		}
+		catch (IOException e) {
+			System.out.println("IOException at logOff() in DistSmartFridge.");
+			return false;
+		}
 	}
 	
 	public void stopServer() {
-		f_fridgeuserThread.stop();
-		f_fridgeuserThread.destroy();
-		
-		f_fridgeServer.close();		
+		f_smartfridgeThread.interrupt();
+		f_smartfridgeThread = null;		
 	}
 	
 	@Override
@@ -174,7 +155,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 			f_fridgeServer.join();
 		}
 		catch (InterruptedException e) {
-			System.err.println("Failed to join the SmartFridge server.");
+			f_fridgeServer.close();
 		}
 		
 		
@@ -245,13 +226,6 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 	public static void main(String[] args) {
 		DistController controller = new DistController(6789);
 		
-		// temporarly fix?
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
-		
 		DistSmartFridge remoteFridge = new DistSmartFridge(6789);
 		
 		System.out.println("testing");
@@ -278,11 +252,7 @@ public class DistSmartFridge implements communicationFridge, Runnable {
 		catch (AvroRemoteException e) {
 			System.err.println("AvroRemoteException at main class in DistSmartFridge.");
 		}
-		
-		
-		
-//		String fridgeContents = "items: [\"bacon\", \"parmesan cheese\"]";
-		
+		System.exit(0);
 	}
 
 }

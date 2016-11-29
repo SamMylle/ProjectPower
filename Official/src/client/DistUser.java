@@ -77,7 +77,6 @@ public class DistUser implements communicationUser, Runnable {
 	public void stopServer() {
 		f_serverThread.interrupt();
 		f_serverThread = null;
-		f_server.close();
 	}
 	
 	public void registerToController() {
@@ -110,7 +109,8 @@ public class DistUser implements communicationUser, Runnable {
 			f_server.join();
 		}
 		catch (InterruptedException e) {
-			System.err.println("Failed to join the User server.");
+			f_server.close();
+			Logger.getLogger().log("Closed the DistUser server.");
 		}
 		
 	}
@@ -126,13 +126,6 @@ public class DistUser implements communicationUser, Runnable {
 	 */
 	public static void main(String[] args) {
 		DistController controller = new DistController(6789);
-		
-		// temporarly fix?
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
 		
 		DistUser remoteUser = new DistUser(6789);
 		
