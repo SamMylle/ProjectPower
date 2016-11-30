@@ -7,6 +7,14 @@
 			"type" : "enum",
 			"name" : "ClientType",
 			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		},
+		{
+			"type": "record",
+			"name": "Client",
+			"fields": [
+				{"name": "clientType", "type": "ClientType"},
+				{"name": "ID", "type": "int"}
+			]
 		}
 	],
 
@@ -104,6 +112,10 @@
 			}
 			],
 			"response": "int"
+		},
+		"getAllClients":{
+			"request": [],
+			"response": {"type": "array", "items": "Client"}
 		}
 	}
 
