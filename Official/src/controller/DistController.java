@@ -18,6 +18,7 @@ import util.Logger;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import avro.ProjectPower.*;
@@ -277,34 +278,27 @@ public class DistController implements ControllerComm, Runnable{
 			DistController controller = new DistController(5000);
 			
 			DistSmartFridge fridge = new DistSmartFridge(5000);
-			
+			try {
+				fridge.addItemRemote("bacon");
+				fridge.addItemRemote("parmesan cheese");
+			} catch (AvroRemoteException e1) {
+				// TODO Auto-generated catch block
+				Logger.getLogger().log("woops");
+			}
 			
 			Logger.getLogger().log("Servers started");
-			/*try {
-				System.in.read();
-				int state = 0;
+			
+			try {
+				List<CharSequence> items = controller.getFridgeInventory(5001);
 				
-				Transceiver f_transceiver = new SaslSocketTransceiver(new InetSocketAddress(5000));
-				
-				/// Get your ID
-				ControllerComm.Callback proxy =
-						SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
-				
-				CallFuture<Integer> future = new CallFuture<Integer>();
-				state = proxy.setLight(5, 5001);
-				
-				Logger.getLogger().log("setting light to 5, retVal = ", false);
-				Logger.getLogger().log(new Integer(state).toString());
-				
-				state = proxy.getLightState(5001);
-				
-				Logger.getLogger().log("getting light, retVal = ", false);
-				Logger.getLogger().log(new Integer(state).toString());
+				for (int i = 0; i < items.size(); i++){
+					Logger.getLogger().log(items.get(i).toString());
+				}
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}*/
+			}
 		}
 		
 
