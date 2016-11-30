@@ -31,7 +31,7 @@ public class Controller {
 		return ID;
 	}
 	
-	public ClientType getClientType(int ID){
+	public ClientType getClType(int ID){
 		try{
 			return f_names.get(ID);
 		}catch(NullPointerException e){
@@ -83,7 +83,7 @@ public class Controller {
 		return avg/count;
 	}
 	
-	public boolean hasValidTemperatures(){		
+	public boolean hasValidTemp(){		
 		for (int i = 0; i < f_temperatures.size(); i++){
 			if (f_temperatures.elementAt(i).getRecord().size() > 0){
 				return true;

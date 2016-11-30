@@ -124,7 +124,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		DistController controller = new DistController(6789);
+		DistController controller = new DistController(6789, 10);
 		
 		DistUser remoteUser = new DistUser(6789);
 		

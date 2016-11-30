@@ -14,8 +14,9 @@ import client.User;
 public class DistUserTest {
 
 	private static final int controllerPort = 5000;
+	private static final int maxTemp = 10;
 	DistUser distuser;
-	DistController controller = new DistController(controllerPort);
+	DistController controller = new DistController(controllerPort, maxTemp);
 
 	@Test
 	public void testGetID() {

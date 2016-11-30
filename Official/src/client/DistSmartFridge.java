@@ -217,7 +217,7 @@ public class DistSmartFridge
 	
 
 	public static void main(String[] args) {
-		DistController controller = new DistController(6789);
+		DistController controller = new DistController(6789, 10);
 		
 		DistSmartFridge remoteFridge = new DistSmartFridge(6789);
 		

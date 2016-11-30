@@ -23,16 +23,17 @@ import java.util.concurrent.ExecutionException;
 
 import avro.ProjectPower.*;
 
-public class DistController implements ControllerComm, Runnable{
+public class DistController extends Controller implements ControllerComm, Runnable{
 	
-		private Controller f_controller;
+		//private Controller f_controller;
 		private Server f_server;
 		private Thread f_serverThread;
 		private int f_myPort;
 		private boolean f_serverActive;
 		
-		public DistController(int port){
-			f_controller = new Controller(port + 1, 10);
+		public DistController(int port, int maxTemperatures){
+			super(port + 1, maxTemperatures);
+			//f_controller = new Controller(port + 1, 10);
 			f_myPort = port;
 			f_serverActive = false;
 			
@@ -76,7 +77,14 @@ public class DistController implements ControllerComm, Runnable{
 			f_serverActive = true;
 			try{
 				f_server.join();
-			}catch(InterruptedException e){}
+			}catch(InterruptedException e){
+				f_server.close();
+			}
+		}
+		
+		public void stopServer(){
+			f_serverThread.interrupt();
+			f_serverActive = false;
 		}
 		
 		public Transceiver setupTransceiver(int ID){
@@ -92,38 +100,38 @@ public class DistController implements ControllerComm, Runnable{
 		@Override
 		public int getID(ClientType clientType) throws AvroRemoteException{
 			Logger.getLogger().log("give new ID");
-			int newID = f_controller.giveNextID(clientType);
+			int newID = this.giveNextID(clientType);
 			return newID;
 		}
 		
 		@Override
 		public ClientType getClientType(int ID) throws AvroRemoteException{
-			return f_controller.getClientType(ID);
+			return this.getClType(ID);
 		}
 		
 		@Override
 		public Void logOff(int ID) throws AvroRemoteException{
 			/// Remove ID from the system
 			/// TODO, special case when the client is a temperatureSensor
-			f_controller.removeID(ID);
+			this.removeID(ID);
 			
 			return null;
 		}
 		
 		@Override
 		public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
-			f_controller.addTemperature(temperature, ID);
+			this.addTemperature(temperature, ID);
 			return null;
 		}
 		
 		@Override
 		public double averageCurrentTemperature() throws AvroRemoteException{
-			return f_controller.averageCurrentTemp();
+			return this.averageCurrentTemp();
 		}
 		
 		@Override
 		public boolean hasValidTemperatures() throws AvroRemoteException{
-			return f_controller.hasValidTemperatures();
+			return this.hasValidTemp();
 		}
 		
 		@Override
@@ -163,7 +171,7 @@ public class DistController implements ControllerComm, Runnable{
 		@Override
 		public List<CharSequence> getFridgeInventory(int ID) throws AvroRemoteException {
 			/// return null on invalid stuff and thangs
-			ClientType type = f_controller.f_names.get(ID);
+			ClientType type = this.f_names.get(ID);
 			
 			if(type != ClientType.SmartFridge){
 				return null;
@@ -196,7 +204,7 @@ public class DistController implements ControllerComm, Runnable{
 			/// return -1 on invalid stuff and thangs
 			/// return 0 on success
 			
-			ClientType type = f_controller.f_names.get(ID);
+			ClientType type = this.f_names.get(ID);
 			
 			if(type != ClientType.Light){
 				return -1;
@@ -228,7 +236,7 @@ public class DistController implements ControllerComm, Runnable{
 
 		@Override
 		public int getLightState(int ID) throws AvroRemoteException {
-			ClientType type = f_controller.f_names.get(ID);
+			ClientType type = this.f_names.get(ID);
 			
 			if(type != ClientType.Light){
 				return -1;
@@ -275,7 +283,7 @@ public class DistController implements ControllerComm, Runnable{
 		}
 		
 		public static void main(String[] args) {
-			DistController controller = new DistController(5000);
+			DistController controller = new DistController(5000, 10);
 			
 			DistSmartFridge fridge = new DistSmartFridge(5000);
 			try {
