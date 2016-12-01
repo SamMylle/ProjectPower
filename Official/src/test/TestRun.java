@@ -43,14 +43,14 @@ public class TestRun{
 		System.out.print("SmartFridgeTest: ");
 		System.out.println(result.wasSuccessful());
 		
-//		result = JUnitCore.runClasses(DistUserTest.class);
-//		
-//		for (Failure failure : result.getFailures()) {
-//			System.out.println(failure.toString());
-//		}
-//		System.out.print("DistUserTest: ");
-//		System.out.println(result.wasSuccessful());
+		result = JUnitCore.runClasses(DistUserTest.class);
 		
+		for (Failure failure : result.getFailures()) {
+			System.out.println(failure.toString());
+		}
+		System.out.print("DistUserTest: ");
+		System.out.println(result.wasSuccessful());
 		
+		System.exit(0);
 	}
 }

@@ -78,17 +78,7 @@ public class DistSmartFridge
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
-		
-		try {
-			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
-			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			proxy.listenToMe(this.getID(), SmartFridge.type);
-		}
-		catch (IOException e) {
-			System.err.println("IOException thrown at DistSmartFridge constructor: listonToMe to controller");
-		}
-		
+		}	
 	}
 	
 	/*
@@ -133,7 +123,7 @@ public class DistSmartFridge
 	@Override
 	public void run() {
 		// This function will run the thread which sets up the smartFridge server, used by the controller
-		// TODO Similair descision as above - split between user and controller?
+		// TODO Similar decision as above - split between user and controller?
 		
 		try {
 			f_fridgeServer = new SaslSocketServer(

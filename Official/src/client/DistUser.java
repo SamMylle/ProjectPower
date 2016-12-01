@@ -52,8 +52,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 				e.printStackTrace();
 			}
 		}
-		
-		registerToController();
 	}
 	
 	public boolean logOffController() {
@@ -76,18 +74,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	public void stopServer() {
 		f_serverThread.interrupt();
 		f_serverThread = null;
-	}
-	
-	public void registerToController() {
-		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
-			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			proxy.listenToMe(this.getID(), User.type);
-		}
-		catch (IOException e) {
-			System.err.println("IOException in constructor for DistUser (listenToMe).");
-			System.exit(1);
-		}
 	}
 	
 	@Override

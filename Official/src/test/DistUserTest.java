@@ -13,13 +13,14 @@ import client.User;
 
 public class DistUserTest {
 
-	private static final int controllerPort = 5000;
+	private static final int controllerPort = 10000;
 	private static final int maxTemp = 10;
 	DistUser distuser;
-	DistController controller = new DistController(controllerPort, maxTemp);
+	DistController controller;
 
 	@Test
 	public void testGetID() {
+		controller = new DistController(controllerPort, maxTemp);
 		distuser = new DistUser(controllerPort);
 		
 		try {
@@ -38,10 +39,12 @@ public class DistUserTest {
 		}
 		distuser.logOffController();
 		distuser.stopServer();
+		controller.stopServer();
 	}
 	
 	@Test
 	public void testStatus() {
+		controller = new DistController(controllerPort, maxTemp);
 		distuser = new DistUser(controllerPort);
 		
 		try {
@@ -49,5 +52,6 @@ public class DistUserTest {
 		} catch (AvroRemoteException e) {
 			return;
 		}
+		controller.stopServer();
 	}
 }
