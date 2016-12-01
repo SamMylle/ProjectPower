@@ -286,6 +286,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public java.util.List<Client> getAllClients() throws AvroRemoteException {
+		/// TODO test
 		List<Client> ret = new Vector<Client>();
 
 		/// Ugliest for loop in the history of for loops

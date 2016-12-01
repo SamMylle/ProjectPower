@@ -10,7 +10,6 @@ import avro.ProjectPower.ClientType;
 
 public class Controller {
 	public Controller(int startID, int maxTemperatures){
-		/// TODO dynamic starting ID
 		f_nextID = startID;
 		f_maxTemperatures = maxTemperatures;
 		f_names = new HashMap<Integer, ClientType>();
@@ -51,11 +50,13 @@ public class Controller {
 		}catch(NullPointerException e){}
 	}
 	
+	@Deprecated
 	public boolean unusedID(int ID){
 		return true;
 	}
 	
 	public void addTemperature(double newTemp, int ID){
+		/// TODO write test
 		for (int i = 0; i < f_temperatures.size(); i++){
 			if (f_temperatures.elementAt(i).getID() == ID){
 				f_temperatures.elementAt(i).addValue(newTemp);
@@ -64,7 +65,12 @@ public class Controller {
 		}
 	}
 	
+	public Vector<TemperatureRecord> getRawTemperatures(){
+		return f_temperatures;
+	}
+	
 	public double averageCurrentTemp(){
+		/// TODO write test
 		/// In a non-distributed system i would throw an exception for an empty list or records
 		double avg = 0;
 		double count = 0;
@@ -83,7 +89,8 @@ public class Controller {
 		return avg/count;
 	}
 	
-	public boolean hasValidTemp(){		
+	public boolean hasValidTemp(){
+		/// TODO write test	
 		for (int i = 0; i < f_temperatures.size(); i++){
 			if (f_temperatures.elementAt(i).getRecord().size() > 0){
 				return true;
