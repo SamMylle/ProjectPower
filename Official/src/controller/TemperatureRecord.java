@@ -2,7 +2,7 @@ package controller;
 
 import java.util.LinkedList;
 
-public class TemperatureRecord {
+public class TemperatureRecord{
 	public TemperatureRecord(int maxSize, int ID){
 		f_maxSize = maxSize;
 		f_record = new LinkedList<Double>();

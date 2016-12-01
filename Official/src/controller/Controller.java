@@ -56,7 +56,6 @@ public class Controller {
 	}
 	
 	public void addTemperature(double newTemp, int ID){
-		/// TODO write test
 		for (int i = 0; i < f_temperatures.size(); i++){
 			if (f_temperatures.elementAt(i).getID() == ID){
 				f_temperatures.elementAt(i).addValue(newTemp);
@@ -70,7 +69,6 @@ public class Controller {
 	}
 	
 	public double averageCurrentTemp(){
-		/// TODO write test
 		/// In a non-distributed system i would throw an exception for an empty list or records
 		double avg = 0;
 		double count = 0;
@@ -90,7 +88,6 @@ public class Controller {
 	}
 	
 	public boolean hasValidTemp(){
-		/// TODO write test	
 		for (int i = 0; i < f_temperatures.size(); i++){
 			if (f_temperatures.elementAt(i).getRecord().size() > 0){
 				return true;
@@ -98,6 +95,8 @@ public class Controller {
 		}
 		return false;
 	}
+	
+	/// TODO get temperature history
 	
 	
 	
