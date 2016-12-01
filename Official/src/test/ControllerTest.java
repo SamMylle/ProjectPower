@@ -2,6 +2,8 @@ package test;
 
 import org.junit.Test;
 
+import util.Logger;
+
 import avro.ProjectPower.ClientType;
 import static org.junit.Assert.assertEquals;
 
