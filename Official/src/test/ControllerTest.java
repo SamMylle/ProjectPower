@@ -68,7 +68,6 @@ public class ControllerTest {
 		assertEquals(ctrl.getRawTemperatures().size(), 0);
 		assertEquals(null, ctrl.getClType(ID - 2));
 		assertEquals(ClientType.SmartFridge, ctrl.getClType(ID - 3));
-		/// TODO add test for temperature
 
 		ctrl.removeID(ID - 1);
 		assertEquals(ClientType.User, ctrl.getClType(ID));
