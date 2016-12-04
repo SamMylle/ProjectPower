@@ -100,7 +100,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 			
 		}
-		
+
 		f_serverActive = false;
 	}
 
@@ -157,6 +157,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try {
 			Transceiver client = this.setupTransceiver(ID);
 
+			/// Don't think this is necessary
 			if (client == null){
 				return -1;
 			}

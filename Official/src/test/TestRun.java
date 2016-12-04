@@ -79,6 +79,16 @@ public class TestRun{
 		System.out.println(result.wasSuccessful());
 		
 		
+
+		result = JUnitCore.runClasses(DistControllerTest.class);
+		
+		for (Failure failure : result.getFailures()) {
+			System.out.println(failure.toString());
+		}
+		System.out.print("DistControllerTest: ");
+		System.out.println(result.wasSuccessful());
+		
+		
 		
 		
 		

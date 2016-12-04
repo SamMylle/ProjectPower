@@ -38,11 +38,18 @@ public class DistLight implements Runnable, LightComm {
 	@Override
 	public void run() {
 		try {
+			if (f_light.getID() == -1){
+				this.connectToServer(f_serverPort);
+			}
+			System.out.print("Starting server at ");
+			System.out.print(f_light.getID());
+			System.out.print("\n");
 			f_server = new SaslSocketServer(
 					new SpecificResponder(LightComm.class,
 					this), new InetSocketAddress(f_light.getID()));
 		} catch (IOException e) {
-			System.err.println("[error]Failed to start light server");
+			System.err.println("[error]Failed to start light server on ID ");
+			System.err.println(f_light.getID());
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}
