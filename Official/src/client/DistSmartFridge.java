@@ -49,8 +49,7 @@ public class DistSmartFridge extends SmartFridge {
 	 * Constructor for DistSmartFridge
 	 * 
 	 * Constructs the DistSmartFridge object (in specified order):
-	 * 		- Sets up a transceiver to communicate with the controller
-	 * 		- Gets an ID from the controller
+	 * 		- Gets an ID from the controller, using the given argument @controllerPort
 	 * 		- Starts a SmartFridge server on port=ID
 	 * 
 	 * @param controllerPort
@@ -67,17 +66,14 @@ public class DistSmartFridge extends SmartFridge {
 		f_userServer = null;
 		f_userConnected = false;
 		
-		// the smartfridge needs an ID to function -> ask the controller for the id
-		this.setupSmartFridge();
-		// The smartfridge should also start a server on the port number equal to his given ID
-		// This will be done in a thread
+		this.setupID();
 		this.startServer();
 	}
 	
-	/*
-	 * Gets an ID for the fridge itself.
+	/**
+	 * Summary: gets an ID for the SmartFridge, requesting one from the controller.
 	 */
-	private void setupSmartFridge() {
+	private void setupID() {
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) 
@@ -92,6 +88,11 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
+	/**
+	 * Summary: logs off at the controller
+	 * 
+	 * @return  success of logging off.
+	 */
 	public boolean logOffController() {
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
@@ -110,11 +111,12 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
+	/**
+	 * Summary: starts a thread, which runs the DistSmartFridge server for the controller. Sleeps until the server is functional.
+	 */
 	private void startServer() {
 		f_smartfridgeThread = new Thread(new controllerServer());
 		f_smartfridgeThread.start();
-		
-		
 		while (f_serverControllerReady == false) {
 			try {
 				Thread.sleep(50);
@@ -124,11 +126,17 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
+	/**
+	 * Summary: interrupts the thread which runs the DistSmartFridge server for the controller, forcing it to close.
+	 */
 	public void stopServerController() {
 		f_smartfridgeThread.interrupt();
 		f_smartfridgeThread = null;		
 	}
 	
+	/**
+	 * Summary: Notifies the controller that the inventory of the fridge is empty.
+	 */
 	public void notifyControllerEmptyInventory() {
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
@@ -147,7 +155,10 @@ public class DistSmartFridge extends SmartFridge {
 	
 
 	/**
-	 * Runs the server to be used by the Controller
+	 * Class used to run the DistSmartFridge server used by the Controller
+	 * 
+	 * This class implements all the methods that the controller needs, 
+	 * 		aswell as running the thread for the DistSmartFridge server respectively.
 	 */
 	public class controllerServer implements Runnable, communicationFridge {
 		
@@ -219,7 +230,10 @@ public class DistSmartFridge extends SmartFridge {
 	}
 	
 	/**
-	 * Runs the server to be used by the User
+	 * Class used to run the DistSmartFridge server used by the User
+	 * 
+	 * This class implements all the methods that the user needs, 
+	 * 		aswell as running the thread for the DistSmartFridge server respectively.
 	 */
 	class userServer implements Runnable, communicationFridgeUser {
 
@@ -246,14 +260,7 @@ public class DistSmartFridge extends SmartFridge {
 				f_userServer.close();
 			}
 		}
-
-		@Override
-		public Void addItemRemote(CharSequence itemName)
-				throws AvroRemoteException {
-			addItem(itemName.toString());
-			return null;
-		}
-	
+		
 		@Override
 		public boolean openFridgeRemote() throws AvroRemoteException {
 			openFridge();
@@ -263,7 +270,7 @@ public class DistSmartFridge extends SmartFridge {
 			logger.log("The fridge has been opened.");
 			return true;
 		}
-	
+		
 		@Override
 		public boolean closeFridgeRemote() throws AvroRemoteException {
 			closeFridge();
@@ -275,10 +282,23 @@ public class DistSmartFridge extends SmartFridge {
 			return true;
 		}
 
+		
+		@Override
+		public Void addItemRemote(CharSequence itemName)
+				throws AvroRemoteException {
+			addItem(itemName.toString());
+			return null;
+		}
+	
 		@Override
 		public Void removeItemRemote(CharSequence itemName)
 				throws AvroRemoteException {
 			removeItem((String) itemName);
+			
+			if (emptyInventory() == true) {
+				notifyControllerEmptyInventory();
+			}
+			
 			return null;
 		}
 

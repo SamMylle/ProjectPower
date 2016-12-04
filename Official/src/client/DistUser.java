@@ -18,11 +18,18 @@ import avro.ProjectPower.*;
 
 public class DistUser extends User implements communicationUser, Runnable {
 	
+	// TODO add exceptions when 
+	// 		- trying to connect directly to fridge without communication
+	//		- trying to connect with other clients, when already being connected with the fridge
+	
 	private int f_controllerPort;
 	
 	private Server f_server;
 	private Thread f_serverThread;
 	private boolean f_serverReady;
+	
+	private boolean f_connectedToFridge;
+	private int f_fridgePort;
 	
 	
 	public DistUser(int controllerPort, String name) {
@@ -31,6 +38,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		f_controllerPort = controllerPort;
 		f_serverReady = false;
+		
+		f_connectedToFridge = false;
+		f_fridgePort = -1;
 		
 		this.setupID();
 		this.setupServer();
@@ -88,9 +98,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	
 	/**
-	 * ===============
-	 * General methods
-	 * ===============
+	 * =====================================================
+	 * General methods: communication with controller/fridge
+	 * =====================================================
 	 */
 	
 	/**
@@ -195,6 +205,124 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	public void communicateWithFridge(int fridgeID) {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			f_fridgePort = proxy.setupFridgeCommunication(fridgeID);
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
+			return;
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at communicateWithFridge() in DistUser.");
+			return;
+		}
+		
+		f_connectedToFridge = true;
+	}
+	
+	public void addItemFridge(String item) {
+		// TODO add exception if no connection has been setup yet
+		if (f_connectedToFridge == false) {
+			return;
+		}
+		
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
+			communicationFridgeUser proxy = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+			proxy.addItemRemote(item);
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at addItemFridge() in DistUser.");
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at addItemFridge() in DistUser.");
+		}
+	}
+	public void removeItemFridge(String item) {
+		// TODO add exception if no connection has been setup yet
+		if (f_connectedToFridge == false) {
+			return;
+		}
+		
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
+			communicationFridgeUser proxy = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+			proxy.removeItemRemote(item);
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at removeItemFridge() in DistUser.");
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at removeItemFridge() in DistUser.");
+		}
+	}
+	
+	public List<CharSequence> getFridgeItemsDirectly() {
+		if (f_connectedToFridge == false) {
+			return null;
+		}
+		
+		List<CharSequence> items = null;
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
+			communicationFridgeUser proxy = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+			items = proxy.getItemsRemote();
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at getFridgeItemsDirectly() in DistUser.");
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at getFridgeItemsDirectly() in DistUser.");
+		}
+		return items;
+	}
+	
+	public void openFridge() {
+		if (f_connectedToFridge == false) {
+			return;
+		}
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
+			communicationFridgeUser proxy = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+			proxy.openFridgeRemote();
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at openFridge() in DistUser.");
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at openFridge() in DistUser.");
+		}
+	}
+	
+	public void closeFridge() {
+		if (f_connectedToFridge == false) {
+			return;
+		}
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
+			communicationFridgeUser proxy = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+			proxy.openFridgeRemote();
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at openFridge() in DistUser.");
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at openFridge() in DistUser.");
+		}
+		
+		f_connectedToFridge = false;
+		f_fridgePort = -1;
+	}
+	
 	/**
 	 * Thread run() method, used to run the User server in the background
 	 */
@@ -217,7 +345,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		catch (InterruptedException e) {
 			f_server.close();
-			Logger.getLogger().log("Closed the DistUser server.");
+//			Logger.getLogger().log("Closed the DistUser server.");
 		}
 		
 	}
@@ -269,10 +397,5 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		System.exit(0);
 	}
-
-
-
-
-
 
 }

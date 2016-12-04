@@ -66,6 +66,10 @@ public class SmartFridge {
 		return f_items;
 	}
 	
+	boolean emptyInventory() {
+		return f_items.isEmpty();
+	}
+	
 	public void openFridge() {
 		f_status = FridgeStatus.open;
 	}
