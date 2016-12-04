@@ -45,7 +45,7 @@ public class DistSmartFridge
 	
 	
 	
-	/*
+	/**
 	 * Constructor for DistSmartFridge
 	 * 
 	 * Constructs the DistSmartFridge object (in specified order):
@@ -53,7 +53,7 @@ public class DistSmartFridge
 	 * 		- Gets an ID from the controller
 	 * 		- Starts a SmartFridge server on port=ID
 	 * 
-	 * @param int controllerPort
+	 * @param controllerPort
 	 * 	 the port on which the controller server is running
 	 * 
 	 */
@@ -92,6 +92,7 @@ public class DistSmartFridge
 			ControllerComm proxy = (ControllerComm) 
 					SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.getID(SmartFridge.type));
+			transceiver.close();
 		}
 		catch (IOException e) {
 			System.err.println("Error connecting to the controller server, the port number might be wrong.");
@@ -105,14 +106,15 @@ public class DistSmartFridge
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.logOff(this.getID());
+			transceiver.close();
 			return true;
 		}
 		catch (AvroRemoteException e) {
-			System.out.println("AvroRemoteException at logOff() in DistSmartFridge.");
+			System.err.println("AvroRemoteException at logOff() in DistSmartFridge.");
 			return false;
 		}
 		catch (IOException e) {
-			System.out.println("IOException at logOff() in DistSmartFridge.");
+			System.err.println("IOException at logOff() in DistSmartFridge.");
 			return false;
 		}
 	}
@@ -148,39 +150,39 @@ public class DistSmartFridge
 		
 		
 	}
-
-	@Override
-	public Void addItemRemote(CharSequence itemName)
-			throws AvroRemoteException {
-		this.addItem(itemName.toString());
-		return null;
-	}
-
-	@Override
-	public boolean openFridgeRemote() throws AvroRemoteException {
-		this.openFridge();
-		Logger.getLogger().log("The fridge has been opened.");
-		return true;
-	}
-
-	@Override
-	public boolean closeFridgeRemote() throws AvroRemoteException {
-		this.closeFridge();
-		Logger.getLogger().log("The fridge has been closed.");
-		return true;
-	}
-
-	@Override
-	public Void setupServer(int port) throws AvroRemoteException {
-		// TODO determine what to do with threads and edit/delete this method accordingly
-		return null;
-	}
-
-	@Override
-	public Void closeServer() throws AvroRemoteException {
-		// TODO determine what to do with threads and edit/delete this method accordingly
-		return null;
-	}
+//
+//	@Override
+//	public Void addItemRemote(CharSequence itemName)
+//			throws AvroRemoteException {
+//		this.addItem(itemName.toString());
+//		return null;
+//	}
+//
+//	@Override
+//	public boolean openFridgeRemote() throws AvroRemoteException {
+//		this.openFridge();
+//		Logger.getLogger().log("The fridge has been opened.");
+//		return true;
+//	}
+//
+//	@Override
+//	public boolean closeFridgeRemote() throws AvroRemoteException {
+//		this.closeFridge();
+//		Logger.getLogger().log("The fridge has been closed.");
+//		return true;
+//	}
+//
+//	@Override
+//	public Void setupServer(int port) throws AvroRemoteException {
+//		// TODO determine what to do with threads and edit/delete this method accordingly
+//		return null;
+//	}
+//
+//	@Override
+//	public Void closeServer() throws AvroRemoteException {
+//		// TODO determine what to do with threads and edit/delete this method accordingly
+//		return null;
+//	}
 
 	@Override
 	public boolean testMethod(ClientType clienttype) throws AvroRemoteException {
@@ -220,8 +222,8 @@ public class DistSmartFridge
 		DistSmartFridge remoteFridge = new DistSmartFridge(6789);
 		
 		try {
-			remoteFridge.addItemRemote("bacon");
-			remoteFridge.addItemRemote("parmesan cheese");
+//			remoteFridge.addItemRemote("bacon");
+//			remoteFridge.addItemRemote("parmesan cheese");
 			Logger logger = Logger.getLogger();
 			
 			logger.log(remoteFridge.toString());

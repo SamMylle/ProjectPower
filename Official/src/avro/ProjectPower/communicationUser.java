@@ -9,13 +9,15 @@ package avro.ProjectPower;
 /** Methods for the User class */
 @org.apache.avro.specific.AvroGenerated
 public interface communicationUser {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationUser\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the User class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]},{\"type\":\"enum\",\"name\":\"UserStatus\",\"symbols\":[\"present\",\"absent\"]}],\"messages\":{\"getStatusRemote\":{\"request\":[],\"response\":\"UserStatus\"}}}");
-  avro.ProjectPower.UserStatus getStatusRemote() throws org.apache.avro.AvroRemoteException;
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationUser\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the User class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]},{\"type\":\"enum\",\"name\":\"UserStatus\",\"symbols\":[\"present\",\"absent\"]}],\"messages\":{\"getStatus\":{\"request\":[],\"response\":\"UserStatus\"},\"getName\":{\"request\":[],\"response\":\"string\"}}}");
+  avro.ProjectPower.UserStatus getStatus() throws org.apache.avro.AvroRemoteException;
+  java.lang.CharSequence getName() throws org.apache.avro.AvroRemoteException;
 
   @SuppressWarnings("all")
   /** Methods for the User class */
   public interface Callback extends communicationUser {
     public static final org.apache.avro.Protocol PROTOCOL = avro.ProjectPower.communicationUser.PROTOCOL;
-    void getStatusRemote(org.apache.avro.ipc.Callback<avro.ProjectPower.UserStatus> callback) throws java.io.IOException;
+    void getStatus(org.apache.avro.ipc.Callback<avro.ProjectPower.UserStatus> callback) throws java.io.IOException;
+    void getName(org.apache.avro.ipc.Callback<java.lang.CharSequence> callback) throws java.io.IOException;
   }
 }

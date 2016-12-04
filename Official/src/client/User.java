@@ -15,12 +15,14 @@ import util.Logger;
 public class User {
 	private int f_ID;
 	private UserStatus f_status;
+	private String f_name;
 	public static final ClientType type = ClientType.User;
 	
 	
-	public User() {
+	public User(String name) {
 		f_ID = -1;
 		f_status = UserStatus.absent; //the user is not present until he is connected to the system
+		f_name = name;
 	}
 	
 	public void setID(int _ID) {
@@ -43,12 +45,21 @@ public class User {
 		Logger.getLogger().log("User with ID " + f_ID + " has left the system.");
 	}
 
-	public UserStatus getStatus() {
+	public void _setStatus(UserStatus status) {
+		f_status = status; 
+	}
+	
+	public UserStatus _getStatus() {
 		return f_status;
+	}
+	
+	public String _getName() {
+		return f_name;
 	}
 	
 	public static void main(String[] args) {
 		
+		/*
 		try {
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(6789));
 			communicationFridge proxy = (communicationFridge) SpecificRequestor.getClient(communicationFridge.class, client);
@@ -71,7 +82,7 @@ public class User {
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}
-		
+		*/
 		
 		/*
 		User user = new User();

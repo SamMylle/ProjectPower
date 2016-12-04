@@ -17,9 +17,13 @@
 	],
 
 	"messages" : {
-		"getStatusRemote" : {
+		"getStatus" : {
 			"request" : [],
 			"response" : "UserStatus"
+		},
+		"getName" : {
+			"request" : [],
+			"response" : "string"
 		}
 	}
 }

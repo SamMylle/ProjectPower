@@ -57,6 +57,7 @@ public class DistTemperatureSensor
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.getID(TemperatureSensor.type));
+			transceiver.close();
 		}
 		catch (IOException e) {
 			System.err.println("IOException in constructor for DistTemperatureSensor (getID).");
@@ -110,6 +111,7 @@ public class DistTemperatureSensor
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.addTemperature(this.getID(), this.getTemperature());
+			transceiver.close();
 		}
 		catch (IOException e) {
 			System.err.println("IOException in sentTemperatureToController for DistTemperatureSensor.");

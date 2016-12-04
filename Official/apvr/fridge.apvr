@@ -1,7 +1,7 @@
 {
 	"namespace" : "avro.ProjectPower",
 	"protocol" : "communicationFridge",
-	"doc" : "Methods for the SmartFridge class",
+	"doc" : "Methods for the SmartFridge class, specifically destined for the CONTROLLER",
 
 	"types" : [
 		{
@@ -17,29 +17,9 @@
 	],
 
 	"messages" : {
-		"addItemRemote" : {
-			"request" : [{"name" : "itemName", "type" : "string"}],
-			"response" : "null"
-		},
 		"getItemsRemote" : {
 			"request" : [],
 			"response" : {"type" : "array", "items" : "string"}
-		},
-		"openFridgeRemote" : {
-			"request" : [],
-			"response" : "boolean"
-		},
-		"closeFridgeRemote" : {
-			"request" : [],
-			"response" : "boolean"
-		},
-		"setupServer" : {
-			"request" : [{"name" : "port", "type" : "int"}],
-			"response" : "null"
-		},
-		"closeServer" : {
-			"request" : [],
-			"response" : "null"
 		},
 		"testMethod" : {
 			"request" : [{"name" : "clienttype", "type" : "ClientType"}],
