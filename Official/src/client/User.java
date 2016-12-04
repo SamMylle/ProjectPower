@@ -13,38 +13,38 @@ import util.Logger;
 //enum UserStatus {present, absent};
 
 public class User {
-	private int ID;
-	private UserStatus status;
+	private int f_ID;
+	private UserStatus f_status;
 	public static final ClientType type = ClientType.User;
 	
 	
 	public User() {
-		ID = -1;
-		status = UserStatus.absent; //the user is not present until he is connected to the system
+		f_ID = -1;
+		f_status = UserStatus.absent; //the user is not present until he is connected to the system
 	}
 	
 	public void setID(int _ID) {
 		assert _ID >= 0; //change later on with custom exceptions
 		
-		ID = _ID;
+		f_ID = _ID;
 	}
 	
 	public int getID() {
-		return ID;
+		return f_ID;
 	}
 	
 	public void enter() {
-		status = UserStatus.present;
-		Logger.getLogger().log("User with ID " + ID + " has entered the system.");
+		f_status = UserStatus.present;
+		Logger.getLogger().log("User with ID " + f_ID + " has entered the system.");
 	}
 	
 	public void leave() {
-		status = UserStatus.absent;
-		Logger.getLogger().log("User with ID " + ID + " has left the system.");
+		f_status = UserStatus.absent;
+		Logger.getLogger().log("User with ID " + f_ID + " has left the system.");
 	}
 
 	public UserStatus getStatus() {
-		return status;
+		return f_status;
 	}
 	
 	public static void main(String[] args) {

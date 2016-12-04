@@ -15,15 +15,15 @@ enum FridgeStatus {closed, open};
 
 public class SmartFridge {
 
-	private Set<String> items;
-	private FridgeStatus status;
+	private Set<String> f_items;
+	private FridgeStatus f_status;
 	private int f_ID;
 	public static final ClientType type = ClientType.SmartFridge;
 	
 	
 	public SmartFridge() {
-		items = new HashSet<String>();
-		status = FridgeStatus.closed;
+		f_items = new HashSet<String>();
+		f_status = FridgeStatus.closed;
 		f_ID = 0;
 	}
 	
@@ -38,20 +38,20 @@ public class SmartFridge {
 	}
 	
 	public void addItem(String newItem) {
-		assert status == FridgeStatus.open;
+		assert f_status == FridgeStatus.open;
 		
-		items.add(newItem); //returns boolean to see if the element was added, might be useful later
+		f_items.add(newItem); //returns boolean to see if the element was added, might be useful later
 	}
 	
 	public void removeItem(String oldItem) {
-		assert items.isEmpty() == false;
+		assert f_items.isEmpty() == false;
 		
-		if (items.contains(oldItem) == false) {
+		if (f_items.contains(oldItem) == false) {
 			return;
 		}
-		items.remove(oldItem);
+		f_items.remove(oldItem);
 		
-		if (items.isEmpty() == true) {
+		if (f_items.isEmpty() == true) {
 			System.out.println("send broadcast"); //placeholder function
 		}
 	}
@@ -59,27 +59,27 @@ public class SmartFridge {
 	public boolean hasItem(String item) {
 		assert item != "";
 		
-		return items.contains(item);
+		return f_items.contains(item);
 	}
 	
 	public Set<String> getItems() {
-		return items;
+		return f_items;
 	}
 	
 	public void openFridge() {
-		status = FridgeStatus.open;
+		f_status = FridgeStatus.open;
 	}
 	
 	public void closeFridge() {
-		status = FridgeStatus.closed;
+		f_status = FridgeStatus.closed;
 	}
 	
 	public boolean isOpen() {
-		return status == FridgeStatus.open;
+		return f_status == FridgeStatus.open;
 	}
 	
 	public String toString() {
-		return "items: " + items;
+		return "items: " + f_items;
 	}
 	
 	public static void main(String[] args) {

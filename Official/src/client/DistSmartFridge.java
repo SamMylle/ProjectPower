@@ -33,6 +33,7 @@ public class DistSmartFridge
 	
 	private Server f_fridgeServer;					// The server for the SmartFridge itself
 	private Thread f_smartfridgeThread;				// The thread used to run the server and handle the requests it gets.
+	private boolean f_userConnected;
 
 	
 	// TODO decide what to for user/controller, in terms of different or shared fridge servers
@@ -63,6 +64,7 @@ public class DistSmartFridge
 		f_isReady = false;
 		f_fridgeuserThread = null;
 		f_userServer = null;
+		f_userConnected = false;
 		
 		// the smartfridge needs an ID to function -> ask the controller for the id
 		this.setupSmartFridge();
@@ -189,6 +191,12 @@ public class DistSmartFridge
 	@Override
 	public boolean requestFridgeCommunication() throws AvroRemoteException {
 		// TODO determine what to do with threads and edit/delete this method accordingly
+		
+		if (f_userConnected == true) {
+			return false;
+		}
+		
+		f_userConnected = true;
 		return true;
 	}
 	

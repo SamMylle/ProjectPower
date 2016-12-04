@@ -1,0 +1,20 @@
+{
+	"namespace" : "avro.ProjectPower",
+	"protocol" : "communicationTempSensor",
+	"doc" : "Methods for the TemperatureSensor class",
+
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		}
+	],
+
+	"messages" : {
+		"isAlive" : {
+			"request" : [],
+			"response" : "boolean"
+		}
+	}
+}
