@@ -37,6 +37,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	public DistController(int port, int maxTemperatures){
 		super(port + 1, maxTemperatures);
+		
 		//f_controller = new Controller(port + 1, 10);
 		f_myPort = port;
 		f_serverActive = false;
@@ -55,6 +56,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
+				Logger.getLogger().f_active = true;
 				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
 			}
@@ -83,11 +85,22 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			f_server.join();
 		}catch(InterruptedException e){
 			f_server.close();
+			f_server = null;
 		}
 	}
 
 	public void stopServer(){
 		f_serverThread.interrupt();
+		while (f_server != null){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			
+		}
+		
 		f_serverActive = false;
 	}
 
@@ -300,8 +313,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	public static void main(String[] args) {
 		DistController controller = new DistController(5000, 10);
+		controller.stopServer();
+		DistController controller2 = new DistController(5000, 10);
+		controller2.stopServer();
 
-		DistSmartFridge fridge = new DistSmartFridge(5000);
+		/*DistSmartFridge fridge = new DistSmartFridge(5000);
 		try {
 			fridge.addItemRemote("bacon");
 			fridge.addItemRemote("parmesan cheese");
@@ -322,7 +338,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 	}
 
 

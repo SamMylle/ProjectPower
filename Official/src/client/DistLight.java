@@ -21,18 +21,18 @@ import avro.ProjectPower.*;
 
 public class DistLight implements Runnable, LightComm {
 	public Light f_light;
-	public Transceiver f_transceiver;
 	private Server f_server;
 	private Thread f_serverThread;
 	private boolean f_serverActive;
+	private int f_serverPort;
 	
 	
-	DistLight(){
+	public DistLight(){
 		f_light = new Light();
-		f_transceiver = null;
 		f_server = null;
 		f_serverThread = null;
 		f_serverActive = false;
+		f_serverPort = -1;
 	}
 
 	@Override
@@ -50,25 +50,42 @@ public class DistLight implements Runnable, LightComm {
 		f_serverActive = true;
 		try{
 			f_server.join();
-		}catch(InterruptedException e){}
+		}catch(InterruptedException e){
+			f_server.close();
+			Logger.getLogger().f_active = true;
+			Logger.getLogger().log("server stopped");
+		}
+	}
+	
+	public boolean serverRunning(){
+		return f_serverActive;
+	}
+	
+	public int getServerPort(){
+		return f_serverPort;
 	}
 	
 	public void connectToServer(int port){
 		try{
 			/// Setup connection
-			f_transceiver = new SaslSocketTransceiver(new InetSocketAddress(port));
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(port));
 			
 			/// Get the proxy
 			ControllerComm.Callback proxy =
-					SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
+					SpecificRequestor.getClient(ControllerComm.Callback.class, transceiver);
 			
 			/// Get your ID from the server
-			CallFuture<Integer> future = new CallFuture<Integer>(); 
+			CallFuture<Integer> future = new CallFuture<Integer>();
+			/// TODO remove future
 			proxy.getID(ClientType.Light, future);
 			int ID = future.get();
+			
+			transceiver.close();
+			
 			f_light.setID(ID);
 			
 			f_serverThread = new Thread(this);
+			
 			f_serverThread.start();
 
 			while(! f_serverActive){
@@ -76,7 +93,9 @@ public class DistLight implements Runnable, LightComm {
 			}
 
 			//Logger.getLogger().log("j21");
-			proxy.listenToMe(f_light.getID(), ClientType.Light);
+			///proxy.listenToMe(f_light.getID(), ClientType.Light);
+			
+			f_serverPort = port;
 			
 		}catch(ExecutionException e){
 			System.err.println("Error executing command on server (light)...");
@@ -87,33 +106,37 @@ public class DistLight implements Runnable, LightComm {
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}catch(IOException e){
-			System.err.println("Error connecting to server...");
-			e.printStackTrace(System.err);
-			System.exit(1);
+			/// Server isn't running, just return
+			f_serverPort = -1;
+			return;
 		}
 	}
 	
 	public void disconnect(){
 		try{
-			if (f_transceiver != null){
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_serverPort));
+			
+			if (transceiver != null){
 				ControllerComm.Callback proxy =
-						SpecificRequestor.getClient(ControllerComm.Callback.class, f_transceiver);
-				Logger.getLogger().log("kkk000");
+						SpecificRequestor.getClient(ControllerComm.Callback.class, transceiver);
 				proxy.logOff(f_light.getID());
-
-				Logger.getLogger().log("kkk1");
-				f_transceiver.close();
-				Logger.getLogger().log("kkk");
+				transceiver.close();
 			}
 
 			if (f_server != null){
-				f_server.close();
+				f_serverThread.interrupt();
 			}
+			
+			f_serverPort = -1;
+			f_light.reset();
+			f_serverActive = false;
+			
 		}catch(IOException e){
-			System.err.println("Error connecting to server...");
+			System.err.println("Error logging of...");
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}catch(java.lang.NullPointerException e){
+			Logger.getLogger().f_active = true;
 			Logger.getLogger().log("nullptr");
 		}
 	}

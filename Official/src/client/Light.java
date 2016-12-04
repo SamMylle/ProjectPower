@@ -17,6 +17,12 @@ public class Light {
 		ID = -1;
 	}
 	
+	public void reset(){
+		/// TODO write test
+		ID = -1;
+		status = 0;
+	}
+	
 	public boolean setID(int _id){
 		/// _id must be non-negative
 		if (_id >= 0){
