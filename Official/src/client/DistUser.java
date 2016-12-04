@@ -15,6 +15,8 @@ import util.Logger;
 import controller.DistController;
 
 import avro.ProjectPower.*;
+import client.exception.*;
+
 
 public class DistUser extends User implements communicationUser, Runnable {
 	
@@ -108,7 +110,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * 
 	 * @return A list with all the clients connected to the system.
 	 */
-	public List<Client> requestClients() {
+	public List<Client> requestClients() throws MultipleInteractionException {
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		List<Client> clients = null;
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
@@ -125,8 +131,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return clients;
 	}
 	
-	public void requestLightStates() {
+	public void requestLightStates() throws MultipleInteractionException {
 		// TODO change return type
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
@@ -141,7 +151,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void setLightState(int newState, int lightID) {
+	public void setLightState(int newState, int lightID) throws MultipleInteractionException {
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
@@ -156,7 +170,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public List<CharSequence> getFridgeItems(int fridgeID) {
+	public List<CharSequence> getFridgeItems(int fridgeID) throws MultipleInteractionException {
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		List<CharSequence> items = null;
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
@@ -173,7 +191,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return items;
 	}
 	
-	public double getCurrentTemperatureHouse() {
+	public double getCurrentTemperatureHouse() throws MultipleInteractionException {
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		double currentTemp = 0;
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
@@ -190,7 +212,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return currentTemp;
 	}
 	
-	public void getTemperatureHistory() {
+	public void getTemperatureHistory() throws MultipleInteractionException {
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
@@ -205,7 +231,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void communicateWithFridge(int fridgeID) {
+	public void communicateWithFridge(int fridgeID) throws MultipleInteractionException {
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
@@ -224,10 +254,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_connectedToFridge = true;
 	}
 	
-	public void addItemFridge(String item) {
-		// TODO add exception if no connection has been setup yet
+	public void addItemFridge(String item) throws NoFridgeConnectionException {
 		if (f_connectedToFridge == false) {
-			return;
+			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
 		
 		try {
@@ -243,10 +272,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 			System.err.println("IOException at addItemFridge() in DistUser.");
 		}
 	}
-	public void removeItemFridge(String item) {
-		// TODO add exception if no connection has been setup yet
+	public void removeItemFridge(String item) throws NoFridgeConnectionException {
 		if (f_connectedToFridge == false) {
-			return;
+			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
 		
 		try {
@@ -263,9 +291,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public List<CharSequence> getFridgeItemsDirectly() {
+	public List<CharSequence> getFridgeItemsDirectly() throws NoFridgeConnectionException {
 		if (f_connectedToFridge == false) {
-			return null;
+			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
 		
 		List<CharSequence> items = null;
@@ -284,9 +312,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return items;
 	}
 	
-	public void openFridge() {
+	public void openFridge() throws NoFridgeConnectionException {
 		if (f_connectedToFridge == false) {
-			return;
+			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
@@ -302,9 +330,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void closeFridge() {
+	public void closeFridge() throws NoFridgeConnectionException {
 		if (f_connectedToFridge == false) {
-			return;
+			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
