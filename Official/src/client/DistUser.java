@@ -3,6 +3,7 @@ package client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Vector;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.SaslSocketServer;
@@ -16,13 +17,10 @@ import controller.DistController;
 
 import avro.ProjectPower.*;
 import client.exception.*;
+import client.util.LightState;
 
 
 public class DistUser extends User implements communicationUser, Runnable {
-	
-	// TODO add exceptions when 
-	// 		- trying to connect directly to fridge without communication
-	//		- trying to connect with other clients, when already being connected with the fridge
 	
 	private int f_controllerPort;
 	
@@ -98,6 +96,32 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_serverThread = null;
 	}
 	
+	// TODO make sure exception handling isn't screwed up when using this method
+	private SaslSocketTransceiver getControllerTransceiver() throws Exception {
+		SaslSocketTransceiver transceiver = null;
+		try {
+			transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+		} catch (IOException e) {
+			System.err.println("Could not establish connection with the controller.");
+			throw new Exception("");
+		}
+		
+		return transceiver;
+	}
+	
+	// TODO same as above
+	private SaslSocketTransceiver getSmartFridgeTransciever() throws Exception {
+		SaslSocketTransceiver transceiver = null;
+		try {
+			transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgePort));
+		} catch (IOException e) {
+			System.err.println("Could not establish connection with the smartfridge.");
+			throw new Exception("");
+		}
+		
+		return transceiver;
+	}
+	
 	
 	/**
 	 * =====================================================
@@ -135,8 +159,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return clients;
 	}
 	
-	public void requestLightStates() throws MultipleInteractionException, AbsentException {
-		// TODO change return type
+	public List<LightState> requestLightStates() throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
@@ -145,10 +168,20 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
+		List<LightState> lightStates = null;
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			// TODO add method here to get all light states
+			List<Client> clients = proxy.getAllClients();
+			lightStates = new Vector<LightState>();
+			
+			// TODO check for different options to access fields because the following are deprecated?
+			for (Client client : clients) {
+				if (client.clientType == ClientType.Light) {
+					LightState state = new LightState(client.ID, proxy.getLightState(client.ID));
+					lightStates.add(state);
+				}
+			}
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -157,6 +190,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			System.err.println("IOException at requestLightStates() in DistUser.");
 		}
+		
+		return lightStates;
 	}
 	
 	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException {

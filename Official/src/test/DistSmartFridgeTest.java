@@ -2,19 +2,26 @@ package test;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.avro.AvroRemoteException;
+import org.apache.avro.ipc.SaslSocketServer;
+import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.specific.SpecificResponder;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import avro.ProjectPower.Client;
 import avro.ProjectPower.ClientType;
+import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.UserStatus;
+import avro.ProjectPower.communicationTempSensor;
 import client.*;
 import client.exception.AbsentException;
 import client.exception.FridgeOccupiedException;
@@ -25,21 +32,21 @@ import util.SuppressSystemOut;
 
 
 public class DistSmartFridgeTest {
-//	static SuppressSystemOut suppress;
-//	@BeforeClass
-//	public static void setUpBeforeClass() throws Exception {
-//		suppress = new SuppressSystemOut();
-//		suppress.suppressOutput();
-//	}
-//
-//	@AfterClass
-//	public static void tearDownAfterClass() throws Exception {
-//		suppress.activateOutput();
-//	}
-//
-//	@Before
-//	public void setUp() throws Exception {
-//	}
+	static SuppressSystemOut suppress;
+	@BeforeClass
+	public static void setUpBeforeClass() throws Exception {
+		suppress = new SuppressSystemOut();
+		suppress.suppressOutput();
+	}
+
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception {
+		suppress.activateOutput();
+	}
+
+	@Before
+	public void setUp() throws Exception {
+	}
 	
 	
 	@Test
@@ -170,6 +177,41 @@ public class DistSmartFridgeTest {
 	@Test
 	public void testEmptyInventoryBroadcast() {
 		// TODO add this test
+	}
+	
+	@Test
+	public void testIDSetup() {
+		/// playing devils advocate here, occupying a few ports with random clients to force an increased ID
+		
+		
+		/// setup
+		Server server1 = null;
+		Server server2 = null;
+		Server server3 = null;
+		final int controllerPort = 5000;
+		
+		try{
+			server1 = new SaslSocketServer(
+					new SpecificResponder(communicationTempSensor.class,
+							this), new InetSocketAddress(controllerPort+1));
+		}catch(IOException e){ }
+		server1.start();
+		try{
+			server2 = new SaslSocketServer(
+					new SpecificResponder(communicationTempSensor.class,
+							this), new InetSocketAddress(controllerPort+2));
+		}catch(IOException e){ }
+		server2.start();
+		try{
+			server3 = new SaslSocketServer(
+					new SpecificResponder(communicationTempSensor.class,
+							this), new InetSocketAddress(controllerPort+3));
+		}catch(IOException e){ }
+		server3.start();
+
+		/// * actual test
+		
+		// TODO finish this test, after implementation ofcourse
 	}
 	
 }
