@@ -314,9 +314,18 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	public static void main(String[] args) {
 		DistController controller = new DistController(5000, 10);
+		
+		try {
+			System.out.print("do somethings pls");
+			System.in.read();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.print("Clients:");
+		System.out.print(controller.f_names.get(5001));
+		
 		controller.stopServer();
-		DistController controller2 = new DistController(5000, 10);
-		controller2.stopServer();
 
 		/*DistSmartFridge fridge = new DistSmartFridge(5000);
 		try {
