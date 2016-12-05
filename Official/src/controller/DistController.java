@@ -167,6 +167,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public int setupFridgeCommunication(int ID) throws AvroRemoteException {
 		try {
+			if (f_names.get(ID) != ClientType.SmartFridge){
+				return -1;
+			}
+			
+			/// TODO catch this?
 			Transceiver client = this.setupTransceiver(ID);
 
 			/// Don't think this is necessary
@@ -179,9 +184,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 					SpecificRequestor.getClient(communicationFridge.Callback.class, client);
 
 			/// Ask the fridge if it's okay to connect a user to it
-			if (proxy.requestFridgeCommunication() == true){
-				return this.getFridgePort(-1);
+			int newID = this.getFridgePort(-1);
+			if (proxy.requestFridgeCommunication(newID) == true){
+				return newID;
 			}else{
+				f_usedFridgePorts.remove(newID);
 				return -1;
 			}
 		}catch(IOException e){
@@ -201,18 +208,25 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			ret = start;
 		}
 		
-		if (start < 0){
+		if (ret < 0){
 			return -1;
 		}
 		
-		int i = 0;
 		boolean portAlreadyInUse = true;
+		
+		if(f_usedFridgePorts.size() == 0){
+			portAlreadyInUse = false;
+			ret--;
+		}
+
 		while(portAlreadyInUse){
-			start--;
-			portAlreadyInUse = true;
-			while(i < f_usedFridgePorts.size()){
-				if (f_usedFridgePorts.elementAt(i) == new Integer(start)){
-					portAlreadyInUse = false;
+			ret--;
+			portAlreadyInUse = false;
+			
+			for (int i = 0; i < f_usedFridgePorts.size(); i++){
+				if (f_usedFridgePorts.elementAt(i).equals(new Integer(ret))){
+					portAlreadyInUse = true;
+					break;
 				}
 			}
 		}
@@ -248,9 +262,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			/// Ask the fridge if it's okay to connect a user to it
 			/// TODO fill in request with port
-			if (proxy.requestFridgeCommunication() == true){
-				return this.getFridgePort(wrongID);
+			int newID = this.getFridgePort(wrongID);
+			if (proxy.requestFridgeCommunication(newID) == true){
+				return newID;
 			}else{
+				f_usedFridgePorts.remove(newID);
 				return -1;
 			}
 		}catch(IOException e){
@@ -309,6 +325,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 
 		return proxy.getItemsRemote();
+	}
+	
+	public Vector<Integer> getOccupiedPorts(){
+		/// For testing purposes
+		return f_usedFridgePorts;
 	}
 
 	@Override

@@ -14,6 +14,7 @@ import controller.*;
 import client.*;
 import avro.ProjectPower.*;
 
+import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
@@ -26,13 +27,13 @@ public class DistControllerTest {
 	static SuppressSystemOut suppress;
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		suppress = new SuppressSystemOut();
-		suppress.suppressOutput();
+		///suppress = new SuppressSystemOut();
+		///suppress.suppressOutput();
 	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
-		suppress.activateOutput();
+		///suppress.activateOutput();
 	}
 
 	@Before
@@ -132,6 +133,56 @@ public class DistControllerTest {
 
 	@Test
 	public void testSetupFridgeCommunication() {
+		// TODO test with non-connected fridge
+		DistController controller = new DistController(5000, 10);
+
+		DistSmartFridge fridge = new DistSmartFridge(5000);
+		DistSmartFridge fridge2 = new DistSmartFridge(5000);
+
+		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
+		try {
+
+			int port = controller.setupFridgeCommunication(5001);
+
+			assertEquals(4999, port);
+			Vector<Integer> expected = new Vector<Integer>();
+			expected.add(new Integer(4999));
+			assertEquals(expected, controller.getOccupiedPorts());
+
+			port = controller.setupFridgeCommunication(5002);
+			
+			assertEquals(4998, port);
+			expected.add(new Integer(4998));
+			assertEquals(expected, controller.getOccupiedPorts());
+			
+			/// Should fail
+			port = controller.setupFridgeCommunication(5003);
+			
+			assertEquals(-1, port);
+			assertEquals(expected, controller.getOccupiedPorts());
+		} catch (AvroRemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		fridge.logOffController();
+		fridge.stopServerController();
+		fridge2.logOffController();
+		fridge2.stopServerController();
+		controller.stopServer();
+	}
+
+	@Test
+	public void getFridgePort() {
+		// TODO test with federico
+	}
+
+	@Test
+	public void reSetupFridgeCommunication() {
+		// TODO test with federico
+	}
+
+	@Test
+	public void endFridgeCommunication() {
 		// TODO test with federico
 	}
 
