@@ -121,6 +121,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		int newID = this.giveNextID(clientType);
 		return newID;
 	}
+	
+	@Override
+	public int retryLogin(int oldID, ClientType clientType) throws AvroRemoteException{
+		/// TODO write test
+		Logger.getLogger().log("give renewed ID");
+		this.removeID(oldID);
+		int newID = this.giveNextID(clientType);
+		return newID;
+	}
 
 	@Override
 	public ClientType getClientType(int ID) throws AvroRemoteException{
@@ -313,19 +322,32 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	public static void main(String[] args) {
-		DistController controller = new DistController(5000, 10);
-		
+		Logger.getLogger().f_active = true;
+		DistController controller = new DistController(4999, 10);
+		DistController controller2 = new DistController(5000, 10);
+
+		int ID;
 		try {
+			ID = controller.getID(ClientType.Light);
+			controller.retryLogin(ID, ClientType.Light);
+		} catch (AvroRemoteException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		
+		/*try {
 			System.out.print("do somethings pls");
 			System.in.read();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		System.out.print("Clients:");
-		System.out.print(controller.f_names.get(5001));
+		}*/
+		//System.out.print("Clients:");
+		//System.out.print(controller.f_names.get(5001));
 		
 		controller.stopServer();
+		controller2.stopServer();
 
 		/*DistSmartFridge fridge = new DistSmartFridge(5000);
 		try {

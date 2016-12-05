@@ -26,6 +26,19 @@
 			}],
 			"response": "int"
 		},
+		"retryLogin":{
+			"request": [
+			{
+				"name": "oldID",
+				"type": "int"
+			},
+			{
+				"name": "type",
+				"type": "ClientType"
+			}
+			],
+			"response": "int"
+		},
 		"getClientType":{
 			"request": [{
 				"name": "ID",
