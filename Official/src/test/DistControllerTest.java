@@ -133,7 +133,6 @@ public class DistControllerTest {
 
 	@Test
 	public void testSetupFridgeCommunication() {
-		// TODO test with non-connected fridge
 		DistController controller = new DistController(5000, 10);
 
 		DistSmartFridge fridge = new DistSmartFridge(5000);
@@ -161,8 +160,8 @@ public class DistControllerTest {
 			assertEquals(-1, port);
 			assertEquals(expected, controller.getOccupiedPorts());
 		} catch (AvroRemoteException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(0);
 		}
 		fridge.logOffController();
 		fridge.stopServerController();
@@ -194,8 +193,8 @@ public class DistControllerTest {
 			assertEquals(expected, controller.getOccupiedPorts());
 
 		} catch (AvroRemoteException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(0);
 		}
 		fridge.logOffController();
 		fridge.stopServerController();
@@ -230,8 +229,8 @@ public class DistControllerTest {
 			
 
 		} catch (AvroRemoteException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(0);
 		}
 		fridge.logOffController();
 		fridge.stopServerController();
