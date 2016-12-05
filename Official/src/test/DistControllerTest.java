@@ -156,7 +156,11 @@ public class DistControllerTest {
 			
 			/// Should fail
 			port = controller.setupFridgeCommunication(5003);
+			assertEquals(-1, port);
+			assertEquals(expected, controller.getOccupiedPorts());
 			
+			/// Denied access by fridge
+			port = controller.setupFridgeCommunication(5001);
 			assertEquals(-1, port);
 			assertEquals(expected, controller.getOccupiedPorts());
 		} catch (AvroRemoteException e) {
@@ -203,7 +207,7 @@ public class DistControllerTest {
 	
 
 	@Test
-	public void endFridgeCommunication() {
+	public void testEndFridgeCommunication() {
 		// I could only do it this way, no multiple fridges and actual fuckups
 		DistController controller = new DistController(5000, 10);
 
