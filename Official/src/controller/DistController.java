@@ -265,7 +265,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (proxy.requestFridgeCommunication(newID) == true){
 				return newID;
 			}else{
-				f_usedFridgePorts.remove(newID);
+				f_usedFridgePorts.removeElement(newID);
 				return -1;
 			}
 		}catch(IOException e){
