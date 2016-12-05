@@ -110,7 +110,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * 
 	 * @return A list with all the clients connected to the system.
 	 */
-	public List<Client> requestClients() throws MultipleInteractionException {
+	public List<Client> requestClients() throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -131,8 +135,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return clients;
 	}
 	
-	public void requestLightStates() throws MultipleInteractionException {
+	public void requestLightStates() throws MultipleInteractionException, AbsentException {
 		// TODO change return type
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -151,7 +159,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void setLightState(int newState, int lightID) throws MultipleInteractionException {
+	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -170,7 +182,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public List<CharSequence> getFridgeItems(int fridgeID) throws MultipleInteractionException {
+	public List<CharSequence> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -191,7 +207,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return items;
 	}
 	
-	public double getCurrentTemperatureHouse() throws MultipleInteractionException {
+	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -212,7 +232,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return currentTemp;
 	}
 	
-	public void getTemperatureHistory() throws MultipleInteractionException {
+	public void getTemperatureHistory() throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -231,7 +255,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void communicateWithFridge(int fridgeID) throws MultipleInteractionException {
+	public void communicateWithFridge(int fridgeID) throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == true) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -254,7 +282,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_connectedToFridge = true;
 	}
 	
-	public void addItemFridge(String item) throws NoFridgeConnectionException {
+	public void addItemFridge(String item) throws NoFridgeConnectionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == false) {
 			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
@@ -272,7 +304,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 			System.err.println("IOException at addItemFridge() in DistUser.");
 		}
 	}
-	public void removeItemFridge(String item) throws NoFridgeConnectionException {
+	public void removeItemFridge(String item) throws NoFridgeConnectionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == false) {
 			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
@@ -291,7 +327,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public List<CharSequence> getFridgeItemsDirectly() throws NoFridgeConnectionException {
+	public List<CharSequence> getFridgeItemsDirectly() throws NoFridgeConnectionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == false) {
 			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
@@ -312,7 +352,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return items;
 	}
 	
-	public void openFridge() throws NoFridgeConnectionException {
+	public void openFridge() throws NoFridgeConnectionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+
 		if (f_connectedToFridge == false) {
 			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
@@ -330,7 +374,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void closeFridge() throws NoFridgeConnectionException {
+	public void closeFridge() throws NoFridgeConnectionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+		
 		if (f_connectedToFridge == false) {
 			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
