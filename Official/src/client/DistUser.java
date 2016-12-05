@@ -446,32 +446,32 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Main function, used for testing
 	 */
  	public static void main(String[] args) {
-		DistController controller = new DistController(6789, 10);
+//		DistController controller = new DistController(6789, 10);
 		
-		DistUser remoteUser = new DistUser(6789, "Federico Quin");
-		
-		try {
-			Logger logger = Logger.getLogger();
-			logger.f_active = true;
-			if (remoteUser.getStatus() == UserStatus.present) {
-				logger.log("User status is present.");
-			}
-			
-			
-			if (remoteUser.logOffController() == true) {
-				logger.log("Logged off succesfully.");
-			}
-			else {
-				logger.log("Could not log off.");
-			}
-			remoteUser.stopServer();
-			logger.log("Server stopped.");
-			
-		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at main class in DistSmartFridge.");
-		}
-		System.exit(0);
+		DistUser remoteUser = new DistUser(5000, "Federico Quin");
+//		
+//		try {
+//			Logger logger = Logger.getLogger();
+//			logger.f_active = true;
+//			if (remoteUser.getStatus() == UserStatus.present) {
+//				logger.log("User status is present.");
+//			}
+//			
+//			
+//			if (remoteUser.logOffController() == true) {
+//				logger.log("Logged off succesfully.");
+//			}
+//			else {
+//				logger.log("Could not log off.");
+//			}
+//			remoteUser.stopServer();
+//			logger.log("Server stopped.");
+//			
+//		}
+//		catch (AvroRemoteException e) {
+//			System.err.println("AvroRemoteException at main class in DistSmartFridge.");
+//		}
+//		System.exit(0);
 	}
 
 }
