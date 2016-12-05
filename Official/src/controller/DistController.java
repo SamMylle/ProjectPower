@@ -34,13 +34,16 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private Thread f_serverThread;
 	private int f_myPort;
 	private boolean f_serverActive;
+	private Vector<Integer> f_usedFridgePorts;
 
 	public DistController(int port, int maxTemperatures){
+		/// TODO  throws java.net.BindException
 		super(port + 1, maxTemperatures);
 		
 		//f_controller = new Controller(port + 1, 10);
 		f_myPort = port;
 		f_serverActive = false;
+		f_usedFridgePorts = new Vector<Integer>();
 
 		/// Make a thread, the "run" method will execute in a new thread
 		/// The run method must be implemented by a Runnable object (see implements in this class)
@@ -177,13 +180,94 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			/// Ask the fridge if it's okay to connect a user to it
 			if (proxy.requestFridgeCommunication() == true){
-				return ID;
+				return this.getFridgePort(-1);
 			}else{
 				return -1;
 			}
 		}catch(IOException e){
 			return -1;
 		}
+	}
+	
+	
+	
+	public int getFridgePort(int start){
+		/// -1 for default start port
+		///  It will NOT take the start port into consideration
+		/// TODO test
+		int ret = f_myPort;
+		
+		if (start != -1){
+			ret = start;
+		}
+		
+		if (start < 0){
+			return -1;
+		}
+		
+		int i = 0;
+		boolean portAlreadyInUse = true;
+		while(portAlreadyInUse){
+			start--;
+			portAlreadyInUse = true;
+			while(i < f_usedFridgePorts.size()){
+				if (f_usedFridgePorts.elementAt(i) == new Integer(start)){
+					portAlreadyInUse = false;
+				}
+			}
+		}
+		
+		if (ret < 0){
+			return -1;
+		}
+		
+		
+		Logger.getLogger().log("giving ", false);
+		Logger.getLogger().log(new Integer(ret).toString());
+		
+		f_usedFridgePorts.add(new Integer(ret));
+		
+		return ret;
+	}
+	
+	
+
+	@Override
+	public int reSetupFridgeCommunication(int myID, int wrongID) throws AvroRemoteException {
+		try {
+			Transceiver client = this.setupTransceiver(myID);
+
+			/// Don't think this is necessary
+			if (client == null){
+				return -1;
+			}
+
+			/// Connect to fridge
+			communicationFridge.Callback proxy =
+					SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+
+			/// Ask the fridge if it's okay to connect a user to it
+			/// TODO fill in request with port
+			if (proxy.requestFridgeCommunication() == true){
+				return this.getFridgePort(wrongID);
+			}else{
+				return -1;
+			}
+		}catch(IOException e){
+			return -1;
+		}
+	}
+
+	@Override
+	public Void endFridgeCommunication(int usedPort) throws AvroRemoteException {
+		/// TODO test
+		for (int i = 0; i < f_usedFridgePorts.size(); i++){
+			if(f_usedFridgePorts.elementAt(i) == usedPort){
+				f_usedFridgePorts.remove(i);
+				break;
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -331,7 +415,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			ID = controller.getID(ClientType.Light);
 			controller.retryLogin(ID, ClientType.Light);
 		} catch (AvroRemoteException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		
@@ -340,7 +423,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			System.out.print("do somethings pls");
 			System.in.read();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
 		//System.out.print("Clients:");
@@ -354,7 +436,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			fridge.addItemRemote("bacon");
 			fridge.addItemRemote("parmesan cheese");
 		} catch (AvroRemoteException e1) {
-			// TODO Auto-generated catch block
 			Logger.getLogger().log("woops");
 		}
 
@@ -368,7 +449,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
 	}

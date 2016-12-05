@@ -82,6 +82,28 @@
 			],
 			"response": "int"
 		},
+		"reSetupFridgeCommunication":{
+			"request": [
+			{
+				"name": "myID",
+				"type": "int"
+			},
+			{
+				"name": "wrongID",
+				"type": "int"
+			}
+			],
+			"response": "int"
+		},
+		"endFridgeCommunication":{
+			"request": [
+			{
+				"name": "usedPort",
+				"type": "int"
+			}
+			],
+			"response": "null"
+		},
 		"listenToMe":{
 			"request": [
 			{
