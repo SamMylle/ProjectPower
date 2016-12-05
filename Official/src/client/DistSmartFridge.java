@@ -29,15 +29,13 @@ import util.Logger;
 public class DistSmartFridge extends SmartFridge {
 
 	private int f_controllerPort;					// The port on which the controller runs
+	private int f_userPort;
 	private boolean f_serverControllerReady;		// Boolean used to determine if the server has been finished setting up.
 	private boolean f_serverUserReady;
 	private boolean f_userConnected;
 	
 	private Server f_fridgeServer;					// The server for the SmartFridge itself
 	private Thread f_smartfridgeThread;				// The thread used to run the server and handle the requests it gets.
-
-	// TODO decide what to for user/controller, in terms of different or shared fridge servers
-	// Used for communication between a user and the fridge, without the controller in between
 	private Server f_userServer;					// The server object, which should be used by the user, not the controller
 	private Thread f_fridgeuserThread;				// The thread used to run the smartfridge server, destined to be used by the user
 	
@@ -60,6 +58,7 @@ public class DistSmartFridge extends SmartFridge {
 		assert controllerPort > 1000; // the controller should not be running on a port lower (or equal) than 1000
 		
 		f_controllerPort = controllerPort;
+		f_userPort = -1;
 		f_serverControllerReady = false;
 		f_serverUserReady = false;
 		f_fridgeuserThread = null;
@@ -204,10 +203,11 @@ public class DistSmartFridge extends SmartFridge {
 		}
 
 		@Override
-		public boolean requestFridgeCommunication() throws AvroRemoteException {
+		public boolean requestFridgeCommunication(int userServerPort) throws AvroRemoteException {
 			if (f_userConnected == true) {
 				return false;
 			}
+			f_userPort = userServerPort;
 			startUserServer();
 			f_userConnected = true;
 			return true;
@@ -244,7 +244,7 @@ public class DistSmartFridge extends SmartFridge {
 			try {
 				//TODO remove magic number
 				f_userServer = new SaslSocketServer(
-						new SpecificResponder(communicationFridgeUser.class, this), new InetSocketAddress(15000) );
+						new SpecificResponder(communicationFridgeUser.class, this), new InetSocketAddress(f_userPort) );
 				f_userServer.start();
 			}
 			catch (IOException e) {
@@ -334,7 +334,7 @@ public class DistSmartFridge extends SmartFridge {
 			Transceiver transceiverController = new SaslSocketTransceiver(new InetSocketAddress(6790));
 			communicationFridge proxyController = (communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiverController);
 			
-			proxyController.requestFridgeCommunication();
+			proxyController.requestFridgeCommunication(15000);
 			
 			Transceiver transceiverUser = new SaslSocketTransceiver(new InetSocketAddress(15000));
 			communicationFridgeUser proxyUser = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiverUser);

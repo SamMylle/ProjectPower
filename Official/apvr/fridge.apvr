@@ -26,7 +26,7 @@
 			"response" : "boolean"
 		},
 		"requestFridgeCommunication":{
-			"request": [],
+			"request": [{"name" : "userServerPort", "type" : "int"}],
 			"response": "boolean"
 		}
 	}
