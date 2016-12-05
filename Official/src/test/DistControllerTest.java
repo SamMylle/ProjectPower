@@ -27,13 +27,13 @@ public class DistControllerTest {
 	static SuppressSystemOut suppress;
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		///suppress = new SuppressSystemOut();
-		///suppress.suppressOutput();
+		suppress = new SuppressSystemOut();
+		suppress.suppressOutput();
 	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
-		///suppress.activateOutput();
+		suppress.activateOutput();
 	}
 
 	@Before
