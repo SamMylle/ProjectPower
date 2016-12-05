@@ -90,6 +90,13 @@ public class TestRun{
 		
 		
 		
+		result = JUnitCore.runClasses(DistSmartFridgeTest.class);
+		for (Failure failure : result.getFailures()) {
+			System.out.println(failure.toString());
+		}
+		System.out.print("DistSmartFridgeTest: ");
+		System.out.println(result.wasSuccessful());
+		
 		
 		
 		System.exit(0);

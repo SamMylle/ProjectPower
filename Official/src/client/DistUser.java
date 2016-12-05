@@ -255,7 +255,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public void communicateWithFridge(int fridgeID) throws MultipleInteractionException, AbsentException {
+	public void communicateWithFridge(int fridgeID) 
+		throws MultipleInteractionException, AbsentException, FridgeOccupiedException {
+		
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
@@ -279,6 +281,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 			return;
 		}
 		
+		if (f_fridgePort == -1) {
+			throw new FridgeOccupiedException("The fridge is already being used by another user.");
+		}
 		f_connectedToFridge = true;
 	}
 	
