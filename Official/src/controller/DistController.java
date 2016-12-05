@@ -235,10 +235,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			return -1;
 		}
 		
-		
-		Logger.getLogger().log("giving ", false);
-		Logger.getLogger().log(new Integer(ret).toString());
-		
 		f_usedFridgePorts.add(new Integer(ret));
 		
 		return ret;
@@ -247,9 +243,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 
 	@Override
-	public int reSetupFridgeCommunication(int myID, int wrongID) throws AvroRemoteException {
+	public int reSetupFridgeCommunication(int fridgeID, int wrongID) throws AvroRemoteException {
 		try {
-			Transceiver client = this.setupTransceiver(myID);
+			if (f_names.get(fridgeID) != ClientType.SmartFridge){
+				return -1;
+			}
+			Transceiver client = this.setupTransceiver(fridgeID);
 
 			/// Don't think this is necessary
 			if (client == null){

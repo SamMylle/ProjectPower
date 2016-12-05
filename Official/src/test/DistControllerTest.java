@@ -173,17 +173,69 @@ public class DistControllerTest {
 
 	@Test
 	public void getFridgePort() {
-		// TODO test with federico
+		// Tested in testSetupFridgeCommunication
 	}
 
 	@Test
 	public void reSetupFridgeCommunication() {
-		// TODO test with federico
+		// I could only do it this way, no multiple fridges and actual fuckups
+		DistController controller = new DistController(5000, 10);
+
+		DistSmartFridge fridge = new DistSmartFridge(5000);
+
+		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
+		try {
+
+			int port = controller.reSetupFridgeCommunication(5001, 3001);
+
+			assertEquals(3000, port);
+			Vector<Integer> expected = new Vector<Integer>();
+			expected.add(new Integer(3000));
+			assertEquals(expected, controller.getOccupiedPorts());
+
+		} catch (AvroRemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		fridge.logOffController();
+		fridge.stopServerController();
+		controller.stopServer();
 	}
+	
 
 	@Test
 	public void endFridgeCommunication() {
-		// TODO test with federico
+		// I could only do it this way, no multiple fridges and actual fuckups
+		DistController controller = new DistController(5000, 10);
+
+		DistSmartFridge fridge = new DistSmartFridge(5000);
+
+		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
+		try {
+
+			int port = controller.reSetupFridgeCommunication(5001, 3001);
+
+			assertEquals(3000, port);
+			Vector<Integer> expected = new Vector<Integer>();
+			expected.add(new Integer(3000));
+			assertEquals(expected, controller.getOccupiedPorts());
+			
+			controller.endFridgeCommunication(3000);
+			expected = new Vector<Integer>();
+			assertEquals(expected, controller.getOccupiedPorts());
+			
+			/// Test this when the port is unused
+			controller.endFridgeCommunication(3000);
+			assertEquals(expected, controller.getOccupiedPorts());
+			
+
+		} catch (AvroRemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		fridge.logOffController();
+		fridge.stopServerController();
+		controller.stopServer();
 	}
 
 	@Test
