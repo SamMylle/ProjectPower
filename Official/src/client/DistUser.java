@@ -290,6 +290,30 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	private List<Client> getAllClients() throws MultipleInteractionException, AbsentException {
+		if (super._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house");
+		}
+		if (f_connectedToFridge == true) {
+			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		}
+		
+		List<Client> clients = null;
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			clients = proxy.getAllClients();
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at getAllClients() in DistUser.");
+		} 
+		catch (IOException e) {
+			System.err.println("IOException at getAllClients() in DistUser.");
+		}
+		return clients;
+	}
+	
 	public void communicateWithFridge(int fridgeID) 
 		throws MultipleInteractionException, AbsentException, FridgeOccupiedException {
 		
