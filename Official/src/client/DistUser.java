@@ -290,7 +290,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	private List<Client> getAllClients() throws MultipleInteractionException, AbsentException {
+	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
