@@ -15,9 +15,9 @@ public class TemperatureRecord{
 	
 	public void addValue(double value){
 		if (f_record.size() >= f_maxSize){
-			f_record.remove();
+			f_record.removeLast();
 		}
-		f_record.add(new Double(value));
+		f_record.addFirst(new Double(value));
 	}
 	
 	public int getID(){

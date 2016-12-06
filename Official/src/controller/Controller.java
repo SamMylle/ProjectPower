@@ -77,7 +77,7 @@ public class Controller {
 		for (int i = 0; i < f_temperatures.size(); i++){
 			LinkedList<Double> list = f_temperatures.elementAt(i).getRecord();
 			if (list.size() >= 1){
-				avg += list.get(list.size() - 1);
+				avg += list.getFirst();
 				count++;
 			}
 		}
@@ -95,6 +95,33 @@ public class Controller {
 			}
 		}
 		return false;
+	}
+	
+	public Vector<Double> getTemperatureHistory(){
+		/// The first temp is the most recent temp
+		/// TODO test
+		Vector<Double> retVal = new Vector<Double>();
+		
+		for (int j = 0; j < f_maxTemperatures; j++){
+			double count = 0;
+			double avg = 0;
+			for (int i = 0; i < f_temperatures.size(); i++){
+				LinkedList<Double> list = f_temperatures.elementAt(i).getRecord();
+				if (list.size() >= j + 1){
+					avg += list.get(j);
+					count++;
+				}
+			}
+			
+			if (count == 0){
+				return retVal;
+			}else{
+				avg /= count;
+				retVal.add(new Double(avg));
+			}
+		}
+		
+		return retVal;
 	}
 	
 	/// TODO get temperature history

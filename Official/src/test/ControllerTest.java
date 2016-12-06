@@ -1,6 +1,7 @@
 package test;
 
 import java.util.LinkedList;
+import java.util.Vector;
 
 import org.junit.Test;
 
@@ -129,7 +130,7 @@ public class ControllerTest {
 		LinkedList<Double> shouldBe = new LinkedList<Double>();
 		for (int i = 0; i < 5; i++){
 			ctrl.addTemperature(5 * i, 5001);
-			shouldBe.add(new Double(i * 5));
+			shouldBe.addFirst(new Double(i * 5));
 		}
 
 		assertEquals(ctrl.getRawTemperatures().elementAt(0).getID(), 5001);
@@ -141,7 +142,7 @@ public class ControllerTest {
 		shouldBe = new LinkedList<Double>();
 		for (int i = 0; i < 6; i++){
 			ctrl.addTemperature(6 * i, 5002);
-			shouldBe.add(new Double(i * 6));
+			shouldBe.addFirst(new Double(i * 6));
 		}
 
 		assertEquals(ctrl.getRawTemperatures().elementAt(1).getID(), 5002);
@@ -198,5 +199,70 @@ public class ControllerTest {
 		/// When the record is deleted
 		ctrl.removeID(5001);
 		assertEquals(ctrl.hasValidTemp(), false);
+	}
+	
+	@Test
+	public void testGetTemperatureHistory() {
+		/// Prove that the current temperature of an empty system is an empty vector
+		assertEquals(new Vector<Double>(), ctrl.getTemperatureHistory());
+
+		/// When there's one sensor
+		ctrl.giveNextID(ClientType.TemperatureSensor);
+		Vector<Double> shouldBe = new Vector<Double>();
+		Vector<Double> added1 = new Vector<Double>();
+		Vector<Double> added2 = new Vector<Double>();
+		/// Note that i'm not exceeding the max amount of values
+		/// This would make the tests overly complicated
+		/// By the ay, the functionality for removing these values has been tested
+		for (int i = 0; i < 8; i++){
+			ctrl.addTemperature(i * 3, 5001);
+			shouldBe.add(0, new Double (i * 3));
+			added1.add(0, new Double (i * 3));
+			assertEquals(shouldBe, ctrl.getTemperatureHistory());
+		}
+		
+		
+		/// When there's multiple sensors
+		ctrl.giveNextID(ClientType.TemperatureSensor);
+		for (int i = 0; i < 3; i++){
+			ctrl.addTemperature(i, 5002);
+			added2.add(0, new Double(i));
+			Double curr = shouldBe.elementAt(i);
+			curr += i;
+			curr /= 2;
+			shouldBe.set(i, curr);
+		}
+		
+		/// Written by hand...
+		shouldBe = new Vector<Double>();
+		shouldBe.add(new Double(23.0/2.0));
+		shouldBe.add(new Double(19.0/2.0));
+		shouldBe.add(new Double(15.0/2.0));
+		shouldBe.add(new Double(12.0));
+		shouldBe.add(new Double(9.0));
+		shouldBe.add(new Double(6.0));
+		shouldBe.add(new Double(3.0));
+		shouldBe.add(new Double(0.0));
+		assertEquals(shouldBe, ctrl.getTemperatureHistory());
+		
+		/// Moar sensors
+		Vector<Double> added3 = new Vector<Double>();
+		
+		ctrl.giveNextID(ClientType.TemperatureSensor);
+		for (int i = 0; i < 7; i++){
+			ctrl.addTemperature(i * 2, 5003);
+			added3.add(0, new Double(i * 2));
+		}
+		shouldBe = new Vector<Double>();
+		shouldBe.add(new Double(35.0/3.0));
+		shouldBe.add(new Double(29.0/3.0));
+		shouldBe.add(new Double(23.0/3.0));
+		shouldBe.add(new Double(18.0/2.0));
+		shouldBe.add(new Double(13.0/2.0));
+		shouldBe.add(new Double(8.0/2.0));
+		shouldBe.add(new Double(3.0/2.0));
+		shouldBe.add(new Double(0.0/2.0));
+		assertEquals(shouldBe, ctrl.getTemperatureHistory());
+
 	}
 }

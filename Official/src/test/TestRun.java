@@ -89,8 +89,11 @@ public class TestRun{
 		System.out.println(result.wasSuccessful());
 		
 		
-		
+
+		suppress.suppressOutput();
 		result = JUnitCore.runClasses(DistSmartFridgeTest.class);
+		suppress.activateOutput();
+		
 		for (Failure failure : result.getFailures()) {
 			System.out.println(failure.toString());
 		}
