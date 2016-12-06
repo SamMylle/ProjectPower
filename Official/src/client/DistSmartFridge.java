@@ -25,7 +25,7 @@ import util.Logger;
 
 
 
-
+// TODO add checks at stopServer methods for empty threads
 public class DistSmartFridge extends SmartFridge {
 
 	private int f_controllerPort;					// The port on which the controller runs
@@ -321,61 +321,71 @@ public class DistSmartFridge extends SmartFridge {
 	
 
 	public static void main(String[] args) {
-		DistController controller = new DistController(6789, 10);
+		// DistController controller = new DistController(6789, 10);
 		
-		DistSmartFridge remoteFridge = new DistSmartFridge(6789);
-		
+		DistSmartFridge remoteFridge = new DistSmartFridge(5000);
+
 		try {
-			Logger logger = Logger.getLogger();
-			logger.f_active = true;
-			logger.log(remoteFridge.toString());
-		
-			Transceiver transceiverController = new SaslSocketTransceiver(new InetSocketAddress(6790));
-			communicationFridge proxyController = (communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiverController);
-			
-			proxyController.requestFridgeCommunication(15000);
-			
-			Transceiver transceiverUser = new SaslSocketTransceiver(new InetSocketAddress(15000));
-			communicationFridgeUser proxyUser = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiverUser);
-			
-			proxyUser.openFridgeRemote();
-			proxyUser.addItemRemote("bacon");
-			proxyUser.addItemRemote("parmesan cheese");
-			
-			List<CharSequence> items = proxyController.getItemsRemote();
-			logger.log("Items retrieved from remote function in controller: ");
-			for (CharSequence item : items) {
-				logger.log("\t" + item.toString());
-			}
-						
-			proxyUser.addItemRemote("milk");
-			items = proxyUser.getItemsRemote();
-			logger.log("");
-			logger.log("Items retrieved from remote function in user: ");
-			for (CharSequence item : items) {
-				logger.log("\t" + item.toString());
-			}
-			logger.log("");
-			
-			proxyUser.closeFridgeRemote();
-			transceiverUser.close();
-			
-			
-			if (remoteFridge.logOffController() == true) {
-				logger.log("Logged off succesfully.");
-			}
-			else {
-				logger.log("Could not log off.");
-			}
-			remoteFridge.stopServerController();
-			transceiverController.close();
-		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at main class in DistSmartFridge.");
+			System.in.read();
 		} catch (IOException e) {
-			System.err.println("IOException at main class in DistSmartFridge.");
+
 		}
+
+		remoteFridge.logOffController();
+		remoteFridge.stopServerController();
 		System.exit(0);
+		
+		// try {
+		// 	Logger logger = Logger.getLogger();
+		// 	logger.f_active = true;
+		// 	logger.log(remoteFridge.toString());
+		
+		// 	Transceiver transceiverController = new SaslSocketTransceiver(new InetSocketAddress(6790));
+		// 	communicationFridge proxyController = (communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiverController);
+			
+		// 	proxyController.requestFridgeCommunication(15000);
+			
+		// 	Transceiver transceiverUser = new SaslSocketTransceiver(new InetSocketAddress(15000));
+		// 	communicationFridgeUser proxyUser = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiverUser);
+			
+		// 	proxyUser.openFridgeRemote();
+		// 	proxyUser.addItemRemote("bacon");
+		// 	proxyUser.addItemRemote("parmesan cheese");
+			
+		// 	List<CharSequence> items = proxyController.getItemsRemote();
+		// 	logger.log("Items retrieved from remote function in controller: ");
+		// 	for (CharSequence item : items) {
+		// 		logger.log("\t" + item.toString());
+		// 	}
+						
+		// 	proxyUser.addItemRemote("milk");
+		// 	items = proxyUser.getItemsRemote();
+		// 	logger.log("");
+		// 	logger.log("Items retrieved from remote function in user: ");
+		// 	for (CharSequence item : items) {
+		// 		logger.log("\t" + item.toString());
+		// 	}
+		// 	logger.log("");
+			
+		// 	proxyUser.closeFridgeRemote();
+		// 	transceiverUser.close();
+			
+			
+		// 	if (remoteFridge.logOffController() == true) {
+		// 		logger.log("Logged off succesfully.");
+		// 	}
+		// 	else {
+		// 		logger.log("Could not log off.");
+		// 	}
+		// 	remoteFridge.stopServerController();
+		// 	transceiverController.close();
+		// }
+		// catch (AvroRemoteException e) {
+		// 	System.err.println("AvroRemoteException at main class in DistSmartFridge.");
+		// } catch (IOException e) {
+		// 	System.err.println("IOException at main class in DistSmartFridge.");
+		// }
+		// System.exit(0);
 	}
 
 }

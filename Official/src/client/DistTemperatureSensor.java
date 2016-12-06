@@ -28,6 +28,7 @@ import avro.ProjectPower.communicationTempSensor;
 import avro.ProjectPower.communicationUser;
 
 
+// TODO add logOffController method
 public class DistTemperatureSensor 
 	extends TemperatureSensor 
 	implements communicationTempSensor, Runnable {
@@ -139,7 +140,16 @@ public class DistTemperatureSensor
 	
 	public static void main(String[] args) {
 		
-		final int ControllerPort = 6789;
+		final int ControllerPort = 5000;
+		DistTemperatureSensor sensor = new DistTemperatureSensor(19,22,ControllerPort);
+		try {
+			System.in.read();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		sensor.stopServer();
+		System.exit(0);
 		DistController controller = new DistController(ControllerPort, 10);
 		
 		
