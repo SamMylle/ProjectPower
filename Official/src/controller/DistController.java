@@ -19,6 +19,7 @@ import client.SmartFridge;
 
 import util.Logger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -276,13 +277,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 			
 			/// TODO catch this?
-			/// TODO make get IP address
 			String ip = this.getIPAddress(fridgeID);
 			
 			if (ip == ""){
 				return new CommData(-1, "");
 			}
-			/// TODO adjust ip
+
 			Transceiver client = this.setupTransceiver(fridgeID, ip);
 
 			/// Don't think this is necessary
@@ -333,15 +333,19 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public List<CharSequence> getFridgeInventory(int ID) throws AvroRemoteException {
 		/// return null on invalid stuff and thangs
-		ClientType type = this.f_names.get(ID);
-
-		if(type != ClientType.SmartFridge){
-			return null;
+		
+		if (f_names.get(ID) != ClientType.SmartFridge){
+			return new ArrayList<CharSequence>();
 		}
-
-		// We know the type is a fridge (AND it exists)
-		/// TODO correct ip
-		Transceiver fridge = this.setupTransceiver(ID, "127.0.1.1");
+		
+		/// TODO catch this?
+		String ip = this.getIPAddress(ID);
+		
+		if (ip == ""){
+			return new ArrayList<CharSequence>();
+		}
+		
+		Transceiver fridge = this.setupTransceiver(ID, ip);
 
 		if (fridge == null){
 			// If connection can't be established, just say no to the other guy
@@ -372,15 +376,20 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// return -1 on invalid stuff and thangs
 		/// return 0 on success
 
-		ClientType type = this.f_names.get(ID);
-
-		if(type != ClientType.Light){
+		if (f_names.get(ID) != ClientType.Light){
+			return -1;
+		}
+		
+		/// TODO catch this?
+		String ip = this.getIPAddress(ID);
+		
+		if (ip == ""){
 			return -1;
 		}
 
 		// We know the type is a light (AND it exists)
 		/// TODO correct IP
-		Transceiver light = this.setupTransceiver(ID, "127.0.1.1");
+		Transceiver light = this.setupTransceiver(ID, ip);
 
 		if (light == null){
 			// If connection can't be established, just say no to the other guy
@@ -405,9 +414,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public int getLightState(int ID) throws AvroRemoteException {
-		ClientType type = this.f_names.get(ID);
 
-		if(type != ClientType.Light){
+		if (f_names.get(ID) != ClientType.Light){
+			return -1;
+		}
+		
+		/// TODO catch this?
+		String ip = this.getIPAddress(ID);
+		
+		if (ip == ""){
 			return -1;
 		}
 
@@ -415,17 +430,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		SaslSocketTransceiver light = null;
 		try {
 			/// TODO correct ip
-			light = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName("127.0.1.1"), ID));
+			light = new SaslSocketTransceiver(new InetSocketAddress(ip, ID));
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			System.exit(0);
 		}
-
-		/*if (light == null){
-				// This shouldn't happen actually, but you never know
-				this.setupTransceiver(ClientType.Light, ID);
-				light = f_transceivers.get(ID);
-			}*/
 
 		if (light == null){
 			// If connection can't be established, just say no to the other guy
@@ -436,8 +445,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			/// set the state and thangs
 			LightComm.Callback proxy;
 			proxy = SpecificRequestor.getClient(LightComm.Callback.class, light);
-
-
 
 			return proxy.getState();
 		} catch (IOException e) {
