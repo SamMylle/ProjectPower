@@ -129,7 +129,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
-		/// TODO rename to login
 		Logger.getLogger().log("give new ID");
 		int newID = this.giveNextID(clientType);
 		ip.toString();
@@ -177,20 +176,32 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return this.hasValidTemp();
 	}
 
+	public String getIPAddress(int ID){
+		/// TODO write test
+		return f_IPs.get(ID);
+	}
+	
 	@Override
-	public Client setupFridgeCommunication(int ID) throws AvroRemoteException {
+	public CommData setupFridgeCommunication(int ID) throws AvroRemoteException {
 		try {
 			if (f_names.get(ID) != ClientType.SmartFridge){
-				return new Client(null, -1);
+				return new CommData(-1, "");
 			}
 			
 			/// TODO catch this?
 			/// TODO make get IP address
-			Transceiver client = this.setupTransceiver(ID, "127.0.1.1");
+			String ip = this.getIPAddress(ID);
+			
+			if (ip == ""){
+				return new CommData(-1, "");
+			}
+			
+			/// TODO catch exception for when connection can't be established
+			Transceiver client = this.setupTransceiver(ID, ip);
 
 			/// Don't think this is necessary
 			if (client == null){
-				return new Client(null, -1);
+				return new CommData(-1, "");
 			}
 
 			/// Connect to fridge
@@ -200,13 +211,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			/// Ask the fridge if it's okay to connect a user to it
 			int newID = this.getFridgePort(-1);
 			if (proxy.requestFridgeCommunication(newID) == true){
-				return new Client(null, newID);
+				return new CommData(newID, ip);
 			}else{
 				f_usedFridgePorts.removeElement(new Integer(newID));
-				return new Client(null, -1);
+				return new CommData(-1, "");
 			}
 		}catch(IOException e){
-			return new Client(null, -1);
+			return new CommData(-1, "");
 		}
 	}
 	
@@ -257,18 +268,26 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 
 	@Override
-	public int reSetupFridgeCommunication(int fridgeID, int wrongID) throws AvroRemoteException {
+	public CommData reSetupFridgeCommunication(int fridgeID, int wrongID) throws AvroRemoteException {
 		/// Only needs a port
 		try {
 			if (f_names.get(fridgeID) != ClientType.SmartFridge){
-				return -1;
+				return new CommData(-1, "");
+			}
+			
+			/// TODO catch this?
+			/// TODO make get IP address
+			String ip = this.getIPAddress(fridgeID);
+			
+			if (ip == ""){
+				return new CommData(-1, "");
 			}
 			/// TODO adjust ip
-			Transceiver client = this.setupTransceiver(fridgeID, "127.0.1.1");
+			Transceiver client = this.setupTransceiver(fridgeID, ip);
 
 			/// Don't think this is necessary
 			if (client == null){
-				return -1;
+				return new CommData(-1, "");
 			}
 
 			/// Connect to fridge
@@ -279,13 +298,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			/// TODO fill in request with port
 			int newID = this.getFridgePort(wrongID);
 			if (proxy.requestFridgeCommunication(newID) == true){
-				return newID;
+				return new CommData(newID, ip);
 			}else{
 				f_usedFridgePorts.removeElement(newID);
-				return -1;
+				return new CommData(-1, "");
 			}
 		}catch(IOException e){
-			return -1;
+			return new CommData(-1, "");
 		}
 	}
 

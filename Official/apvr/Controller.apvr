@@ -15,6 +15,14 @@
 				{"name": "clientType", "type": "ClientType"},
 				{"name": "ID", "type": "int"}
 			]
+		},
+		{
+			"type": "record",
+			"name": "CommData",
+			"fields": [
+				{"name": "ID", "type": "int"},
+				{"name": "IP", "type": "string"}
+			]
 		}
 	],
 
@@ -84,7 +92,7 @@
 				"type": "int"
 			}
 			],
-			"response": "int"
+			"response": "CommData"
 		},
 		"reSetupFridgeCommunication":{
 			"request": [
@@ -97,7 +105,7 @@
 				"type": "int"
 			}
 			],
-			"response": "int"
+			"response": "CommData"
 		},
 		"endFridgeCommunication":{
 			"request": [

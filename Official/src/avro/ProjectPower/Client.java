@@ -9,8 +9,8 @@ package avro.ProjectPower;
 public class Client extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Client\",\"namespace\":\"avro.ProjectPower\",\"fields\":[{\"name\":\"clientType\",\"type\":{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}},{\"name\":\"ID\",\"type\":\"int\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
- public avro.ProjectPower.ClientType clientType;
- public int ID;
+  @Deprecated public avro.ProjectPower.ClientType clientType;
+  @Deprecated public int ID;
 
   /**
    * Default constructor.  Note that this does not initialize fields
