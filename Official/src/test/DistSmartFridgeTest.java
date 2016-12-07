@@ -52,8 +52,8 @@ public class DistSmartFridgeTest {
 	@Test
 	public void testControllerServerMethods() {
 		final int controllerPort = 5000;
-		DistController controller = new DistController(controllerPort, 10, "127.0.1.1");
-		DistSmartFridge fridge = new DistSmartFridge(controllerPort);
+		DistController controller = new DistController(controllerPort, 10, System.getProperty("ip"));
+		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"), System.getProperty("ip"), controllerPort);
 		
 		/// making sure the fridge is entered correctly in the system
 		List<Client> clients = null;
@@ -67,12 +67,14 @@ public class DistSmartFridgeTest {
 		
 		
 		/// testing the getItems method
+		Exception ex = null;
 		List<CharSequence> items = null;
 		try {
 			items = controller.getFridgeInventory(controllerPort+1);
 		} catch (AvroRemoteException e) {
-			e.printStackTrace();
+			ex = e;
 		}
+		assertEquals(ex, null);
 		assertEquals(items.size(), 0);
 		
 		fridge.addItem("cheese");
@@ -106,10 +108,13 @@ public class DistSmartFridgeTest {
 	public void testUserServerMethods() {
 		/// setup
 		final int controllerPort = 5000;
-		DistController controller = new DistController(controllerPort, 10, "127.0.1.1");
-		DistSmartFridge fridge = new DistSmartFridge(controllerPort);
-		DistUser user = new DistUser(controllerPort, "Federico Quin");
-		DistUser user2 = new DistUser(controllerPort, "Sam Mylle");
+		final String clientIP = System.getProperty("clientip");
+		final String IP = System.getProperty("ip");
+		
+		DistController controller = new DistController(controllerPort, 10, IP);
+		DistSmartFridge fridge = new DistSmartFridge(clientIP, IP, controllerPort);
+		DistUser user = new DistUser("Federico Quin", clientIP, IP, controllerPort);
+		DistUser user2 = new DistUser("Sam Mylle", clientIP, IP, controllerPort);
 		
 		Exception ex = null;
 		
@@ -183,6 +188,8 @@ public class DistSmartFridgeTest {
 	public void testIDSetup() {
 		/// playing devils advocate here, occupying a few ports with random clients to force an increased ID
 		
+		final String IP = System.getProperty("ip");
+		final String clientIP = System.getProperty("clientip");
 		
 		/// setup
 		Server server1 = null;
@@ -193,19 +200,19 @@ public class DistSmartFridgeTest {
 		try{
 			server1 = new SaslSocketServer(
 					new SpecificResponder(communicationTempSensor.class,
-							this), new InetSocketAddress(controllerPort+1));
+							this), new InetSocketAddress(clientIP, controllerPort+1));
 		}catch(IOException e){ }
 		server1.start();
 		try{
 			server2 = new SaslSocketServer(
 					new SpecificResponder(communicationTempSensor.class,
-							this), new InetSocketAddress(controllerPort+2));
+							this), new InetSocketAddress(clientIP, controllerPort+2));
 		}catch(IOException e){ }
 		server2.start();
 		try{
 			server3 = new SaslSocketServer(
 					new SpecificResponder(communicationTempSensor.class,
-							this), new InetSocketAddress(controllerPort+3));
+							this), new InetSocketAddress(clientIP, controllerPort+3));
 		}catch(IOException e){ }
 		server3.start();
 

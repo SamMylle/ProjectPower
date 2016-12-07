@@ -38,13 +38,19 @@ public class DistTemperatureSensor
 	private Thread f_serverThread;
 	private boolean f_serverReady;
 	private Timer f_timer;
+	private String f_ownIP;
+	private String f_controllerIP;
 
 	
-	public DistTemperatureSensor(double lowTempRange, double highTempRange, int controllerPort) {
+	public DistTemperatureSensor(double lowTempRange, double highTempRange, String ownIP, String controllerIP, int controllerPort) {
 		super(lowTempRange, highTempRange);
+		
+		// TODO check IP arguments to be valid
 		
 		f_controllerPort = controllerPort;
 		f_serverReady = false;
+		f_ownIP = ownIP;
+		f_controllerIP = controllerIP;
 		this.setupID();
 		this.setupServer();
 		
@@ -55,9 +61,9 @@ public class DistTemperatureSensor
 
 	private void setupID() {
 		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			this.setID(proxy.LogOn(TemperatureSensor.type, "127.0.1.1"));
+			this.setID(proxy.LogOn(TemperatureSensor.type, f_ownIP));
 			transceiver.close();
 		}
 		catch (IOException e) {
@@ -88,7 +94,7 @@ public class DistTemperatureSensor
 	public void run() {
 		try {
 			f_server = new SaslSocketServer(
-					new SpecificResponder(communicationUser.class, this), new InetSocketAddress(this.getID()) );
+					new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
 			f_server.start();
 		}
 		catch (IOException e) {
@@ -109,7 +115,7 @@ public class DistTemperatureSensor
 
 	public void sendTemperatureToController() {
 		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.addTemperature(this.getID(), this.getTemperature());
 			transceiver.close();
@@ -141,7 +147,8 @@ public class DistTemperatureSensor
 	public static void main(String[] args) {
 		
 		final int ControllerPort = 5000;
-		DistTemperatureSensor sensor = new DistTemperatureSensor(19,22,ControllerPort);
+		DistTemperatureSensor sensor = new DistTemperatureSensor(
+				19,22, System.getProperty("clientip"), System.getProperty("ip"), ControllerPort);
 		try {
 			System.in.read();
 		} catch (IOException e1) {
@@ -153,7 +160,8 @@ public class DistTemperatureSensor
 		DistController controller = new DistController(ControllerPort, 10, "127.0.1.1");
 		
 		
-		DistTemperatureSensor remoteSensor = new DistTemperatureSensor(19,22,ControllerPort);
+		DistTemperatureSensor remoteSensor = new DistTemperatureSensor(
+				19,22, System.getProperty("clientip"), System.getProperty("ip"), ControllerPort);
 		
 		
 		try {

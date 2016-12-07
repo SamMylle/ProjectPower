@@ -29,7 +29,7 @@ public class WindowUser extends javax.swing.JFrame {
         initComponents();
         controller = new DistController(5000, 10, "127.0.1.1");
         
-        user = new DistUser(5000, "");
+        user = new DistUser("", "fixme", "fixme", 5000);
     }
 
     /**
