@@ -1,7 +1,10 @@
 package controller;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
+
 import org.apache.avro.AvroRemoteException ;
 import org.apache.avro.ipc.CallFuture;
 import org.apache.avro.ipc.SaslSocketServer;
@@ -77,6 +80,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			f_server = new SaslSocketServer(
 					new SpecificResponder(ControllerComm.class,
 							this), new InetSocketAddress(f_myPort));
+			//InetAddress[] addr = InetAddress.getAllByName("143.169.204.21");
+			System.out.print(addr.toString());
+			//InetSocketAddress ad = new InetSocketAddress(addr, port);
 		}catch(IOException e){
 			System.err.println("[error]Failed to start server");
 			e.printStackTrace(System.err);
