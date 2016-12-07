@@ -15,13 +15,16 @@ public class DistUserTest {
 
 	private static final int controllerPort = 10000;
 	private static final int maxTemp = 10;
+	final String IP = System.getProperty("ip");
+	final String clientIP = System.getProperty("clientip");
+	
 	DistUser distuser;
 	DistController controller;
 
 	@Test
 	public void testGetID() {
-		controller = new DistController(controllerPort, maxTemp, "127.0.1.1");
-		distuser = new DistUser("", "fixme", "fixme", controllerPort);
+		controller = new DistController(controllerPort, maxTemp, IP);
+		distuser = new DistUser("", clientIP, IP, controllerPort);
 		
 		try {
 			assertEquals(controller.getClientType(controllerPort+1), User.type);
@@ -31,7 +34,7 @@ public class DistUserTest {
 		distuser.logOffController();
 		distuser.stopServer();
 		
-		distuser = new DistUser("", "fixme", "fixme", controllerPort);
+		distuser = new DistUser("", clientIP, IP, controllerPort);
 		try {
 			assertEquals(controller.getClientType(controllerPort+2), User.type);
 		} catch (AvroRemoteException e) {
@@ -44,8 +47,8 @@ public class DistUserTest {
 	
 	@Test
 	public void testStatus() {
-		controller = new DistController(controllerPort, maxTemp, "127.0.1.1");
-		distuser = new DistUser("", "fixme", "fixme", controllerPort);
+		controller = new DistController(controllerPort, maxTemp, IP);
+		distuser = new DistUser("", clientIP, IP, controllerPort);
 		
 		try {
 			assertEquals(distuser.getStatus(), UserStatus.present);

@@ -357,7 +357,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			// TODO fix this here, with IP addresses
-			client = proxy.setupFridgeCommunication(fridgeID);
+//			client = proxy.setupFridgeCommunication(fridgeID);
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
