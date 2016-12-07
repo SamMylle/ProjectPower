@@ -77,12 +77,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public void run() {
 		/// when thread.start() is invoked, this method is ran
 		try{
+			InetAddress addr = InetAddress.getByName("192.168.1.6");
+			//System.out.print(addr.toString());
+			InetSocketAddress ad = new InetSocketAddress(addr, f_myPort);
 			f_server = new SaslSocketServer(
 					new SpecificResponder(ControllerComm.class,
-							this), new InetSocketAddress(f_myPort));
-			//InetAddress[] addr = InetAddress.getAllByName("143.169.204.21");
-			System.out.print(addr.toString());
-			//InetSocketAddress ad = new InetSocketAddress(addr, port);
+							this), ad);
 		}catch(IOException e){
 			System.err.println("[error]Failed to start server");
 			e.printStackTrace(System.err);
@@ -445,12 +445,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 		
 		
-		/*try {
+		try {
 			System.out.print("do somethings pls");
 			System.in.read();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}*/
+		}
 		//System.out.print("Clients:");
 		//System.out.print(controller.f_names.get(5001));
 		

@@ -75,7 +75,7 @@ public class DistLight implements Runnable, LightComm {
 	public void connectToServer(int port){
 		try{
 			/// Setup connection
-			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(port));
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress("192.168.1.6", port));
 			
 			/// Get the proxy
 			ControllerComm.Callback proxy =
@@ -121,7 +121,7 @@ public class DistLight implements Runnable, LightComm {
 	
 	public void disconnect(){
 		try{
-			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_serverPort));
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress("192.168.1.6", f_serverPort));
 			
 			if (transceiver != null){
 				ControllerComm.Callback proxy =
