@@ -51,7 +51,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			this.setID(proxy.getID(User.type));
+			this.setID(proxy.LogOn(User.type, "127.0.1.1"));
 			transceiver.close();
 		}
 		catch (IOException e) {
@@ -328,7 +328,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			f_fridgePort = proxy.setupFridgeCommunication(fridgeID);
+			//f_fridgePort =
+			proxy.setupFridgeCommunication(fridgeID);
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {

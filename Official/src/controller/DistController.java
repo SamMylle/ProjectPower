@@ -38,8 +38,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private int f_myPort;
 	private boolean f_serverActive;
 	private Vector<Integer> f_usedFridgePorts;
+	private HashMap<Integer, String> f_IPs;
+	private String f_ownIP;
 
-	public DistController(int port, int maxTemperatures){
+	public DistController(int port, int maxTemperatures, String ip){
 		/// TODO  throws java.net.BindException
 		super(port + 1, maxTemperatures);
 		
@@ -47,6 +49,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_myPort = port;
 		f_serverActive = false;
 		f_usedFridgePorts = new Vector<Integer>();
+		f_IPs = new HashMap<Integer, String>();
+		f_ownIP = new String(ip);
 
 		/// Make a thread, the "run" method will execute in a new thread
 		/// The run method must be implemented by a Runnable object (see implements in this class)
@@ -77,7 +81,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public void run() {
 		/// when thread.start() is invoked, this method is ran
 		try{
-			InetAddress addr = InetAddress.getByName("192.168.1.6");
+			InetAddress addr = InetAddress.getByName(f_ownIP);
 			//System.out.print(addr.toString());
 			InetSocketAddress ad = new InetSocketAddress(addr, f_myPort);
 			f_server = new SaslSocketServer(
@@ -113,9 +117,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_serverActive = false;
 	}
 
-	private Transceiver setupTransceiver(int ID){
+	private Transceiver setupTransceiver(int ID, String ip){
 		try{
-			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(ID));
+			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
 			return client;
 		}catch(IOException e){
 			System.err.println("Error connecting to the client server...");
@@ -124,10 +128,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public int getID(ClientType clientType) throws AvroRemoteException{
+	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
 		/// TODO rename to login
 		Logger.getLogger().log("give new ID");
 		int newID = this.giveNextID(clientType);
+		ip.toString();
+		f_IPs.put(newID, ip.toString());
 		return newID;
 	}
 	
@@ -150,6 +156,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// Remove ID from the system
 		/// TODO, special case when the client is a temperatureSensor
 		this.removeID(ID);
+		this.f_IPs.remove(ID);
 
 		return null;
 	}
@@ -171,18 +178,19 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public int setupFridgeCommunication(int ID) throws AvroRemoteException {
+	public Client setupFridgeCommunication(int ID) throws AvroRemoteException {
 		try {
 			if (f_names.get(ID) != ClientType.SmartFridge){
-				return -1;
+				return new Client(null, -1);
 			}
 			
 			/// TODO catch this?
-			Transceiver client = this.setupTransceiver(ID);
+			/// TODO make get IP address
+			Transceiver client = this.setupTransceiver(ID, "127.0.1.1");
 
 			/// Don't think this is necessary
 			if (client == null){
-				return -1;
+				return new Client(null, -1);
 			}
 
 			/// Connect to fridge
@@ -192,13 +200,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			/// Ask the fridge if it's okay to connect a user to it
 			int newID = this.getFridgePort(-1);
 			if (proxy.requestFridgeCommunication(newID) == true){
-				return newID;
+				return new Client(null, newID);
 			}else{
 				f_usedFridgePorts.removeElement(new Integer(newID));
-				return -1;
+				return new Client(null, -1);
 			}
 		}catch(IOException e){
-			return -1;
+			return new Client(null, -1);
 		}
 	}
 	
@@ -250,11 +258,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public int reSetupFridgeCommunication(int fridgeID, int wrongID) throws AvroRemoteException {
+		/// Only needs a port
 		try {
 			if (f_names.get(fridgeID) != ClientType.SmartFridge){
 				return -1;
 			}
-			Transceiver client = this.setupTransceiver(fridgeID);
+			/// TODO adjust ip
+			Transceiver client = this.setupTransceiver(fridgeID, "127.0.1.1");
 
 			/// Don't think this is necessary
 			if (client == null){
@@ -311,7 +321,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 
 		// We know the type is a fridge (AND it exists)
-		Transceiver fridge = this.setupTransceiver(ID);
+		/// TODO correct ip
+		Transceiver fridge = this.setupTransceiver(ID, "127.0.1.1");
 
 		if (fridge == null){
 			// If connection can't be established, just say no to the other guy
@@ -349,7 +360,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 
 		// We know the type is a light (AND it exists)
-		Transceiver light = this.setupTransceiver(ID);
+		/// TODO correct IP
+		Transceiver light = this.setupTransceiver(ID, "127.0.1.1");
 
 		if (light == null){
 			// If connection can't be established, just say no to the other guy
@@ -383,7 +395,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		// We know the type is a light (AND it exists)
 		SaslSocketTransceiver light = null;
 		try {
-			light = new SaslSocketTransceiver(new InetSocketAddress(ID));
+			/// TODO correct ip
+			light = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName("127.0.1.1"), ID));
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			System.exit(0);
@@ -433,12 +446,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
-		DistController controller = new DistController(4999, 10);
-		DistController controller2 = new DistController(5000, 10);
+		DistController controller = new DistController(4999, 10, "127.0.1.1");
+		DistController controller2 = new DistController(5000, 10, "127.0.1.1");
 
 		int ID;
 		try {
-			ID = controller.getID(ClientType.Light);
+			/// TODO correct IP
+			ID = controller.LogOn(ClientType.Light, "127.0.1.1");
 			controller.retryLogin(ID, ClientType.Light);
 		} catch (AvroRemoteException e1) {
 			e1.printStackTrace();

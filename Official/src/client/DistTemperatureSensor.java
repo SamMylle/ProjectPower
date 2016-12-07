@@ -57,7 +57,7 @@ public class DistTemperatureSensor
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			this.setID(proxy.getID(TemperatureSensor.type));
+			this.setID(proxy.LogOn(TemperatureSensor.type, "127.0.1.1"));
 			transceiver.close();
 		}
 		catch (IOException e) {
@@ -150,7 +150,7 @@ public class DistTemperatureSensor
 		
 		sensor.stopServer();
 		System.exit(0);
-		DistController controller = new DistController(ControllerPort, 10);
+		DistController controller = new DistController(ControllerPort, 10, "127.0.1.1");
 		
 		
 		DistTemperatureSensor remoteSensor = new DistTemperatureSensor(19,22,ControllerPort);

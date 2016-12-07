@@ -20,7 +20,7 @@ public class DistUserTest {
 
 	@Test
 	public void testGetID() {
-		controller = new DistController(controllerPort, maxTemp);
+		controller = new DistController(controllerPort, maxTemp, "127.0.1.1");
 		distuser = new DistUser(controllerPort, "");
 		
 		try {
@@ -44,7 +44,7 @@ public class DistUserTest {
 	
 	@Test
 	public void testStatus() {
-		controller = new DistController(controllerPort, maxTemp);
+		controller = new DistController(controllerPort, maxTemp, "127.0.1.1");
 		distuser = new DistUser(controllerPort, "");
 		
 		try {

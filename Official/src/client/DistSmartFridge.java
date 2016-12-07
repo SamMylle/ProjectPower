@@ -77,7 +77,7 @@ public class DistSmartFridge extends SmartFridge {
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerPort));
 			ControllerComm proxy = (ControllerComm) 
 					SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			this.setID(proxy.getID(SmartFridge.type));
+			this.setID(proxy.LogOn(SmartFridge.type, "127.0.1.1"));
 			transceiver.close();
 		}
 		catch (IOException e) {

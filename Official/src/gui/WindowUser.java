@@ -27,7 +27,7 @@ public class WindowUser extends javax.swing.JFrame {
      */
     public WindowUser() {
         initComponents();
-        controller = new DistController(5000, 10);
+        controller = new DistController(5000, 10, "127.0.1.1");
         
         user = new DistUser(5000, "");
     }

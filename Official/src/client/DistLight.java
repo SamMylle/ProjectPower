@@ -25,21 +25,25 @@ public class DistLight implements Runnable, LightComm {
 	private Thread f_serverThread;
 	private boolean f_serverActive;
 	private int f_serverPort;
+	private String f_ip;
+	private String f_serverip;
 	
 	
-	public DistLight(){
+	public DistLight(String ip, String serverIP){
 		f_light = new Light();
 		f_server = null;
 		f_serverThread = null;
 		f_serverActive = false;
 		f_serverPort = -1;
+		f_ip = new String(ip);
+		f_serverip = new String(serverIP);
 	}
 
 	@Override
 	public void run() {
 		try {
 			if (f_light.getID() == -1){
-				this.connectToServer(f_serverPort);
+				this.connectToServer(f_serverPort, f_serverip);
 			}
 			System.out.print("Starting server at ");
 			System.out.print(f_light.getID());
@@ -72,21 +76,19 @@ public class DistLight implements Runnable, LightComm {
 		return f_serverPort;
 	}
 	
-	public void connectToServer(int port){
+	public void connectToServer(int port, String serverIP){
 		try{
 			/// Setup connection
-			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress("192.168.1.6", port));
-			
+			Transceiver transceiver =
+					new SaslSocketTransceiver(new InetSocketAddress(serverIP, port));
+
 			/// Get the proxy
 			ControllerComm.Callback proxy =
 					SpecificRequestor.getClient(ControllerComm.Callback.class, transceiver);
-			
+
 			/// Get your ID from the server
-			CallFuture<Integer> future = new CallFuture<Integer>();
-			/// TODO remove future
-			proxy.getID(ClientType.Light, future);
-			int ID = future.get();
-			
+			int ID = proxy.LogOn(ClientType.Light, f_ip);
+
 			transceiver.close();
 			
 			f_light.setID(ID);
@@ -104,10 +106,6 @@ public class DistLight implements Runnable, LightComm {
 			
 			f_serverPort = port;
 			
-		}catch(ExecutionException e){
-			System.err.println("Error executing command on server (light)...");
-			e.printStackTrace(System.err);
-			System.exit(1);
 		}catch(InterruptedException e){
 			System.err.println("Interrupted...");
 			e.printStackTrace(System.err);
@@ -121,7 +119,7 @@ public class DistLight implements Runnable, LightComm {
 	
 	public void disconnect(){
 		try{
-			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress("192.168.1.6", f_serverPort));
+			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_serverip, f_serverPort));
 			
 			if (transceiver != null){
 				ControllerComm.Callback proxy =
@@ -162,8 +160,8 @@ public class DistLight implements Runnable, LightComm {
 	}
 	
 	public static void main(String[] args) {
-		DistLight newLight = new DistLight();
-		newLight.connectToServer(5000);
+		DistLight newLight = new DistLight(System.getProperty("ip"), System.getProperty("serverip"));
+		newLight.connectToServer(5000, "127.0.1.1");
 		try {
 			System.in.read();
 		} catch (IOException e) {

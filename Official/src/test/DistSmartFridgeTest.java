@@ -52,7 +52,7 @@ public class DistSmartFridgeTest {
 	@Test
 	public void testControllerServerMethods() {
 		final int controllerPort = 5000;
-		DistController controller = new DistController(controllerPort, 10);
+		DistController controller = new DistController(controllerPort, 10, "127.0.1.1");
 		DistSmartFridge fridge = new DistSmartFridge(controllerPort);
 		
 		/// making sure the fridge is entered correctly in the system
@@ -106,7 +106,7 @@ public class DistSmartFridgeTest {
 	public void testUserServerMethods() {
 		/// setup
 		final int controllerPort = 5000;
-		DistController controller = new DistController(controllerPort, 10);
+		DistController controller = new DistController(controllerPort, 10, "127.0.1.1");
 		DistSmartFridge fridge = new DistSmartFridge(controllerPort);
 		DistUser user = new DistUser(controllerPort, "Federico Quin");
 		DistUser user2 = new DistUser(controllerPort, "Sam Mylle");

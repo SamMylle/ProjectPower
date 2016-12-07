@@ -20,13 +20,17 @@ import client.DistLight;
 
 public class DistLightTest {
 
+	static String f_ip;
+	static String f_clientip;
 	@Before
 	public void setUp() throws Exception {
+		f_ip = System.getProperty("ip");
+		f_clientip = System.getProperty("clientip");
 	}
 
 	@Test
 	public void testDistLight() {
-		DistLight light = new DistLight();
+		DistLight light = new DistLight(f_clientip, f_ip);
 		/// Test that you can't connect to the DistLight
 		assertFalse(light.serverRunning());
 		assertEquals(-1, light.getServerPort());
@@ -34,16 +38,16 @@ public class DistLightTest {
 
 	@Test
 	public void testConnectToServer() {
-		DistLight light = new DistLight();
+		DistLight light = new DistLight(f_clientip, f_ip);
 		
 		/// Test connect to non-existing server
-		light.connectToServer(5000);
+		light.connectToServer(5000, f_ip);
 		assertFalse(light.serverRunning());
 		assertEquals(-1, light.getServerPort());
 		
 		/// Test connect server with existing server
-		DistController controller = new DistController(5000, 10);
-		light.connectToServer(5000);
+		DistController controller = new DistController(5000, 10, f_ip);
+		light.connectToServer(5000, f_ip);
 		assertTrue(light.serverRunning());
 		assertEquals(5000, light.getServerPort());
 		assertEquals(5001, light.f_light.getID());
@@ -54,11 +58,11 @@ public class DistLightTest {
 
 	@Test
 	public void testDisconnect() {
-		DistLight light = new DistLight();
+		DistLight light = new DistLight(f_clientip, f_ip);
 		
 		/// Test connect server with existing server
-		DistController controller = new DistController(5000, 10);
-		light.connectToServer(5000);
+		DistController controller = new DistController(5000, 10, f_ip);
+		light.connectToServer(5000, f_ip);
 		assertTrue(light.serverRunning());
 		assertEquals(5000, light.getServerPort());
 		assertEquals(5001, light.f_light.getID());
@@ -73,14 +77,13 @@ public class DistLightTest {
 
 	@Test
 	public void testSetAndGetState() {
-		DistLight light = new DistLight();
+		DistLight light = new DistLight(f_clientip, f_ip);
 		
 		/// Test connect server with existing server
-		DistController controller = new DistController(5000, 10);
-		light.connectToServer(5000);
-		
+		DistController controller = new DistController(5000, 10, f_ip);
+		light.connectToServer(5000, f_ip);
 		try {
-			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(5001));
+			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(f_ip, 5001));
 			LightComm.Callback proxy =
 					SpecificRequestor.getClient(LightComm.Callback.class, client);
 			

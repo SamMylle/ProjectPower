@@ -19,10 +19,14 @@
 	],
 
 	"messages":{
-		"getID":{
+		"LogOn":{
 			"request": [{
 				"name": "type",
 				"type": "ClientType"
+			},
+			{
+				"name": "ip",
+				"type": "string"
 			}],
 			"response": "int"
 		},
