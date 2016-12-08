@@ -100,7 +100,7 @@ public class TestRun{
 		System.out.print("DistSmartFridgeTest: ");
 		System.out.println(result.wasSuccessful());
 		
-		
+		System.out.println("\nFinished all tests.");
 		
 		System.exit(0);
 	}

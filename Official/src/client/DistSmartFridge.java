@@ -20,29 +20,31 @@ import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
+import client.util.ConnectionData;
+
 import controller.DistController;
 
 import util.Logger;
 
 
-
+// TODO add IP Address for the user connection
 // TODO add checks at stopServer methods for empty threads
 public class DistSmartFridge extends SmartFridge {
 
-	private String f_ownIP;
+	private String f_ownIP;									// The IP address of the client itself
 	
-	private String f_controllerIP;
-	private int f_controllerPort;					// The port on which the controller runs
+	private ConnectionData f_originalControllerConnection; 	// Backup of the first controller connection
+	private ConnectionData f_controllerConnection;			// Data of the current connection to the controller of the system
 	private int f_userPort;
 	
-	private boolean f_serverControllerReady;		// Boolean used to determine if the server has been finished setting up.
+	private boolean f_serverControllerReady;				// Boolean used to determine if the server has been finished setting up.
 	private boolean f_serverUserReady;
 	private boolean f_userConnected;
 	
-	private Server f_fridgeControllerServer;		// The server for the SmartFridge itself
+	private Server f_fridgeControllerServer;				// The server for the SmartFridge itself
 	private Thread f_fridgeControllerThread;				// The thread used to run the server and handle the requests it gets.
-	private Server f_fridgeUserServer;					// The server object, which should be used by the user, not the controller
-	private Thread f_fridgeUserThread;				// The thread used to run the smartfridge server, destined to be used by the user
+	private Server f_fridgeUserServer;						// The server object, which should be used by the user, not the controller
+	private Thread f_fridgeUserThread;						// The thread used to run the smartfridge server, destined to be used by the user
 	
 	
 	
@@ -69,14 +71,15 @@ public class DistSmartFridge extends SmartFridge {
 		// TODO check IP arguments to be valid
 		f_ownIP = ownIP;
 		
-		f_controllerIP = controllerIP;
-		f_controllerPort = controllerPort;
+		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
+		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
+		
 		f_userPort = -1;
 		f_serverControllerReady = false;
 		f_serverUserReady = false;
+		f_userConnected = false;
 		f_fridgeUserThread = null;
 		f_fridgeUserServer = null;
-		f_userConnected = false;
 		
 		this.setupID();
 		this.startControllerServer();
@@ -89,7 +92,7 @@ public class DistSmartFridge extends SmartFridge {
 		// TODO retry getting an ID when failing to bind to the port
 		try {
 			Transceiver transceiver = 
-					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.LogOn(SmartFridge.type, f_ownIP));
@@ -110,7 +113,7 @@ public class DistSmartFridge extends SmartFridge {
 	public boolean logOffController() {
 		try {
 			Transceiver transceiver = 
-					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.logOff(this.getID());
@@ -169,10 +172,10 @@ public class DistSmartFridge extends SmartFridge {
 	public void notifyControllerEmptyInventory() {
 		try {
 			Transceiver transceiver = 
-					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-//			proxy.notifyFridgeEmpty(this.getID());	//TODO add method when implemented in controller
+//			proxy.notifyFridgeEmpty(this.getID());	//TODO add method when implemented in controller/user
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -187,17 +190,12 @@ public class DistSmartFridge extends SmartFridge {
 	 * Summary: Asks the controller for a new ID, to be used when the server failed to bind to the given port
 	 */
 	public void getNewID() {
-		// TODO remove debugging output
-		System.out.println("Getting new ID from the controller");
 		try {
 			Transceiver transceiver = 
-					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.retryLogin(this.getID(), SmartFridge.type));
-			System.out.print("New ID: ");
-			System.out.print(this.getID());
-			System.out.println("");
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -220,13 +218,9 @@ public class DistSmartFridge extends SmartFridge {
 		
 		@Override
 		public void run() {
-			// TODO remove output here, debugging stuff
 			/// repeat untill the server can bind to a valid port
 			while (f_serverControllerReady == false) {
 				try {
-					System.out.println("starting a smartfridge server designated for the controller.");
-					System.out.println(f_ownIP);
-					System.out.println(getID());
 					f_fridgeControllerServer = new SaslSocketServer(
 							new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(f_ownIP, getID()) );
 					f_fridgeControllerServer.start();
@@ -248,9 +242,6 @@ public class DistSmartFridge extends SmartFridge {
 			catch (InterruptedException e) {
 				f_fridgeControllerServer.close();
 				f_fridgeControllerServer = null;
-				System.out.println("closed the smartfridge server designated for the controller.");
-				System.out.println(f_ownIP);
-				System.out.println(getID());
 			}
 		}
 

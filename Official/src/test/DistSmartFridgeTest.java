@@ -109,12 +109,12 @@ public class DistSmartFridgeTest {
 		/// setup
 		final int controllerPort = 5000;
 		final String clientIP = System.getProperty("clientip");
-		final String IP = System.getProperty("ip");
+		final String serverIP = System.getProperty("ip");
 		
-		DistController controller = new DistController(controllerPort, 10, IP);
-		DistSmartFridge fridge = new DistSmartFridge(clientIP, IP, controllerPort);
-		DistUser user = new DistUser("Federico Quin", clientIP, IP, controllerPort);
-		DistUser user2 = new DistUser("Sam Mylle", clientIP, IP, controllerPort);
+		DistController controller = new DistController(controllerPort, 10, serverIP);
+		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
+		DistUser user = new DistUser("Federico Quin", clientIP, serverIP, controllerPort);
+		DistUser user2 = new DistUser("Sam Mylle", clientIP, serverIP, controllerPort);
 		
 		Exception ex = null;
 		
@@ -192,11 +192,10 @@ public class DistSmartFridgeTest {
 	@Test
 	public void testIDSetup() {
 		/// playing devils advocate here, occupying a few ports with random clients to force an increased ID
-		return;	// TODO uncomment this and finish test
+
 		
-		/// comments here because java is being annoying and won't let me compile with unreachable code
-		/*
-		final String IP = System.getProperty("ip");
+
+		final String serverIP = System.getProperty("ip");
 		final String clientIP = System.getProperty("clientip");
 		
 		/// setup
@@ -223,11 +222,18 @@ public class DistSmartFridgeTest {
 							this), new InetSocketAddress(clientIP, controllerPort+3));
 		}catch(IOException e){ }
 		server3.start();
-		*/
+		
 
 		/// * actual test
 		
+		DistController controller = new DistController(controllerPort, 10, serverIP);
+		
 		// TODO finish this test, after implementation ofcourse
+		
+		
+		server1.close();
+		server2.close();
+		server3.close();
 	}
 	
 }

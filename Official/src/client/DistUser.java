@@ -1,9 +1,8 @@
 package client;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Vector;
 
@@ -19,15 +18,16 @@ import controller.DistController;
 
 import avro.ProjectPower.*;
 import client.exception.*;
+import client.util.ConnectionData;
 import client.util.LightState;
 
 
+// TODO add getNewID() to resolve bind exceptions
 public class DistUser extends User implements communicationUser, Runnable {
 	
 	private String f_ownIP;
 	
-	private int f_controllerPort;
-	private String f_controllerIP;
+	private ConnectionData f_controllerConnection;
 	
 	private Server f_server;
 	private Thread f_serverThread;
@@ -43,12 +43,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 		assert controllerPort >= 1000;
 		
 		// TODO check IP arguments to be valid
-		
 		f_ownIP = ownIP;
-		f_controllerIP = controllerIP;
-		f_controllerPort = controllerPort;
-		f_serverReady = false;
 		
+		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
+		f_serverReady = false;
 		f_connectedToFridge = false;
 		f_fridgePort = -1;
 		f_fridgeIP = "";
@@ -60,7 +58,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	private void setupID() {
 		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.LogOn(User.type, f_ownIP));
 			transceiver.close();
@@ -71,9 +69,22 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	private void getNewID() {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			this.setID(proxy.retryLogin(this.getID(), User.type));
+			transceiver.close();
+		}
+		catch (IOException e) {
+			// TODO add handling of exception here, controller not accessible?
+			System.err.println("IOException at getNewID() in DistUser.");
+		}
+	}
+	
 	public boolean logOffController() {
 		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.logOff(this.getID());
 			transceiver.close();
@@ -119,8 +130,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private SaslSocketTransceiver getControllerTransceiver() throws Exception {
 		SaslSocketTransceiver transceiver = null;
 		try {
-			transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
-		} catch (IOException e) {
+			transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+		}
+		catch (IOException e) {
 			System.err.println("Could not establish connection with the controller.");
 			throw new Exception("");
 		}
@@ -165,7 +177,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<Client> clients = null;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			clients = proxy.getAllClients();
@@ -192,7 +204,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<LightState> lightStates = null;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			List<Client> clients = proxy.getAllClients();
@@ -228,7 +240,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.setLight(newState, lightID);
@@ -254,7 +266,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<CharSequence> items = null;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			items = proxy.getFridgeInventory(fridgeID);
@@ -281,7 +293,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		double currentTemp = 0;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			currentTemp = proxy.averageCurrentTemperature();
@@ -307,7 +319,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			//TODO add call to get the history of all the stored temperatures.
@@ -332,7 +344,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<Client> clients = null;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			clients = proxy.getAllClients();
@@ -361,7 +373,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		CommData fridgeData = null;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			// TODO fix this here, with IP addresses
@@ -499,7 +511,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
-			proxy.openFridgeRemote();
+			proxy.closeFridgeRemote();
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -518,17 +530,22 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void run() {
-		try {
-			f_server = new SaslSocketServer(
-					new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
-			f_server.start();
+		while (f_serverReady == false) {
+			try {
+				f_server = new SaslSocketServer(
+						new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
+				f_server.start();
+				f_serverReady = true;
+			}
+			catch (BindException e) {
+				this.getNewID();
+			}
+			catch (IOException e) {
+				System.err.println("Failed to start DistUser server.");
+				e.printStackTrace(System.err);
+				System.exit(1);
+			}
 		}
-		catch (IOException e) {
-			System.err.println("Failed to start DistUser server.");
-			e.printStackTrace(System.err);
-			System.exit(1);
-		}
-		f_serverReady = true;
 
 		try {
 			f_server.join();

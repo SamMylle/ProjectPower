@@ -57,4 +57,6 @@ public class DistUserTest {
 		}
 		controller.stopServer();
 	}
+	
+	// TODO add tests to cover all distributed methods to controller/fridge
 }
