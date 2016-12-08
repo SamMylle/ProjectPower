@@ -1,0 +1,19 @@
+|*| Notation used:
+|*|		* = closed/completed task 
+|*|		> = uncompleted task
+|*|		% = task which is being delt with
+
+
+********************************
+* All tasks (not yet assigned) *
+********************************
+
+
+	> In clients DistUser and DistSmartFridge, connect to other clients in order to resolve controller election
+	> Implement Roberts-Chang algorithm in clients, start Controller Server and stop self if elected
+	> Notify other clients for new Controller IP and PORT (system controller unavailable during setup)
+	> Controller polling at arbitrary interval, to check if client is still alive
+		-> Special case: SmartFridge with own PORT for user, close the port accordingly
+	> User or SmartFridge fail during direct communication -> handle properly, notify Controller if User fails
+
+	
