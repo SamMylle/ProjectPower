@@ -43,76 +43,29 @@ public class WindowUser extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        mainWindow = new javax.swing.JScrollPane();
-        tableClients = new javax.swing.JTable();
-        btnGetClients = new javax.swing.JButton();
         jtpPanelSwitch = new javax.swing.JTabbedPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        mainWindow.setViewportView(tableClients);
-
-        btnGetClients.setLabel("List Clients");
-        btnGetClients.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                btnGetClientsMouseClicked(evt);
-            }
-        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(38, 38, 38)
-                        .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(489, 489, 489)
-                        .addComponent(btnGetClients)))
-                .addContainerGap(112, Short.MAX_VALUE))
+                .addContainerGap()
+                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 776, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(32, 32, 32)
-                        .addComponent(btnGetClients))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(133, 133, 133)
-                .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(60, Short.MAX_VALUE))
+                .addContainerGap()
+                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 476, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void btnGetClientsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGetClientsMouseClicked
-        try {
-            List<Client> clients = user.getAllClients();
-            DefaultTableModel model = new DefaultTableModel();
-            
-            model.addColumn("Id");
-            model.addColumn("Client type");
-            
-            for (Client client : clients) {
-                model.addRow(new Object[]{(new Integer(client.ID)).toString(), (client.clientType).toString()});
-                System.out.println("trying to add a row with a client");
-            }
-            this.tableClients.setModel(model);
-            
-        } catch(MultipleInteractionException e) {
-            
-        } catch(AbsentException e) {
-            
-        }
-    }//GEN-LAST:event_btnGetClientsMouseClicked
 
     /**
      * @param args the command line arguments
@@ -153,9 +106,6 @@ public class WindowUser extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnGetClients;
     private javax.swing.JTabbedPane jtpPanelSwitch;
-    private javax.swing.JScrollPane mainWindow;
-    private javax.swing.JTable tableClients;
     // End of variables declaration//GEN-END:variables
 }

@@ -177,6 +177,14 @@ public class DistSmartFridgeTest {
 			e.printStackTrace();
 		}
 		assertEquals(ex, null);
+                
+                fridge.logOffController();
+                user.logOffController();
+                user2.logOffController();
+                fridge.stopServerController();
+                user.stopServer();
+                user2.stopServer();
+                controller.stopServer();
 	}
 	
 	@Test
