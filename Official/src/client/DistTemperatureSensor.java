@@ -4,6 +4,7 @@
 package client;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,30 +18,25 @@ import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
-import client.TemperatureSensor.generateTempTask;
-
+import client.util.ConnectionData;
 import controller.DistController;
-
 import util.Logger;
-
+import avro.ProjectPower.ClientType;
 import avro.ProjectPower.ControllerComm;
-import avro.ProjectPower.UserStatus;
 import avro.ProjectPower.communicationTempSensor;
 import avro.ProjectPower.communicationUser;
 
 
-// TODO add logOffController method
 public class DistTemperatureSensor 
 	extends TemperatureSensor 
 	implements communicationTempSensor, Runnable {
 	
-	private int f_controllerPort;
+	private ConnectionData f_controllerCommunication;
 	private Server f_server;
 	private Thread f_serverThread;
 	private boolean f_serverReady;
 	private Timer f_timer;
 	private String f_ownIP;
-	private String f_controllerIP;
 
 	
 	public DistTemperatureSensor(double lowTempRange, double highTempRange, String ownIP, String controllerIP, int controllerPort) {
@@ -48,10 +44,9 @@ public class DistTemperatureSensor
 		
 		// TODO check IP arguments to be valid
 		
-		f_controllerPort = controllerPort;
+		f_controllerCommunication = new ConnectionData(controllerIP, controllerPort);
 		f_serverReady = false;
 		f_ownIP = ownIP;
-		f_controllerIP = controllerIP;
 		this.setupID();
 		this.setupServer();
 		
@@ -62,14 +57,28 @@ public class DistTemperatureSensor
 
 	private void setupID() {
 		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerCommunication.toSocketAddress());
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.LogOn(TemperatureSensor.type, f_ownIP));
 			transceiver.close();
 		}
 		catch (IOException e) {
+			// TODO handle exception here
 			System.err.println("IOException in constructor for DistTemperatureSensor (getID).");
 			// System.exit(1);
+		}
+	}
+	
+	private void getNewID() {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerCommunication.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			this.setID(proxy.retryLogin(this.getID(), TemperatureSensor.type));
+			transceiver.close();
+		}
+		catch (IOException e) {
+			// TODO handle exception here
+			System.err.println("IOException at getNewID() at DistTemperatureSensor.");
 		}
 	}
 	
@@ -97,7 +106,7 @@ public class DistTemperatureSensor
 	public void logOffController() {
 		try {
 			Transceiver transceiver = 
-					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+					new SaslSocketTransceiver(f_controllerCommunication.toSocketAddress());
 			ControllerComm proxy = 
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.logOff(this.getID());
@@ -118,17 +127,22 @@ public class DistTemperatureSensor
 	
 	@Override
 	public void run() {
-		try {
-			f_server = new SaslSocketServer(
-					new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
-			f_server.start();
+		while (f_serverReady == false) {
+			try {
+				f_server = new SaslSocketServer(
+						new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
+				f_server.start();
+				f_serverReady = true;
+			}
+			catch (BindException e) {
+				this.getNewID();
+			}
+			catch (IOException e) {
+				System.err.println("Failed to start the DistTemperatureSensor server.");
+				e.printStackTrace(System.err);
+				System.exit(1);
+			}
 		}
-		catch (IOException e) {
-			System.err.println("Failed to start the DistTemperatureSensor server.");
-			e.printStackTrace(System.err);
-			System.exit(1);
-		}
-		f_serverReady = true;
 
 		try {
 			f_server.join();
@@ -136,13 +150,12 @@ public class DistTemperatureSensor
 		catch (InterruptedException e) {
 			f_server.close();
 			f_server = null;
-			Logger.getLogger().log("Closed the DistTemperatureSensor server.");
 		}
 	}
 
 	public void sendTemperatureToController() {
 		try {
-			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerCommunication.toSocketAddress());
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.addTemperature(this.getID(), this.getTemperature());
 			transceiver.close();
@@ -173,9 +186,12 @@ public class DistTemperatureSensor
 	
 	public static void main(String[] args) {
 		
+		final String clientIP = System.getProperty("clientip");
+		final String serverIP = System.getProperty("ip");
 		final int ControllerPort = 5000;
+		
 		DistTemperatureSensor sensor = new DistTemperatureSensor(
-				19,22, System.getProperty("clientip"), System.getProperty("ip"), ControllerPort);
+				19,22, clientIP, serverIP, ControllerPort);
 		try {
 			System.in.read();
 		} catch (IOException e1) {
@@ -184,11 +200,11 @@ public class DistTemperatureSensor
 		
 		sensor.stopServer();
 		System.exit(0);
-		DistController controller = new DistController(ControllerPort, 10, "127.0.1.1");
+		DistController controller = new DistController(ControllerPort, 10, serverIP);
 		
 		
 		DistTemperatureSensor remoteSensor = new DistTemperatureSensor(
-				19,22, System.getProperty("clientip"), System.getProperty("ip"), ControllerPort);
+				19,22, clientIP, serverIP, ControllerPort);
 		
 		
 		try {

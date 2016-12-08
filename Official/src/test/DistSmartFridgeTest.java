@@ -150,7 +150,7 @@ public class DistSmartFridgeTest {
 			user.addItemFridge("cheese");
 			user.addItemFridge("soda");
 			
-			List<CharSequence> items = user.getFridgeItemsDirectly();
+			List<String> items = user.getFridgeItemsDirectly();
 			Set<String> items2 = fridge.getItems();
 			
 			assertEquals(items.size(), items2.size());
@@ -234,6 +234,7 @@ public class DistSmartFridgeTest {
 		server1.close();
 		server2.close();
 		server3.close();
+		controller.stopServer();
 	}
 	
 }

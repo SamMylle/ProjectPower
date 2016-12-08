@@ -160,39 +160,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * =====================================================
 	 */
 	
-	/**
-	 * Summary: request the controller for a list of all the clients connected to the system.
-	 * 
-	 * @return A list with all the clients connected to the system.
-	 */
-	public List<Client> requestClients() throws MultipleInteractionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
 
-		if (f_connectedToFridge == true) {
-			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
-		}
-		
-		List<Client> clients = null;
-		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
-			ControllerComm proxy = 
-				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			clients = proxy.getAllClients();
-			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at requestClients() in DistUser.");
-		} 
-		catch (IOException e) {
-			System.err.println("IOException at requestClients() in DistUser.");
-		}
-		return clients;
-	}
 	
-	public List<LightState> requestLightStates() throws MultipleInteractionException, AbsentException {
+	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
@@ -254,7 +224,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public List<CharSequence> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException {
+	public List<String> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
@@ -263,13 +233,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
-		List<CharSequence> items = null;
+		List<CharSequence> _items = null;
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			items = proxy.getFridgeInventory(fridgeID);
+			_items = proxy.getFridgeInventory(fridgeID);
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -277,6 +247,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} 
 		catch (IOException e) {
 			System.err.println("IOException at getFridgeItems() in DistUser.");
+		}
+		List<String> items = new Vector<String>();
+		for (CharSequence item : _items) {
+			items.add(item.toString());
 		}
 		return items;
 	}
@@ -333,6 +307,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	/**
+	 * Summary: request the controller for a list of all the clients connected to the system.
+	 * 
+	 * @return A list with all the clients connected to the system.
+	 */
 	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
@@ -447,7 +426,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	public List<CharSequence> getFridgeItemsDirectly() throws NoFridgeConnectionException, AbsentException {
+	public List<String> getFridgeItemsDirectly() throws NoFridgeConnectionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
@@ -456,13 +435,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
 		}
 		
-		List<CharSequence> items = null;
+		List<CharSequence> _items = null;
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
-			items = proxy.getItemsRemote();
+			_items = proxy.getItemsRemote();
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -470,6 +449,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} 
 		catch (IOException e) {
 			System.err.println("IOException at getFridgeItemsDirectly() in DistUser.");
+		}
+		List<String> items = new Vector<String>();
+		for (CharSequence item : _items) {
+			items.add(item.toString());
 		}
 		return items;
 	}
