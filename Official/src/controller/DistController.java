@@ -41,17 +41,92 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private Vector<Integer> f_usedFridgePorts;
 	private HashMap<Integer, String> f_IPs;
 	private String f_ownIP;
+	private boolean f_isOriginalServer;
+	private int f_previousControllerPort;
+	private String f_previousControllerIP;
 
 	public DistController(int port, int maxTemperatures, String ip){
 		/// TODO  throws java.net.BindException
 		super(port + 1, maxTemperatures);
+		f_isOriginalServer = true;
 		
 		//f_controller = new Controller(port + 1, 10);
 		f_myPort = port;
+		f_previousControllerPort = -1;
+		f_previousControllerIP = "";
 		f_serverActive = false;
 		f_usedFridgePorts = new Vector<Integer>();
 		f_IPs = new HashMap<Integer, String>();
 		f_ownIP = new String(ip);
+
+		/// Make a thread, the "run" method will execute in a new thread
+		/// The run method must be implemented by a Runnable object (see implements in this class)
+		/// Since the server must run on this object, "this" is passed to the thread
+		/// Below, when starting the thread (thread.start()), the thread will call this.run()
+		/// This has to be this way because the server doesn't get out of the eternal loop
+		/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
+		f_serverThread = new Thread(this);
+		f_serverThread.start();
+
+		while (!f_serverActive){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				Logger.getLogger().f_active = true;
+				Logger.getLogger().log("Server startup failed");
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public boolean equals(DistController otherController){
+		Vector<Boolean> mustAllBeTrue = new Vector<Boolean>();
+
+		mustAllBeTrue.add(new Boolean(this.f_IPs.equals(otherController.f_IPs)));
+		mustAllBeTrue.add(new Boolean(this.f_maxTemperatures == otherController.f_maxTemperatures));
+		mustAllBeTrue.add(new Boolean(this.f_names.equals(otherController.f_names)));
+		mustAllBeTrue.add(new Boolean(this.f_nextID == otherController.f_nextID));
+		
+		if (this.f_temperatures.size() != otherController.f_temperatures.size()){
+			return false;
+		}
+		
+		for (int i = 0; i < this.f_temperatures.size(); i++){
+			if(! this.f_temperatures.elementAt(i).toString().equals(
+					otherController.f_temperatures.elementAt(i).toString())){
+				return false;
+			}
+		}
+		
+		mustAllBeTrue.add(new Boolean(this.f_usedFridgePorts.equals(otherController.f_usedFridgePorts)));
+		
+		for(int i = 0; i < mustAllBeTrue.size(); i++){
+			if (!mustAllBeTrue.elementAt(i)){
+				return false;
+			}
+		}
+
+		return true;
+	}
+	
+	public DistController(int port, int originalControllerPort, int maxTemperatures, int currentMaxPort, String ip,
+			String previousControllerIP, Vector<Integer> usedFridgePorts, HashMap<Integer, String> IPs,
+			HashMap<Integer, ClientType> names, Vector<TemperatureRecord> temperatures){
+		/// TODO  throws java.net.BindException
+		super(currentMaxPort, maxTemperatures);
+		f_isOriginalServer = false;
+		
+		//f_controller = new Controller(port + 1, 10);
+		f_myPort = port;
+		f_previousControllerPort = originalControllerPort;
+		f_previousControllerIP = previousControllerIP;
+		f_serverActive = false;
+		f_usedFridgePorts = usedFridgePorts;
+		f_IPs = IPs;
+		f_ownIP = new String(ip);
+		f_names = names;
+		f_temperatures = temperatures;
 
 		/// Make a thread, the "run" method will execute in a new thread
 		/// The run method must be implemented by a Runnable object (see implements in this class)
@@ -98,6 +173,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try{
 			f_server.join();
 		}catch(InterruptedException e){
+			System.out.print("Closing server\n");
 			f_server.close();
 			f_server = null;
 		}
@@ -323,7 +399,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	@Deprecated
 	public Void listenToMe(int port, ClientType type) throws AvroRemoteException {
-		/// Remote call by e.g. a fridge, to indicate the server can reach him on this port (usually the ID of the client)
+		/// Remote call by e.g. a fridge, to indicate the server can reach him on this port
+			/// (usually the ID of the client)
 		// TODO check if the ID is in the system and in the transceivers
 		// TODO maybe change retval to boolean
 		//this.setupTransceiver(type, port);

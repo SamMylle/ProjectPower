@@ -24,6 +24,14 @@ public class TemperatureRecord{
 		return f_ID;
 	}
 	
+	public String toString(){
+		String ret = "For ID " + new Integer(f_ID).toString();
+		for (int i = 0; i < f_record.size(); i++){
+			ret += " " + f_record.get(i);
+		}
+		return ret;
+	}
+	
 	private int f_maxSize;
 	private LinkedList<Double> f_record;
 	private int f_ID;

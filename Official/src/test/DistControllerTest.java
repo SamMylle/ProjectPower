@@ -2,6 +2,7 @@ package test;
 
 import static org.junit.Assert.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import util.SuppressSystemOut;
+import avro.ProjectPower.ClientType;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.communicationFridge;
 import controller.*;
@@ -68,6 +70,54 @@ public class DistControllerTest {
 		assertEquals(null, ex);
 		controller.stopServer();
 		controller = null;
+	}
+
+	@Test
+	public void testDistControllerExtended() {
+		System.out.print("TEST\n");
+		int port = 6000;
+		int originalHostPort = 5000;
+		int maxTemperatures = 10;
+		int currentMaxPort = 5004;
+		String ip = f_ip;
+		String previousControllerIP = f_ip;
+		Vector<Integer> usedFridgePorts = new Vector<Integer>();
+		HashMap<Integer, String> IPs = new HashMap<Integer, String>();
+		IPs.put(new Integer(5001), f_clientip);
+		IPs.put(new Integer(5002), f_clientip);
+		IPs.put(new Integer(5003), f_clientip);
+		HashMap<Integer, ClientType> names = new HashMap<Integer, ClientType>();
+		names.put(new Integer(5001), ClientType.SmartFridge);
+		names.put(new Integer(5002), ClientType.Light);
+		names.put(new Integer(5003), ClientType.TemperatureSensor);
+		Vector<TemperatureRecord> temperatures = new Vector<TemperatureRecord>();
+		TemperatureRecord record = new TemperatureRecord(maxTemperatures, 5003);
+		record.addValue(20);
+		record.addValue(19);
+		temperatures.add(record);
+		
+		DistController controller = new DistController(port, originalHostPort, maxTemperatures,
+				currentMaxPort, ip, previousControllerIP, usedFridgePorts, IPs, names, temperatures);
+		
+		DistController OtherController = new DistController(5000, maxTemperatures, f_ip);
+		try {
+			OtherController.LogOn(ClientType.SmartFridge, f_ip);
+			OtherController.LogOn(ClientType.Light, f_ip);
+			OtherController.LogOn(ClientType.TemperatureSensor, f_ip);
+			OtherController.addTemperature(20.0, 5003);
+			OtherController.addTemperature(19.0, 5003);
+		} catch (AvroRemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.out.print("TESTEND2\n");
+		assertTrue(controller.equals(OtherController));
+
+		System.out.print("TESTEND1\n");
+		controller.stopServer();
+		OtherController.stopServer();
+		System.out.print("TESTEND\n");
 	}
 
 	@Test
