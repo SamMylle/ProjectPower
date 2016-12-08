@@ -12,6 +12,7 @@ import java.util.List;
 import client.exception.*;
 import javax.swing.table.*;
 import javax.swing.JTable;
+import gui.ClientsPanel;
 
 /**
  *
@@ -27,9 +28,10 @@ public class WindowUser extends javax.swing.JFrame {
      */
     public WindowUser() {
         initComponents();
-        controller = new DistController(5000, 10, "127.0.1.1");
+        controller = new DistController(5000, 10, "143.169.193.230");
+        user = new DistUser("", "143.169.193.230", "143.169.193.230", 5000);
         
-        user = new DistUser("", "fixme", "fixme", 5000);
+        jtpPanelSwitch.addTab("Clients", new ClientsPanel(user) );
     }
 
     /**
@@ -44,9 +46,9 @@ public class WindowUser extends javax.swing.JFrame {
         mainWindow = new javax.swing.JScrollPane();
         tableClients = new javax.swing.JTable();
         btnGetClients = new javax.swing.JButton();
+        jtpPanelSwitch = new javax.swing.JTabbedPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setPreferredSize(new java.awt.Dimension(800, 500));
 
         mainWindow.setViewportView(tableClients);
 
@@ -62,20 +64,30 @@ public class WindowUser extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(38, 38, 38)
-                .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(111, 111, 111)
-                .addComponent(btnGetClients)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(38, 38, 38)
+                        .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(489, 489, 489)
+                        .addComponent(btnGetClients)))
                 .addContainerGap(112, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(32, 32, 32)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnGetClients)
-                    .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(273, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(32, 32, 32)
+                        .addComponent(btnGetClients))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(133, 133, 133)
+                .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(60, Short.MAX_VALUE))
         );
 
         pack();
@@ -142,6 +154,7 @@ public class WindowUser extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGetClients;
+    private javax.swing.JTabbedPane jtpPanelSwitch;
     private javax.swing.JScrollPane mainWindow;
     private javax.swing.JTable tableClients;
     // End of variables declaration//GEN-END:variables
