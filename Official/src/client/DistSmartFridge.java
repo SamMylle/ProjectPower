@@ -1,6 +1,7 @@
 package client;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,12 +52,15 @@ public class DistSmartFridge extends SmartFridge {
 	 * Constructor for DistSmartFridge
 	 * 
 	 * Constructs the DistSmartFridge object (in specified order):
-	 * 		- Gets an ID from the controller, using the given argument @controllerPort
-	 * 		- Starts a SmartFridge server on port=ID
-	 * @param ownIP TODO
-	 * @param controllerIP TODO
+	 * 		- Gets an ID from the controller, using the given arguments @controllerIP @controllerPort
+	 * 		- Starts a SmartFridge server on @PORT=ID and @ownIP
+	 * 
+	 * @param ownIP 
+	 * 		The IP address on which the fridge server(s) needs to run.
+	 * @param controllerIP
+	 * 		The IP address on which the controller server is running.
 	 * @param controllerPort
-	 * 	 the port on which the controller server is running
+	 * 	 	The port on which the controller server is running.
 	 * 
 	 */
 	public DistSmartFridge(String ownIP, String controllerIP, int controllerPort) {
@@ -82,6 +86,7 @@ public class DistSmartFridge extends SmartFridge {
 	 * Summary: gets an ID for the SmartFridge, requesting one from the controller.
 	 */
 	private void setupID() {
+		// TODO retry getting an ID when failing to bind to the port
 		try {
 			Transceiver transceiver = 
 					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
@@ -141,9 +146,22 @@ public class DistSmartFridge extends SmartFridge {
 	 * Summary: interrupts the thread which runs the DistSmartFridge server for the controller, forcing it to close.
 	 */
 	public void stopServerController() {
+		if (f_fridgeControllerThread == null) {
+			return;
+		}
 		f_fridgeControllerThread.interrupt();
 		f_fridgeControllerThread = null;		
 	}
+	
+	/**
+	 * Summary: interrupts the thread which runs the DistSmartFridge server for the controller, forcing it to close.
+	 */
+	public void disconnect() {
+		this.logOffController();
+		this.stopServerController();
+		this.stopUserServer();
+	}
+	
 	
 	/**
 	 * Summary: Notifies the controller that the inventory of the fridge is empty.
@@ -165,7 +183,30 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
-	
+	/**
+	 * Summary: Asks the controller for a new ID, to be used when the server failed to bind to the given port
+	 */
+	public void getNewID() {
+		// TODO remove debugging output
+		System.out.println("Getting new ID from the controller");
+		try {
+			Transceiver transceiver = 
+					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+			ControllerComm proxy = 
+					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			this.setID(proxy.retryLogin(this.getID(), SmartFridge.type));
+			System.out.print("New ID: ");
+			System.out.print(this.getID());
+			System.out.println("");
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at getNewID() in DistSmartFridge.");
+		}
+		catch (IOException e) {
+			System.err.println("IOException at getNewID() in DistSmartFridge.");
+		}
+	}
 
 	/**
 	 * Class used to run the DistSmartFridge server used by the Controller
@@ -179,22 +220,37 @@ public class DistSmartFridge extends SmartFridge {
 		
 		@Override
 		public void run() {
-			try {
-				f_fridgeControllerServer = new SaslSocketServer(
-						new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(f_ownIP, getID()) );
-				f_fridgeControllerServer.start();
+			// TODO remove output here, debugging stuff
+			/// repeat untill the server can bind to a valid port
+			while (f_serverControllerReady == false) {
+				try {
+					System.out.println("starting a smartfridge server designated for the controller.");
+					System.out.println(f_ownIP);
+					System.out.println(getID());
+					f_fridgeControllerServer = new SaslSocketServer(
+							new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(f_ownIP, getID()) );
+					f_fridgeControllerServer.start();
+					f_serverControllerReady = true;
+				}
+				catch (BindException e) {
+					getNewID();
+				}
+				catch (IOException e) {
+					System.err.println("Failed to start the SmartFridge server for the controller.");
+					e.printStackTrace(System.err);
+					System.exit(1);
+				}
 			}
-			catch (IOException e) {
-				System.err.println("Failed to start the SmartFridge server for the controller.");
-				e.printStackTrace(System.err);
-				System.exit(1);
-			}
-			f_serverControllerReady = true;
+			
 			try {
 				f_fridgeControllerServer.join();
 			}
 			catch (InterruptedException e) {
 				f_fridgeControllerServer.close();
+				f_fridgeControllerServer = null;
+				System.out.println("closed the smartfridge server designated for the controller.");
+				System.out.println(f_ownIP);
+				System.out.println(getID());
 			}
 		}
 
@@ -228,11 +284,12 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
-	
+	/**
+	 * Summary: starts the DistSmartFridge server for the user in a thread
+	 */
 	public void startUserServer() {
 		f_fridgeUserThread = new Thread(new userServer());
 		f_fridgeUserThread.start();
-		
 		
 		while (f_serverUserReady == false) {
 			try {
@@ -241,6 +298,17 @@ public class DistSmartFridge extends SmartFridge {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Summary: interrupts the thread which runs the DistSmartFridge server for the user, forcing it to close.
+	 */
+	public void stopUserServer() {
+		if (f_fridgeUserThread == null) {
+			return;
+		}
+		f_fridgeUserThread.interrupt();
+		f_fridgeUserThread = null;
 	}
 	
 	/**
@@ -271,6 +339,7 @@ public class DistSmartFridge extends SmartFridge {
 			}
 			catch (InterruptedException e) {
 				f_fridgeUserServer.close();
+				f_fridgeUserServer = null;
 			}
 		}
 		
@@ -287,7 +356,7 @@ public class DistSmartFridge extends SmartFridge {
 		@Override
 		public boolean closeFridgeRemote() throws AvroRemoteException {
 			closeFridge();
-			this.stopUserServer();
+			stopUserServer();
 			
 			Logger logger = Logger.getLogger();
 			logger.f_active = true;
@@ -325,11 +394,6 @@ public class DistSmartFridge extends SmartFridge {
 				items.add(item);
 			}
 			return items;
-		}
-		
-		public void stopUserServer() {
-			f_fridgeUserThread.interrupt();
-			f_fridgeUserThread = null;
 		}
 	}
 	

@@ -13,6 +13,7 @@ import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
@@ -86,8 +87,33 @@ public class DistTemperatureSensor
 	}
 	
 	public void stopServer() {
+		if (f_serverThread == null) {
+			return;
+		}
 		f_serverThread.interrupt();
 		f_serverThread = null;
+	}
+	
+	public void logOffController() {
+		try {
+			Transceiver transceiver = 
+					new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
+			ControllerComm proxy = 
+					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.logOff(this.getID());
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at logOff() in logOffController.");
+		}
+		catch (IOException e) {
+			System.err.println("IOException at logOff() in logOffController.");
+		}
+	}
+	
+	public void disconnect() {
+		this.logOffController();
+		this.stopServer();
 	}
 	
 	@Override
@@ -109,6 +135,7 @@ public class DistTemperatureSensor
 		}
 		catch (InterruptedException e) {
 			f_server.close();
+			f_server = null;
 			Logger.getLogger().log("Closed the DistTemperatureSensor server.");
 		}
 	}

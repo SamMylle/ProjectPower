@@ -103,8 +103,16 @@ public class DistUser extends User implements communicationUser, Runnable {
 	}
 	
 	public void stopServer() {
+		if (f_serverThread == null) {
+			return;
+		}
 		f_serverThread.interrupt();
 		f_serverThread = null;
+	}
+	
+	public void disconnect() {
+		this.logOffController();
+		this.stopServer();
 	}
 	
 	// TODO make sure exception handling isn't screwed up when using this method
@@ -350,13 +358,14 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
-		Client client = null;
+		CommData fridgeData = null;
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(new InetSocketAddress(f_controllerIP, f_controllerPort));
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			// TODO fix this here, with IP addresses
+			fridgeData = proxy.setupFridgeCommunication(fridgeID);
 //			client = proxy.setupFridgeCommunication(fridgeID);
 			transceiver.close();
 		}
@@ -369,15 +378,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 			return;
 		}
 		
-		if (f_fridgePort == -1) {
+		if (fridgeData.getID() == -1) {
 			throw new FridgeOccupiedException("The fridge is already being used by another user.");
 		}
-		
-		if (client.ID == -1)
-			return;
-		
-		f_fridgeIP = "192.168.1.6"; // TODO remove hardcoded IP address
-		f_fridgePort = client.ID;
+		f_fridgeIP = fridgeData.getIP().toString();
+		f_fridgePort = fridgeData.getID();
 		f_connectedToFridge = true;
 	}
 	

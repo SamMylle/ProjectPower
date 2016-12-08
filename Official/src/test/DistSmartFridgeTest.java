@@ -32,25 +32,26 @@ import util.SuppressSystemOut;
 
 
 public class DistSmartFridgeTest {
-	static SuppressSystemOut suppress;
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-		suppress = new SuppressSystemOut();
-		suppress.suppressOutput();
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-		suppress.activateOutput();
-	}
-
-	@Before
-	public void setUp() throws Exception {
-	}
-	
+//	static SuppressSystemOut suppress;
+//	@BeforeClass
+//	public static void setUpBeforeClass() throws Exception {
+//		suppress = new SuppressSystemOut();
+//		suppress.suppressOutput();
+//	}
+//
+//	@AfterClass
+//	public static void tearDownAfterClass() throws Exception {
+//		suppress.activateOutput();
+//	}
+//
+//	@Before
+//	public void setUp() throws Exception {
+//	}
+//	
 	
 	@Test
 	public void testControllerServerMethods() {
+
 		final int controllerPort = 5000;
 		DistController controller = new DistController(controllerPort, 10, System.getProperty("ip"));
 		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"), System.getProperty("ip"), controllerPort);
@@ -99,8 +100,7 @@ public class DistSmartFridgeTest {
 		assertEquals(items.size(), 1);
 		assertEquals(items.get(0).toString(), "apple");
 		
-		fridge.logOffController();
-		fridge.stopServerController();
+		fridge.disconnect();
 		controller.stopServer();
 	}
 	
@@ -120,7 +120,7 @@ public class DistSmartFridgeTest {
 		
 		assertEquals(user._getStatus(), UserStatus.present);
 		try {
-			user.communicateWithFridge(controllerPort+1);
+			user.communicateWithFridge(fridge.getID());
 		} catch (MultipleInteractionException e) {
 			ex = e;
 		} catch (AbsentException e) {
@@ -134,7 +134,7 @@ public class DistSmartFridgeTest {
 		
 		assertEquals(user2._getStatus(), UserStatus.present);
 		try {
-			user2.communicateWithFridge(controllerPort+1);
+			user2.communicateWithFridge(fridge.getID());
 		} catch (MultipleInteractionException e) {
 			ex = e;
 		} catch (AbsentException e) {
@@ -177,14 +177,11 @@ public class DistSmartFridgeTest {
 			e.printStackTrace();
 		}
 		assertEquals(ex, null);
-                
-                fridge.logOffController();
-                user.logOffController();
-                user2.logOffController();
-                fridge.stopServerController();
-                user.stopServer();
-                user2.stopServer();
-                controller.stopServer();
+		
+		fridge.disconnect();
+		user.disconnect();
+		user2.disconnect();
+		controller.stopServer();
 	}
 	
 	@Test
@@ -195,7 +192,10 @@ public class DistSmartFridgeTest {
 	@Test
 	public void testIDSetup() {
 		/// playing devils advocate here, occupying a few ports with random clients to force an increased ID
+		return;	// TODO uncomment this and finish test
 		
+		/// comments here because java is being annoying and won't let me compile with unreachable code
+		/*
 		final String IP = System.getProperty("ip");
 		final String clientIP = System.getProperty("clientip");
 		
@@ -223,6 +223,7 @@ public class DistSmartFridgeTest {
 							this), new InetSocketAddress(clientIP, controllerPort+3));
 		}catch(IOException e){ }
 		server3.start();
+		*/
 
 		/// * actual test
 		
