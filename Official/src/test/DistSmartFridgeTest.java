@@ -155,9 +155,9 @@ public class DistSmartFridgeTest {
 			
 			assertEquals(items.size(), items2.size());
 			assertEquals(items.size(), 2);
-			assertEquals(items.get(0).toString(), "cheese");
+			assertTrue(items.contains("soda"));
+			assertTrue(items.contains("cheese"));
 			assertTrue(items2.contains("cheese"));
-			assertEquals(items.get(1).toString(), "soda");
 			assertTrue(items2.contains("soda"));
 			
 			user.removeItemFridge("cheese");

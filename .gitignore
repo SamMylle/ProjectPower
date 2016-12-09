@@ -3,6 +3,7 @@ playground/federico/bin/
 */bin/
 */.classpath
 */.project
+*/.settings
 /Official/build/
 /Official/build.xml
 /Official/manifest.mf

@@ -429,8 +429,10 @@ public class DistControllerTest {
 				///a function when using a transceiver, or stuff is broken in avro
 			List<Client> clients = proxy.getAllClients();
 			
+			
+			
 			for (int i = 0; i < clients.size(); i++){
-				assertEquals(connected.get(i), clients.get(i));
+				assertTrue(connected.contains(clients.get(i)));
 			}
 			//System.out.print("lool\n");
 

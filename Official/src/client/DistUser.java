@@ -266,12 +266,14 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		
 		double currentTemp = 0;
+		boolean hasTemperatures = false;
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			currentTemp = proxy.averageCurrentTemperature();
+			hasTemperatures = proxy.hasValidTemperatures();
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -280,6 +282,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			System.err.println("IOException at getCurrentTemperatureHouse() in DistUser.");
 		}
+		if (currentTemp != 0) {
+			return currentTemp;
+		} else if (hasTemperatures == true) {
+			return currentTemp;
+		}
+		
+		// TODO throw exception here
 		return currentTemp;
 	}
 	
