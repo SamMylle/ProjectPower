@@ -74,13 +74,13 @@ public class DistControllerTest {
 
 	@Test
 	public void testDistControllerExtended() {
-		System.out.print("TEST\n");
 		int port = 6000;
 		int originalHostPort = 5000;
 		int maxTemperatures = 10;
 		int currentMaxPort = 5004;
 		String ip = f_ip;
 		String previousControllerIP = f_ip;
+		/// TODO manually test this with nonempty vector
 		Vector<Integer> usedFridgePorts = new Vector<Integer>();
 		HashMap<Integer, String> IPs = new HashMap<Integer, String>();
 		IPs.put(new Integer(5001), f_clientip);
@@ -189,17 +189,19 @@ public class DistControllerTest {
 	@Test
 	public void testSetupFridgeCommunication() {
 		/// TODO uncomment when the fridge is ok
-		/*DistController controller = new DistController(5000, 10, f_ip);
+		DistController controller = new DistController(5000, 10, f_ip);
 
-		DistSmartFridge fridge = new DistSmartFridge(5000);
-		DistSmartFridge fridge2 = new DistSmartFridge(5000);
+		DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
+		DistSmartFridge fridge2 = new DistSmartFridge(f_clientip, f_ip, 5000);
 
 		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
 		try {
 
-			Client port = controller.setupFridgeCommunication(5001);
+			CommData port = controller.setupFridgeCommunication(5001);
 
 			assertEquals(4999, port.ID);
+			assertEquals(f_clientip, port.IP);
+			
 			Vector<Integer> expected = new Vector<Integer>();
 			expected.add(new Integer(4999));
 			assertEquals(expected, controller.getOccupiedPorts());
@@ -207,17 +209,21 @@ public class DistControllerTest {
 			port = controller.setupFridgeCommunication(5002);
 			
 			assertEquals(4998, port.ID);
+			assertEquals(f_clientip, port.IP);
+			
 			expected.add(new Integer(4998));
 			assertEquals(expected, controller.getOccupiedPorts());
 			
 			/// Should fail
 			port = controller.setupFridgeCommunication(5003);
 			assertEquals(-1, port.ID);
+			assertEquals("", port.IP);
 			assertEquals(expected, controller.getOccupiedPorts());
 			
 			/// Denied access by fridge
 			port = controller.setupFridgeCommunication(5001);
 			assertEquals(-1, port.ID);
+			assertEquals("", port.IP);
 			assertEquals(expected, controller.getOccupiedPorts());
 		} catch (AvroRemoteException e) {
 			e.printStackTrace();
@@ -227,7 +233,7 @@ public class DistControllerTest {
 		fridge.stopServerController();
 		fridge2.logOffController();
 		fridge2.stopServerController();
-		controller.stopServer();*/
+		controller.stopServer();
 	}
 
 	@Test
@@ -239,16 +245,18 @@ public class DistControllerTest {
 	public void reSetupFridgeCommunication() {
 		/// TODO uncomment (and correct)
 		// I could only do it this way, no multiple fridges and actual fuckups
-		/*DistController controller = new DistController(5000, 10, f_ip);
+		DistController controller = new DistController(5000, 10, f_ip);
 
-		DistSmartFridge fridge = new DistSmartFridge(5000);
+		DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
 
 		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
 		try {
 
-			int port = controller.reSetupFridgeCommunication(5001, 3001);
+			CommData port = controller.reSetupFridgeCommunication(5001, 3001);
 
-			assertEquals(3000, port);
+			assertEquals(3000, port.ID);
+			assertEquals(f_clientip, port.IP);
+			
 			Vector<Integer> expected = new Vector<Integer>();
 			expected.add(new Integer(3000));
 			assertEquals(expected, controller.getOccupiedPorts());
@@ -259,7 +267,7 @@ public class DistControllerTest {
 		}
 		fridge.logOffController();
 		fridge.stopServerController();
-		controller.stopServer();*/
+		controller.stopServer();
 	}
 	
 
@@ -267,16 +275,18 @@ public class DistControllerTest {
 	public void testEndFridgeCommunication() {
 		/// TODO uncomment (and correct)
 		// I could only do it this way, no multiple fridges and actual fuckups
-		/*DistController controller = new DistController(5000, 10, f_ip);
+		DistController controller = new DistController(5000, 10, f_ip);
 
-		DistSmartFridge fridge = new DistSmartFridge(5000);
+		DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
 
 		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
 		try {
 
-			int port = controller.reSetupFridgeCommunication(5001, 3001);
+			CommData port = controller.reSetupFridgeCommunication(5001, 3001);
 
-			assertEquals(3000, port);
+			assertEquals(3000, port.ID);
+			assertEquals(f_clientip, port.IP);
+			
 			Vector<Integer> expected = new Vector<Integer>();
 			expected.add(new Integer(3000));
 			assertEquals(expected, controller.getOccupiedPorts());
@@ -296,7 +306,7 @@ public class DistControllerTest {
 		}
 		fridge.logOffController();
 		fridge.stopServerController();
-		controller.stopServer();*/
+		controller.stopServer();
 	}
 
 	@Test
@@ -346,8 +356,6 @@ public class DistControllerTest {
 		List<Client> connected = new Vector<Client>();
 		connected.add(new Client(ClientType.Light, 5002));
 		connected.add(new Client(ClientType.Light, 5001));
-		
-		
 		
 		Exception ex = null;
 		
