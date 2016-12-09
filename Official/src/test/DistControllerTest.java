@@ -75,6 +75,7 @@ public class DistControllerTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testDistControllerExtended() {
 		int port = 6000;
 		int originalHostPort = 5000;
@@ -132,6 +133,7 @@ public class DistControllerTest {
 		
 		DistController OtherController = new DistController(5000, maxTemperatures, f_ip);
 		try {
+			/// TODO manually test in an environment that doesn't have the same IP
 			OtherController.LogOn(ClientType.SmartFridge, f_ip);
 			OtherController.LogOn(ClientType.Light, f_ip);
 			OtherController.LogOn(ClientType.TemperatureSensor, f_ip);
@@ -219,6 +221,7 @@ public class DistControllerTest {
 		// Tested in controller stuff
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testSetupFridgeCommunication() {
 		DistController controller = new DistController(5000, 10, f_ip);
@@ -273,6 +276,7 @@ public class DistControllerTest {
 		// Tested in testSetupFridgeCommunication
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void reSetupFridgeCommunication() {
 		// I could only do it this way, no multiple fridges and actual fuckups
@@ -302,6 +306,7 @@ public class DistControllerTest {
 	}
 	
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testEndFridgeCommunication() {
 		// I could only do it this way, no multiple fridges and actual fuckups
