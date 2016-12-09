@@ -3,6 +3,12 @@ package controller;
 import java.util.LinkedList;
 
 public class TemperatureRecord{
+	public TemperatureRecord(int maxSize, int ID, LinkedList<Double> currentTemperatures){
+		f_maxSize = maxSize;
+		f_record = currentTemperatures;
+		f_ID = ID;
+	}
+	
 	public TemperatureRecord(int maxSize, int ID){
 		f_maxSize = maxSize;
 		f_record = new LinkedList<Double>();

@@ -22,6 +22,7 @@ import util.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -110,6 +111,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return true;
 	}
 	
+	@Deprecated
 	public DistController(int port, int originalControllerPort, int maxTemperatures, int currentMaxPort, String ip,
 			String previousControllerIP, Vector<Integer> usedFridgePorts, HashMap<Integer, String> IPs,
 			HashMap<Integer, ClientType> names, Vector<TemperatureRecord> temperatures){
@@ -127,6 +129,66 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_ownIP = new String(ip);
 		f_names = names;
 		f_temperatures = temperatures;
+
+		/// Make a thread, the "run" method will execute in a new thread
+		/// The run method must be implemented by a Runnable object (see implements in this class)
+		/// Since the server must run on this object, "this" is passed to the thread
+		/// Below, when starting the thread (thread.start()), the thread will call this.run()
+		/// This has to be this way because the server doesn't get out of the eternal loop
+		/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
+		f_serverThread = new Thread(this);
+		f_serverThread.start();
+
+		while (!f_serverActive){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				Logger.getLogger().f_active = true;
+				Logger.getLogger().log("Server startup failed");
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	@SuppressWarnings("deprecation")
+	public DistController(ServerData oldServer){
+		/// Precondition: valid stuff in data
+		/// I'm not proud of this
+		super(oldServer.currentMaxPort, oldServer.maxTemperatures);
+		f_isOriginalServer = false;
+		
+		//f_controller = new Controller(port + 1, 10);
+		f_myPort = oldServer.port;
+		f_previousControllerPort = oldServer.originalControllerPort;
+		f_previousControllerIP = oldServer.previousControllerIP.toString();
+		f_serverActive = false;
+		f_usedFridgePorts = new Vector<Integer>(oldServer.usedFridgePorts);
+		f_IPs = new HashMap<Integer, String>();
+		f_names = new HashMap<Integer, ClientType>();
+		f_temperatures = new Vector<TemperatureRecord>();
+		
+		for (int i = 0; i < oldServer.IPsID.size(); i++){
+			String IP = oldServer.IPsIP.get(i).toString();
+			Integer ID = oldServer.IPsID.get(i);
+			f_IPs.put(ID, IP);
+		}
+
+		f_ownIP = oldServer.ip.toString();
+
+		for (int i = 0; i < oldServer.namesID.size(); i++){
+			f_names.put(oldServer.namesID.get(i), oldServer.namesClientType.get(i));
+		}
+
+		for (int i = 0; i < oldServer.temperatures.size(); i++){
+			System.out.print("adding ");
+			TemperatureRecord newRecord =
+					new TemperatureRecord(f_maxTemperatures,
+							oldServer.temperaturesIDs.get(i),
+							new LinkedList<Double>(oldServer.temperatures.get(i)));
+			f_temperatures.add(newRecord);
+			
+		}
 
 		/// Make a thread, the "run" method will execute in a new thread
 		/// The run method must be implemented by a Runnable object (see implements in this class)

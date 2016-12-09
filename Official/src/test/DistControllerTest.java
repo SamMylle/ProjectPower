@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 import java.io.IOException;
@@ -97,8 +98,37 @@ public class DistControllerTest {
 		record.addValue(19);
 		temperatures.add(record);
 		
-		DistController controller = new DistController(port, originalHostPort, maxTemperatures,
-				currentMaxPort, ip, previousControllerIP, usedFridgePorts, IPs, names, temperatures);
+		//DistController controller = new DistController(port, originalHostPort, maxTemperatures,
+		//		currentMaxPort, ip, previousControllerIP, usedFridgePorts, IPs, names, temperatures);
+		ServerData data = new ServerData();
+		data.port = port;
+		data.originalControllerPort = originalHostPort;
+		data.maxTemperatures = maxTemperatures;
+		data.currentMaxPort = currentMaxPort;
+		data.ip = ip;
+		data.previousControllerIP = previousControllerIP;
+		data.usedFridgePorts = usedFridgePorts;
+		data.IPsID = new LinkedList<Integer>(IPs.keySet());
+		System.out.print(data.IPsID.toString() + "id \n");
+		data.IPsIP = new LinkedList<CharSequence>(IPs.values());
+		System.out.print(data.IPsIP.toString() + "ip \n");
+		System.out.print(IPs.toString() + "\n");
+		data.namesClientType = new LinkedList<ClientType>(names.values());
+		data.namesID = new LinkedList<Integer>(names.keySet());
+		
+		data.temperatures = new ArrayList<List<Double>>();
+		for(int i = 0; i < temperatures.size(); i++){
+			List<Double> newRecord = new ArrayList<Double>(temperatures.get(i).getRecord());
+			data.temperatures.add(newRecord);
+		}
+		
+		data.temperaturesIDs = new ArrayList<Integer>();
+		for(int i = 0; i < temperatures.size(); i++){
+			Integer newID = new Integer(temperatures.get(i).getID());
+			data.temperaturesIDs.add(newID);
+		}
+
+		DistController controller = new DistController(data);
 		
 		DistController OtherController = new DistController(5000, maxTemperatures, f_ip);
 		try {
@@ -113,6 +143,8 @@ public class DistControllerTest {
 		}
 
 		System.out.print("TESTEND2\n");
+		System.out.print(controller.getRawTemperatures().toString());
+		System.out.print(OtherController.getRawTemperatures().toString());
 		assertTrue(controller.equals(OtherController));
 
 		System.out.print("TESTEND1\n");
