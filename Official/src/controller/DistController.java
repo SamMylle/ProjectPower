@@ -440,7 +440,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			return null;
 		}
 
-		return proxy.getItemsRemote();
+		return new ArrayList<CharSequence>(proxy.getItemsRemote());
 	}
 	
 	public Vector<Integer> getOccupiedPorts(){

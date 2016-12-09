@@ -2,6 +2,7 @@ package test;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
@@ -188,7 +189,6 @@ public class DistControllerTest {
 
 	@Test
 	public void testSetupFridgeCommunication() {
-		/// TODO uncomment when the fridge is ok
 		DistController controller = new DistController(5000, 10, f_ip);
 
 		DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
@@ -243,7 +243,6 @@ public class DistControllerTest {
 
 	@Test
 	public void reSetupFridgeCommunication() {
-		/// TODO uncomment (and correct)
 		// I could only do it this way, no multiple fridges and actual fuckups
 		DistController controller = new DistController(5000, 10, f_ip);
 
@@ -273,7 +272,6 @@ public class DistControllerTest {
 
 	@Test
 	public void testEndFridgeCommunication() {
-		/// TODO uncomment (and correct)
 		// I could only do it this way, no multiple fridges and actual fuckups
 		DistController controller = new DistController(5000, 10, f_ip);
 
@@ -311,7 +309,32 @@ public class DistControllerTest {
 
 	@Test
 	public void testGetFridgeInventory() {
-		// TODO test with federico
+		// I could only do it this way, no multiple fridges and actual fuckups
+		DistController controller = new DistController(5000, 10, f_ip);
+
+		try {
+			assertEquals(new ArrayList<CharSequence>(), controller.getFridgeInventory(5001));
+			assertEquals(new ArrayList<CharSequence>(), controller.getFridgeInventory(51223687));
+			
+			DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
+			fridge.addItem("Chunks_of_little_children");
+			fridge.addItem("A_dwarf_powering_the_fridge");
+			fridge.addItem("Pizza");
+			fridge.addItem("The_holocaust");
+			
+			List<CharSequence> actual = controller.getFridgeInventory(5001);
+			List<CharSequence> expected = new ArrayList<CharSequence>(fridge.getItems());
+			
+			/// TODO tostring is nasty but java is being a cunt
+			assertEquals(expected.toString(), actual.toString());
+			
+			fridge.logOffController();
+			fridge.stopServerController();
+
+		} catch (AvroRemoteException e1) {
+			e1.printStackTrace();
+		}
+		controller.stopServer();
 	}
 
 	@Test
