@@ -17,6 +17,7 @@ import util.Logger;
 import controller.DistController;
 
 import avro.ProjectPower.*;
+import avro.ProjectPower.ControllerComm;
 import client.exception.*;
 import client.util.ConnectionData;
 import client.util.LightState;

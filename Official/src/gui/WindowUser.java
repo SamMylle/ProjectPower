@@ -6,6 +6,7 @@
 package gui;
 
 import client.DistUser;
+import client.DistTemperatureSensor;
 import controller.DistController;
 import avro.ProjectPower.*;
 import java.util.List;
@@ -13,6 +14,8 @@ import client.exception.*;
 import javax.swing.table.*;
 import javax.swing.JTable;
 import gui.ClientsPanel;
+import avro.ProjectPower.ControllerComm;
+import java.awt.Component;
 
 /**
  *
@@ -20,18 +23,23 @@ import gui.ClientsPanel;
  */
 public class WindowUser extends javax.swing.JFrame {
 
-    private DistUser user;
-    private DistController controller; /// TODO remove this, here for debugging
+    private DistUser f_user;
+    private DistController f_controller; /// TODO remove this, here for debugging
+    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
     
     /**
      * Creates new form MainWindow
      */
     public WindowUser() {
         initComponents();
-        controller = new DistController(5000, 10, "143.169.193.230");
-        user = new DistUser("", "143.169.193.230", "143.169.193.230", 5000);
+        String localIP = "192.168.1.6";
+        f_controller = new DistController(5000, 10, localIP);
+        f_user = new DistUser("", localIP, localIP, 5000);
+        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
         
-        jtpPanelSwitch.addTab("Clients", new ClientsPanel(user) );
+        jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
+        jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
+        jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));
     }
 
     /**
@@ -46,6 +54,12 @@ public class WindowUser extends javax.swing.JFrame {
         jtpPanelSwitch = new javax.swing.JTabbedPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jtpPanelSwitch.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                jtpPanelSwitchStateChanged(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -66,6 +80,14 @@ public class WindowUser extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jtpPanelSwitchStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jtpPanelSwitchStateChanged
+        // TODO add your handling code here:
+
+        Component comp = jtpPanelSwitch.getSelectedComponent();
+        PanelInterface panelinterface = (PanelInterface) comp;
+        panelinterface.update();
+    }//GEN-LAST:event_jtpPanelSwitchStateChanged
 
     /**
      * @param args the command line arguments
