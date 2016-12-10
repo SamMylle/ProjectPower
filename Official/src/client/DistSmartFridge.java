@@ -342,19 +342,16 @@ public class DistSmartFridge extends SmartFridge {
 		
 		@Override
 		public void run() {
-			int currentPort = f_userPort;
 			while (f_serverUserReady == false) {
 				try {
 					f_fridgeUserServer = new SaslSocketServer(
-							new SpecificResponder(communicationFridgeUser.class, this), new InetSocketAddress(f_ownIP, currentPort) );
+							new SpecificResponder(communicationFridgeUser.class, this), new InetSocketAddress(f_ownIP, f_userPort) );
 					f_fridgeUserServer.start();
 					f_serverUserReady = true;
 				} catch (BindException e) {
-					currentPort -= 1;
+					f_userPort -= 1;
 				} catch (IOException e) {
 					System.err.println("Failed to start the SmartFridge server for the user.");
-//					e.printStackTrace(System.err);
-//					System.exit(1);
 				}
 			}
 			try {
