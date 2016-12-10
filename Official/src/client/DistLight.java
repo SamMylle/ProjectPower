@@ -19,7 +19,7 @@ import util.Logger;
 
 import avro.ProjectPower.*;
 
-public class DistLight implements Runnable, LightComm {
+public class DistLight implements Runnable, LightComm, ControlMessages{
 	public Light f_light;
 	private Server f_server;
 	private Thread f_serverThread;
@@ -157,6 +157,20 @@ public class DistLight implements Runnable, LightComm {
 		Logger.getLogger().log("returning: ", false);
 		Logger.getLogger().log(new Integer(f_light.getState()).toString());
 		return f_light.getState();
+	}
+
+	@Override
+	public boolean aliveAndKicking() throws AvroRemoteException {
+		return true;
+	}
+
+	@Override
+	public Void newServer(CharSequence newServerIP, int newServerID) throws AvroRemoteException {
+		/// TODO test
+		f_serverip = newServerIP.toString();
+		f_serverPort = newServerID;
+		
+		return null;
 	}
 	
 	public static void main(String[] args) {

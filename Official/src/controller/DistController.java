@@ -316,7 +316,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	public String getIPAddress(int ID){
-		/// TODO write test
 		return f_IPs.get(ID);
 	}
 	
@@ -361,7 +360,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public int getFridgePort(int start){
 		/// -1 for default start port
 		///  It will NOT take the start port into consideration
-		/// TODO test
 		int ret = f_myPort;
 		
 		if (start != -1){
@@ -444,7 +442,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Deprecated
 	@Override
 	public Void endFridgeCommunication(int usedPort) throws AvroRemoteException {
-		/// TODO test
 		/*for (int i = 0; i < f_usedFridgePorts.size(); i++){
 			if(f_usedFridgePorts.elementAt(i) == usedPort){
 				f_usedFridgePorts.remove(i);
@@ -459,8 +456,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public Void listenToMe(int port, ClientType type) throws AvroRemoteException {
 		/// Remote call by e.g. a fridge, to indicate the server can reach him on this port
 			/// (usually the ID of the client)
-		// TODO check if the ID is in the system and in the transceivers
-		// TODO maybe change retval to boolean
 		//this.setupTransceiver(type, port);
 		return null;
 	}
@@ -547,7 +542,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			// We know the type is a light (AND it exists)
 			SaslSocketTransceiver light = null;
 			try {
-				/// TODO correct ip
 				light = new SaslSocketTransceiver(new InetSocketAddress(ip, ID));
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -572,7 +566,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public java.util.List<Client> getAllClients() throws AvroRemoteException {
-		/// TODO test
 		List<Client> ret = new Vector<Client>();
 
 		/// Ugliest for loop in the history of for loops
@@ -585,7 +578,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void reaffirmClientsAlive(){
-		/// TODO test and make timer
+		/// TODO test and make timer to run this
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
@@ -603,37 +596,14 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
 			
-			if (type == ClientType.Light){
-				LightComm.Callback proxy;
-				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
-				
-				/// TODO check isAlive
+
+			ControlMessages.Callback proxy;
+			proxy = SpecificRequestor.getClient(ControlMessages.Callback.class, client);
+			
+			if (proxy.aliveAndKicking()){
 				return true;
 			}
 			
-			if (type == ClientType.SmartFridge){
-				communicationFridge.Callback proxy;
-				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
-				
-				/// TODO check isAlive
-				return true;
-			}
-			
-			if (type == ClientType.TemperatureSensor){
-				communicationTempSensor.Callback proxy;
-				proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
-				
-				/// TODO check isAlive
-				return true;
-			}
-			
-			if (type == ClientType.User){
-				communicationUser.Callback proxy;
-				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-				
-				/// TODO check isAlive
-				return true;
-			}
 		}catch(Exception e){
 			return false;
 		}
@@ -641,6 +611,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void lookForOldServer(){
+		/// TODO test
 		if (f_isOriginalServer){
 			return;
 		}
@@ -666,6 +637,24 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public boolean areYouTheOriginalController() throws AvroRemoteException {
 		return f_isOriginalServer;
+	}
+	
+	public void notifyClientsIAmServer(){
+		for(Integer ID: f_names.keySet()){
+			try{
+				String ip = f_IPs.get(ID);
+				
+				Transceiver client = this.setupTransceiver(ID, ip);
+
+				ControlMessages.Callback proxy;
+				proxy = SpecificRequestor.getClient(ControlMessages.Callback.class, client);
+				
+				proxy.newServer(f_ownIP, f_myPort);
+				
+			}catch(Exception e){
+				continue;
+			}
+		}
 	}
 
 	public static void main(String[] args) {
