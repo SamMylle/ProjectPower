@@ -31,6 +31,10 @@
 		"closeFridgeRemote" : {
 			"request" : [],
 			"response" : "boolean"
+		},
+		"registerUserIP" : {
+			"request" : [{"name" : "userIP", "type" : "string"}, {"name" : "userPort", "type" : "int"}],
+			"response" : "null"
 		}
 	}
 }

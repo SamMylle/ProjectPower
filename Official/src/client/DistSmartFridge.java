@@ -37,6 +37,7 @@ public class DistSmartFridge extends SmartFridge {
 	private String f_ownIP;									// The IP address of the client itself
 	
 	private ConnectionData f_controllerConnection;			// Data of the current connection to the controller of the system
+	private ConnectionData f_userConnection;				// Data of the current connection to the user, which requested access.
 	private int f_userPort;
 	
 	private boolean f_serverControllerReady;				// Boolean used to determine if the server has been finished setting up.
@@ -78,6 +79,7 @@ public class DistSmartFridge extends SmartFridge {
 		f_ownIP = ownIP;
 		
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
+		f_userConnection = null;
 		f_userPort = -1;
 		f_serverControllerReady = false;
 		f_serverUserReady = false;
@@ -273,14 +275,14 @@ public class DistSmartFridge extends SmartFridge {
 		}
 
 		@Override
-		public boolean requestFridgeCommunication(int userServerPort) throws AvroRemoteException {
+		public int requestFridgeCommunication(int userServerPort) throws AvroRemoteException {
 			if (f_userConnected == true) {
-				return false;
+				return -1;
 			}
 			f_userPort = userServerPort;
 			startUserServer();
 			f_userConnected = true;
-			return true;
+			return f_userPort;
 		}
 	}
 	
@@ -325,6 +327,7 @@ public class DistSmartFridge extends SmartFridge {
 			System.err.println("IOException at stopUserServer() in DistSmartFridge.");
 		}
 		f_userPort= -1;
+		f_userConnection = null;
 	}
 	
 	/**
@@ -339,17 +342,21 @@ public class DistSmartFridge extends SmartFridge {
 		
 		@Override
 		public void run() {
-			try {
-				f_fridgeUserServer = new SaslSocketServer(
-						new SpecificResponder(communicationFridgeUser.class, this), new InetSocketAddress(f_ownIP, f_userPort) );
-				f_fridgeUserServer.start();
+			int currentPort = f_userPort;
+			while (f_serverUserReady == false) {
+				try {
+					f_fridgeUserServer = new SaslSocketServer(
+							new SpecificResponder(communicationFridgeUser.class, this), new InetSocketAddress(f_ownIP, currentPort) );
+					f_fridgeUserServer.start();
+					f_serverUserReady = true;
+				} catch (BindException e) {
+					currentPort -= 1;
+				} catch (IOException e) {
+					System.err.println("Failed to start the SmartFridge server for the user.");
+//					e.printStackTrace(System.err);
+//					System.exit(1);
+				}
 			}
-			catch (IOException e) {
-				System.err.println("Failed to start the SmartFridge server for the user.");
-				e.printStackTrace(System.err);
-				System.exit(1);
-			}
-			f_serverUserReady = true;
 			try {
 				f_fridgeUserServer.join();
 			}
@@ -410,6 +417,13 @@ public class DistSmartFridge extends SmartFridge {
 				items.add(item);
 			}
 			return items;
+		}
+
+		@Override
+		public Void registerUserIP(CharSequence userIP, int userPort) throws AvroRemoteException {
+			f_userConnection = new ConnectionData(userIP.toString(), userPort);
+			
+			return null;
 		}
 	}
 	
