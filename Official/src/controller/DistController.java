@@ -39,7 +39,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private Thread f_serverThread;
 	private int f_myPort;
 	private boolean f_serverActive;
-	private Vector<Integer> f_usedFridgePorts;
 	private HashMap<Integer, String> f_IPs;
 	private String f_ownIP;
 	private boolean f_isOriginalServer;
@@ -56,7 +55,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_previousControllerPort = -1;
 		f_previousControllerIP = "";
 		f_serverActive = false;
-		f_usedFridgePorts = new Vector<Integer>();
 		f_IPs = new HashMap<Integer, String>();
 		f_ownIP = new String(ip);
 
@@ -99,8 +97,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 		}
 		
-		mustAllBeTrue.add(new Boolean(this.f_usedFridgePorts.equals(otherController.f_usedFridgePorts)));
-		
 		for(int i = 0; i < mustAllBeTrue.size(); i++){
 			if (!mustAllBeTrue.elementAt(i)){
 				return false;
@@ -123,7 +119,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_previousControllerPort = originalControllerPort;
 		f_previousControllerIP = previousControllerIP;
 		f_serverActive = false;
-		f_usedFridgePorts = usedFridgePorts;
 		f_IPs = IPs;
 		f_ownIP = new String(ip);
 		f_names = names;
@@ -161,10 +156,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_previousControllerPort = oldServer.originalControllerPort;
 		f_previousControllerIP = oldServer.previousControllerIP.toString();
 		f_serverActive = false;
-		
-		if (f_usedFridgePorts == null){
-			f_usedFridgePorts = new Vector<Integer>(oldServer.usedFridgePorts);
-		}
 
 		if (f_IPs == null){
 			f_IPs = new HashMap<Integer, String>();
@@ -354,11 +345,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 					SpecificRequestor.getClient(communicationFridge.Callback.class, client);
 
 			/// Ask the fridge if it's okay to connect a user to it
-			int newID = this.getFridgePort(-1);
-			if (proxy.requestFridgeCommunication(newID) == true){
-				return new CommData(newID, ip);
+			int newPort = proxy.requestFridgeCommunication(f_myPort - 1);
+			if (newPort != -1){
+				return new CommData(newPort, ip);
 			}else{
-				f_usedFridgePorts.removeElement(new Integer(newID));
 				return new CommData(-1, "");
 			}
 		}catch(Exception e){
@@ -367,7 +357,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	
-	
+	/*@Deprecated
 	public int getFridgePort(int start){
 		/// -1 for default start port
 		///  It will NOT take the start port into consideration
@@ -408,13 +398,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_usedFridgePorts.add(new Integer(ret));
 		
 		return ret;
-	}
+	}*/
 	
 	
-
+	@Deprecated
 	@Override
 	public CommData reSetupFridgeCommunication(int fridgeID, int wrongID) throws AvroRemoteException {
-		/// Only needs a port
+		/*/// Only needs a port
 		try {
 			if (f_names.get(fridgeID) != ClientType.SmartFridge){
 				return new CommData(-1, "");
@@ -447,18 +437,20 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 		}catch(Exception e){
 			return new CommData(-1, "");
-		}
+		}*/
+		return new CommData(-1, "");
 	}
 
+	@Deprecated
 	@Override
 	public Void endFridgeCommunication(int usedPort) throws AvroRemoteException {
 		/// TODO test
-		for (int i = 0; i < f_usedFridgePorts.size(); i++){
+		/*for (int i = 0; i < f_usedFridgePorts.size(); i++){
 			if(f_usedFridgePorts.elementAt(i) == usedPort){
 				f_usedFridgePorts.remove(i);
 				break;
 			}
-		}
+		}*/
 		return null;
 	}
 
@@ -501,11 +493,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		} catch (Exception e) {
 			return null;
 		}
-	}
-	
-	public Vector<Integer> getOccupiedPorts(){
-		/// For testing purposes
-		return f_usedFridgePorts;
 	}
 
 	@Override
