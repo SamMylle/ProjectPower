@@ -43,6 +43,7 @@ public class DistSmartFridge extends SmartFridge {
 	
 	private boolean f_serverControllerReady;				// Boolean used to determine if the server for the controller has finished setting up.
 	private boolean f_userServerReady;						// Boolean used to determine if the server for the user has finished setting up.
+	private boolean f_safeToClose;							// TODO test
 	
 	private Server f_fridgeControllerServer;				// The server for the SmartFridge itself
 	private Thread f_fridgeControllerThread;				// The thread used to run the server and handle the requests it gets.
@@ -81,6 +82,7 @@ public class DistSmartFridge extends SmartFridge {
 		
 		f_serverControllerReady = false;
 		f_userServerReady = false;
+		f_safeToClose = true;
 		
 		f_fridgeControllerServer = null;
 		f_fridgeControllerThread = null;
@@ -301,13 +303,13 @@ public class DistSmartFridge extends SmartFridge {
 	 * Stops the user server, as well as 'resetting' all the variables associated with the direct user communication
 	 */
 	private void stopUserServer() {
+		f_userServerReady = false;
+		f_userConnection = null;
+		f_userServerConnection.setPort(-1);
 		if (f_userServerThread != null) {
 			f_userServerThread.interrupt();
 			f_userServerThread = null;
 		}
-		f_userServerReady = false;
-		f_userConnection = null;
-		f_userServerConnection.setPort(-1);
 	}
 	
 	private class UserServer implements Runnable, communicationFridgeUser {
@@ -332,6 +334,14 @@ public class DistSmartFridge extends SmartFridge {
 			try {
 				f_userServer.join();
 			} catch (InterruptedException e) {
+				while (f_safeToClose == false) {
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException e1) { }
+				}
+				try {
+					Thread.sleep(50);					
+				} catch (InterruptedException e1) { }
 				f_userServer.close();
 				f_userServer = null;
 			}
@@ -377,6 +387,7 @@ public class DistSmartFridge extends SmartFridge {
 		public Void registerUserIP(CharSequence userIP, int userPort) throws AvroRemoteException {
 			f_userConnection = new ConnectionData(userIP.toString(), userPort);
 			System.out.println(f_userConnection.toString());
+			f_safeToClose = true;
 			return null;
 		}
 	}
