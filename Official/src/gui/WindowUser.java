@@ -32,7 +32,7 @@ public class WindowUser extends javax.swing.JFrame {
      */
     public WindowUser() {
         initComponents();
-        String localIP = "192.168.1.9";
+        String localIP = "192.168.1.6";
         f_controller = new DistController(5000, 10, localIP);
         f_user = new DistUser("", localIP, localIP, 5000);
         f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);

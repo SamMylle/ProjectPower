@@ -8,6 +8,7 @@ package gui;
 import client.DistUser;
 import client.exception.MultipleInteractionException;
 import client.exception.AbsentException;
+import client.exception.*;
 import gui.PanelInterface;
 
 /**
@@ -103,15 +104,12 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
             // TODO do something here
         } catch (AbsentException e) {
             // TODO do something here
-        }
-        
-        // TODO add exception when no temperatures are available yet in the DistUser class
-        if (currentTemp != 0) {
-            lblCurrentTemp.setText(String.valueOf(currentTemp));
-        } else {
+        } catch (NoTemperatureMeasures e) {
             lblCurrentTemp.setText("No temperature measurements available yet.");
+            return;
         }
         
+        lblCurrentTemp.setText(String.valueOf(currentTemp));
     }
     
     @Override

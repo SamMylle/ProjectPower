@@ -256,7 +256,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return items;
 	}
 	
-	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException {
+	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException, NoTemperatureMeasures {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
@@ -288,8 +288,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			return currentTemp;
 		}
 		
-		// TODO throw exception here
-		return currentTemp;
+		throw new NoTemperatureMeasures("No temperature measures are available yet.");
 	}
 	
 	public void getTemperatureHistory() throws MultipleInteractionException, AbsentException {
