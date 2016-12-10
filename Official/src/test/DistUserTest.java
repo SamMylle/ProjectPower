@@ -19,7 +19,9 @@ import client.DistSmartFridge;
 import client.DistUser;
 import client.User;
 import client.exception.AbsentException;
+import client.exception.FridgeOccupiedException;
 import client.exception.MultipleInteractionException;
+import client.exception.NoFridgeConnectionException;
 import client.util.LightState;
 
 public class DistUserTest {
@@ -199,7 +201,46 @@ public class DistUserTest {
 	 */
 	@Test
 	public void testSetupFridgeComm() {
-		return;
+		DistController controller = new DistController(controllerPort, maxTemp, serverIP);
+		DistUser user = new DistUser("test", clientIP, serverIP, controllerPort);
+		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
+		Exception ex = null;
+		
+		try {
+			user.communicateWithFridge(fridge.getID());
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException e) {
+			ex = e;
+		}
+		assertEquals(ex, null);
+		
+		try {
+			user.openFridge();
+		} catch (NoFridgeConnectionException | AbsentException e) {
+			ex = e;
+		}
+		assertEquals(ex, null);
+		assertTrue(fridge.isOpen());
+		
+		try {
+			user.closeFridge();
+		} catch (NoFridgeConnectionException | AbsentException e) {
+			ex = e;
+		}
+		assertEquals(ex, null);
+		assertFalse(fridge.isOpen());
+		
+		try {
+			user.removeItemFridge("Cat food");
+		} catch (NoFridgeConnectionException e) {
+			ex = e;
+		} catch (AbsentException e) {
+			assertTrue(false);
+		}
+		assertNotEquals(ex, null);
+		
+		fridge.disconnect();
+		user.disconnect();
+		controller.stopServer();
 	}
 	
 	/**
@@ -207,7 +248,43 @@ public class DistUserTest {
 	 */
 	@Test
 	public void testFridgeItemsDirectly() {
-		return;
+		DistController controller = new DistController(controllerPort, maxTemp, serverIP);
+		DistUser user = new DistUser("test", clientIP, serverIP, controllerPort);
+		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
+		Exception ex = null;
+		
+		List<String> items = null;
+		
+		try {
+			user.communicateWithFridge(fridge.getID());
+			user.openFridge();
+			user.addItemFridge("Chocolate");
+			user.addItemFridge("Soup");
+			user.addItemFridge("Beer");
+			
+			items = user.getFridgeItemsDirectly();
+			assertEquals(items.size(), 3);
+			assertTrue(items.contains("Chocolate"));
+			assertTrue(items.contains("Soup"));
+			assertTrue(items.contains("Beer"));
+			
+			user.removeItemFridge("Bear");
+			user.removeItemFridge("Beer");
+			items = user.getFridgeItemsDirectly();
+			assertEquals(items.size(), 2);
+			assertTrue(items.contains("Chocolate"));
+			assertTrue(items.contains("Soup"));
+			assertFalse(items.contains("Beer"));
+			
+			user.closeFridge();
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | NoFridgeConnectionException e) {
+			ex = e;
+		}
+		assertEquals(ex, null);
+		
+		fridge.disconnect();
+		user.disconnect();
+		controller.stopServer();
 	}
 	
 	/// TODO add tests to cover all distributed methods to controller/fridge

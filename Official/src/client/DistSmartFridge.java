@@ -10,6 +10,7 @@ import org.apache.avro.AvroRemoteException;
 
 import avro.ProjectPower.ClientType;
 import avro.ProjectPower.ControllerComm;
+import avro.ProjectPower.ServerData;
 import avro.ProjectPower.communicationFridge;
 import avro.ProjectPower.communicationFridgeUser;
 
@@ -27,13 +28,14 @@ import controller.DistController;
 import util.Logger;
 
 
+// TODO get new Port for the user server when port is already in use.
+// TODO add fault tolerence between user and fridge directly, notification to controller if user dies
 // TODO add IP Address for the user connection
-// TODO add checks at stopServer methods for empty threads
+// TODO be able to start a DistController when being elected
 public class DistSmartFridge extends SmartFridge {
 
 	private String f_ownIP;									// The IP address of the client itself
 	
-	private ConnectionData f_originalControllerConnection; 	// Backup of the first controller connection
 	private ConnectionData f_controllerConnection;			// Data of the current connection to the controller of the system
 	private int f_userPort;
 	
@@ -47,6 +49,10 @@ public class DistSmartFridge extends SmartFridge {
 	private Thread f_fridgeUserThread;						// The thread used to run the smartfridge server, destined to be used by the user
 	
 	
+	/// FAULT TOLERENCE & REPLICATION
+	private ConnectionData f_originalControllerConnection; 	// Backup of the first controller connection
+	private ServerData f_replicatedServerData;				// The replicated data from the DistController
+	private DistController f_controller;					// DistController to be used when this object is elected
 	
 	
 	
@@ -62,7 +68,7 @@ public class DistSmartFridge extends SmartFridge {
 	 * @param controllerIP
 	 * 		The IP address on which the controller server is running.
 	 * @param controllerPort
-	 * 	 	The port on which the controller server is running.
+	 * 	 	The Port number on which the controller server is running.
 	 * 
 	 */
 	public DistSmartFridge(String ownIP, String controllerIP, int controllerPort) {
@@ -72,14 +78,16 @@ public class DistSmartFridge extends SmartFridge {
 		f_ownIP = ownIP;
 		
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
-		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
-		
 		f_userPort = -1;
 		f_serverControllerReady = false;
 		f_serverUserReady = false;
 		f_userConnected = false;
 		f_fridgeUserThread = null;
 		f_fridgeUserServer = null;
+		
+		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
+		f_replicatedServerData = null;
+		f_controller = null;
 		
 		this.setupID();
 		this.startControllerServer();
@@ -205,7 +213,8 @@ public class DistSmartFridge extends SmartFridge {
 			System.err.println("IOException at getNewID() in DistSmartFridge.");
 		}
 	}
-
+	
+	
 	/**
 	 * Class used to run the DistSmartFridge server used by the Controller
 	 * 
@@ -300,6 +309,22 @@ public class DistSmartFridge extends SmartFridge {
 		}
 		f_fridgeUserThread.interrupt();
 		f_fridgeUserThread = null;
+		
+		try {
+			Transceiver transceiver = 
+					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = 
+					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.endFridgeCommunication(f_userPort);
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at stopUserServer() in DistSmartFridge.");
+		}
+		catch (IOException e) {
+			System.err.println("IOException at stopUserServer() in DistSmartFridge.");
+		}
+		f_userPort= -1;
 	}
 	
 	/**

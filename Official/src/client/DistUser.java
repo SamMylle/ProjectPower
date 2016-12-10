@@ -17,13 +17,14 @@ import util.Logger;
 import controller.DistController;
 
 import avro.ProjectPower.*;
-import avro.ProjectPower.ControllerComm;
 import client.exception.*;
 import client.util.ConnectionData;
 import client.util.LightState;
 
 
-// TODO add getNewID() to resolve bind exceptions
+// TODO add method to handle notifications of empty fridges (some type of buffer storing messages?)
+// TODO add fault tolerence between user and fridge directly
+// TODO be able to start a DistController when being elected
 public class DistUser extends User implements communicationUser, Runnable {
 	
 	private String f_ownIP;
@@ -35,10 +36,26 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private boolean f_serverReady;
 	
 	private boolean f_connectedToFridge;
-	private int f_fridgePort;
-	private String f_fridgeIP;
+	private ConnectionData f_fridgeConnection;
+	
+	/// FAULT TOLERENCE & REPLICATION
+	private ConnectionData f_originalControllerConnection; 	// Backup of the connection to the first DistController
+	private ServerData f_replicatedServerData;				// The replicated data from the DistController
+	private DistController f_controller;					// DistController to be used when this object is elected
 	
 	
+	
+	/**
+	 * Constructor for DistUser.
+	 * @param name
+	 * 		The name of the User.
+	 * @param ownIP
+	 * 		The IP address on which the user server needs to run.
+	 * @param controllerIP
+	 * 		The IP address on which the controller server is running.
+	 * @param controllerPort
+	 * 		The Port number on which the controller serveris running.
+	 */
 	public DistUser(String name, String ownIP, String controllerIP, int controllerPort) {
 		super(name);
 		assert controllerPort >= 1000;
@@ -49,8 +66,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
 		f_serverReady = false;
 		f_connectedToFridge = false;
-		f_fridgePort = -1;
-		f_fridgeIP = "";
+		f_fridgeConnection = null;
+		
+		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
+		f_replicatedServerData = null;
+		f_controller = null;
 		
 		this.setupID();
 		this.setupServer();
@@ -65,8 +85,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
+			// TODO server not reachable, start election
 			System.err.println("IOException in constructor for DistUser (getID).");
-			// System.exit(1);
 		}
 	}
 	
@@ -145,7 +165,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private SaslSocketTransceiver getSmartFridgeTransciever() throws Exception {
 		SaslSocketTransceiver transceiver = null;
 		try {
-			transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
+			transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 		} catch (IOException e) {
 			System.err.println("Could not establish connection with the smartfridge.");
 			throw new Exception("");
@@ -358,15 +378,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
-		CommData fridgeData = null;
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			// TODO fix this here, with IP addresses
-			fridgeData = proxy.setupFridgeCommunication(fridgeID);
-//			client = proxy.setupFridgeCommunication(fridgeID);
+			f_fridgeConnection = new ConnectionData(proxy.setupFridgeCommunication(fridgeID));
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
@@ -378,11 +395,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 			return;
 		}
 		
-		if (fridgeData.getID() == -1) {
+		if (f_fridgeConnection.getPort() == -1) {
+			f_fridgeConnection = null;
 			throw new FridgeOccupiedException("The fridge is already being used by another user.");
 		}
-		f_fridgeIP = fridgeData.getIP().toString();
-		f_fridgePort = fridgeData.getID();
 		f_connectedToFridge = true;
 	}
 	
@@ -397,7 +413,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
+				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.addItemRemote(item);
@@ -421,7 +437,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
+				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.removeItemRemote(item);
@@ -447,7 +463,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<CharSequence> _items = null;
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
+				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			_items = proxy.getItemsRemote();
@@ -476,7 +492,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
+				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.openFridgeRemote();
@@ -500,7 +516,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		try {
 			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(new InetSocketAddress(f_fridgeIP, f_fridgePort));
+				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
 				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.closeFridgeRemote();
@@ -514,7 +530,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		
 		f_connectedToFridge = false;
-		f_fridgePort = -1;
+		f_fridgeConnection = null;
 	}
 	
 	/**

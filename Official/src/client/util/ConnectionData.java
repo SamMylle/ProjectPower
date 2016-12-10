@@ -2,12 +2,14 @@ package client.util;
 
 import java.net.InetSocketAddress;
 
+import avro.ProjectPower.CommData;
+
 public class ConnectionData {
 	private String f_IP;
 	private int f_PORT;
 	
 	/**
-	 * Default Constructor for ConnectionData
+	 * Default Constructor for ConnectionData.
 	 */
 	public ConnectionData() {
 		f_IP = "";
@@ -15,18 +17,18 @@ public class ConnectionData {
 	}
 	
 	/**
-	 * Constructor for ConnectionData
+	 * Constructor for ConnectionData.
 	 * The Port will be set to -1 with this constructor.
 	 * 
 	 * @param IP
-	 * 		The IP address to connect to
+	 * 		The IP address to connect to.
 	 */
 	public ConnectionData(String IP) {
 		f_IP = IP;
 	}
 	
 	/**
-	 * Constructor for ConnectionData
+	 * Constructor for ConnectionData.
 	 * @param IP
 	 * 		The IP address to connect to.
 	 * @param PORT
@@ -38,7 +40,7 @@ public class ConnectionData {
 	}
 	
 	/**
-	 * Copy constructor for ConnectionData
+	 * Copy constructor for ConnectionData.
 	 * @param toCopy
 	 * 		The object to be copied.
 	 */
@@ -46,6 +48,17 @@ public class ConnectionData {
 		this(toCopy.getIP(), toCopy.getPort());
 	}
 	
+	
+	/**
+	 * Constructor for ConnectionData using the avro defined type CommData.
+	 * @param data
+	 * 		A CommData object containing the connection information.
+	 */
+	@SuppressWarnings("deprecation")
+	public ConnectionData(CommData data) {
+		f_IP = data.IP.toString();
+		f_PORT = data.ID;
+	}
 	
 	
 	public String getIP() {
