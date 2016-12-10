@@ -73,7 +73,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				Logger.getLogger().f_active = true;
 				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
@@ -143,7 +142,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				Logger.getLogger().f_active = true;
 				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
@@ -203,7 +201,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				Logger.getLogger().f_active = true;
 				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
@@ -268,7 +265,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
-		Logger.getLogger().log("give new ID");
+		System.out.print("give new ID");
 		int newID = this.giveNextID(clientType);
 		ip.toString();
 		f_IPs.put(newID, ip.toString());
@@ -322,23 +319,20 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	@Override
 	public CommData setupFridgeCommunication(int ID) throws AvroRemoteException {
+		/// TODO test this better (i tested it but only short, tests were successful)
 		try {
 			if (f_names.get(ID) != ClientType.SmartFridge){
 				return new CommData(-1, "");
 			}
 			
-			/// TODO catch this?
-			/// TODO make get IP address
 			String ip = this.getIPAddress(ID);
-			
+
 			if (ip == ""){
 				return new CommData(-1, "");
 			}
 			
-			/// TODO catch exception for when connection can't be established
 			Transceiver client = this.setupTransceiver(ID, ip);
 
-			/// Don't think this is necessary
 			if (client == null){
 				return new CommData(-1, "");
 			}
@@ -355,7 +349,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				f_usedFridgePorts.removeElement(new Integer(newID));
 				return new CommData(-1, "");
 			}
-		}catch(IOException e){
+		}catch(Exception e){
 			return new CommData(-1, "");
 		}
 	}
@@ -414,7 +408,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				return new CommData(-1, "");
 			}
 			
-			/// TODO catch this?
 			String ip = this.getIPAddress(fridgeID);
 			
 			if (ip == ""){
@@ -433,7 +426,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 					SpecificRequestor.getClient(communicationFridge.Callback.class, client);
 
 			/// Ask the fridge if it's okay to connect a user to it
-			/// TODO fill in request with port
 			int newID = this.getFridgePort(wrongID);
 			if (proxy.requestFridgeCommunication(newID) == true){
 				return new CommData(newID, ip);
@@ -441,7 +433,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				f_usedFridgePorts.removeElement(newID);
 				return new CommData(-1, "");
 			}
-		}catch(IOException e){
+		}catch(Exception e){
 			return new CommData(-1, "");
 		}
 	}
@@ -472,37 +464,31 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public List<CharSequence> getFridgeInventory(int ID) throws AvroRemoteException {
 		/// return null on invalid stuff and thangs
-		
-		if (f_names.get(ID) != ClientType.SmartFridge){
-			return new ArrayList<CharSequence>();
-		}
-		
-		/// TODO catch this?
-		String ip = this.getIPAddress(ID);
-		
-		if (ip == ""){
-			return new ArrayList<CharSequence>();
-		}
-		
-		Transceiver fridge = this.setupTransceiver(ID, ip);
-
-		if (fridge == null){
-			// If connection can't be established, just say no to the other guy
-			return null;
-		}
-
-		/// get the inventory and return it
-		/// TODO stuff
-		communicationFridge.Callback proxy;
-		try {
+		try{
+			if (f_names.get(ID) != ClientType.SmartFridge){
+				return new ArrayList<CharSequence>();
+			}
+			
+			String ip = this.getIPAddress(ID);
+			
+			if (ip == ""){
+				return new ArrayList<CharSequence>();
+			}
+			
+			Transceiver fridge = this.setupTransceiver(ID, ip);
+	
+			if (fridge == null){
+				// If connection can't be established, just say no to the other guy
+				return null;
+			}
+	
+			/// get the inventory and return it
+			communicationFridge.Callback proxy;
 			proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, fridge);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return new ArrayList<CharSequence>(proxy.getItemsRemote());
+		} catch (Exception e) {
 			return null;
 		}
-
-		return new ArrayList<CharSequence>(proxy.getItemsRemote());
 	}
 	
 	public Vector<Integer> getOccupiedPorts(){
@@ -515,27 +501,25 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// return -1 on invalid stuff and thangs
 		/// return 0 on success
 
-		if (f_names.get(ID) != ClientType.Light){
-			return -1;
-		}
-		
-		/// TODO catch this?
-		String ip = this.getIPAddress(ID);
-		
-		if (ip == ""){
-			return -1;
-		}
-
-		// We know the type is a light (AND it exists)
-		/// TODO correct IP
-		Transceiver light = this.setupTransceiver(ID, ip);
-
-		if (light == null){
-			// If connection can't be established, just say no to the other guy
-			return -1;
-		}
-
 		try {
+			if (f_names.get(ID) != ClientType.Light){
+				return -1;
+			}
+			
+			String ip = this.getIPAddress(ID);
+			
+			if (ip == ""){
+				return -1;
+			}
+	
+			// We know the type is a light (AND it exists if it hasn't failed)
+			Transceiver light = this.setupTransceiver(ID, ip);
+	
+			if (light == null){
+				// If connection can't be established, just say no to the other guy
+				return -1;
+			}
+
 			/// set the state and thangs
 			LightComm.Callback proxy;
 			proxy = SpecificRequestor.getClient(LightComm.Callback.class, light);
@@ -543,53 +527,45 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			proxy.setState(newState);
 
 			return 0;
-		} catch (IOException e) {
-			// TODO remove from system?
-			e.printStackTrace();
-			Logger.getLogger().log("IOEXCEPT for remote light setstate");
+		} catch (Exception e) {
 			return -1;
 		}
 	}
 
 	@Override
 	public int getLightState(int ID) throws AvroRemoteException {
-
-		if (f_names.get(ID) != ClientType.Light){
-			return -1;
-		}
-		
-		/// TODO catch this?
-		String ip = this.getIPAddress(ID);
-		
-		if (ip == ""){
-			return -1;
-		}
-
-		// We know the type is a light (AND it exists)
-		SaslSocketTransceiver light = null;
 		try {
-			/// TODO correct ip
-			light = new SaslSocketTransceiver(new InetSocketAddress(ip, ID));
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			System.exit(0);
-		}
+			if (f_names.get(ID) != ClientType.Light){
+				return -1;
+			}
+			
+			String ip = this.getIPAddress(ID);
+			
+			if (ip == ""){
+				return -1;
+			}
+	
+			// We know the type is a light (AND it exists)
+			SaslSocketTransceiver light = null;
+			try {
+				/// TODO correct ip
+				light = new SaslSocketTransceiver(new InetSocketAddress(ip, ID));
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				System.exit(0);
+			}
+	
+			if (light == null){
+				// If connection can't be established, just say no to the other guy
+				return -1;
+			}
 
-		if (light == null){
-			// If connection can't be established, just say no to the other guy
-			return -1;
-		}
-
-		try {
 			/// set the state and thangs
 			LightComm.Callback proxy;
 			proxy = SpecificRequestor.getClient(LightComm.Callback.class, light);
 
 			return proxy.getState();
-		} catch (IOException e) {
-			// TODO remove from system?
-			e.printStackTrace();
-			Logger.getLogger().log("IOEXCEPT for remote light setstate");
+		} catch (Exception e) {
 			return -1;
 		}
 
@@ -608,54 +584,38 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 		return ret;
 	}
+	
+	public void reaffirmClientsAlive(){
+		
+	}
 
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
-		DistController controller = new DistController(4999, 10, "127.0.1.1");
-		DistController controller2 = new DistController(5000, 10, "127.0.1.1");
+		DistController controller = new DistController(5000, 10, System.getProperty("ip"));;
 
-		int ID;
+		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"), System.getProperty("ip"), 5000);
+		fridge.addItem("bacon");
+		Logger.getLogger().log("Servers started");
+		
+		fridge.stopServerController();
+		fridge = null;
+		
 		try {
-			/// TODO correct IP
-			ID = controller.LogOn(ClientType.Light, "127.0.1.1");
-			controller.retryLogin(ID, ClientType.Light);
-		} catch (AvroRemoteException e1) {
+			Thread.sleep(1000);
+		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
 		
-		
 		try {
-			System.out.print("do somethings pls");
-			System.in.read();
-		} catch (IOException e) {
+			controller.setupFridgeCommunication(5001);
+		} catch (AvroRemoteException e) {
+			System.out.print("here\n");
 			e.printStackTrace();
 		}
-		//System.out.print("Clients:");
-		//System.out.print(controller.f_names.get(5001));
+		System.out.print("here toos\n");
+		
 		
 		controller.stopServer();
-		controller2.stopServer();
-
-		/*DistSmartFridge fridge = new DistSmartFridge(5000);
-		try {
-			fridge.addItemRemote("bacon");
-			fridge.addItemRemote("parmesan cheese");
-		} catch (AvroRemoteException e1) {
-			Logger.getLogger().log("woops");
-		}
-
-		Logger.getLogger().log("Servers started");
-
-		try {
-			List<CharSequence> items = controller.getFridgeInventory(5001);
-
-			for (int i = 0; i < items.size(); i++){
-				Logger.getLogger().log(items.get(i).toString());
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}*/
 	}
 
 
