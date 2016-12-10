@@ -161,10 +161,22 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_previousControllerPort = oldServer.originalControllerPort;
 		f_previousControllerIP = oldServer.previousControllerIP.toString();
 		f_serverActive = false;
-		f_usedFridgePorts = new Vector<Integer>(oldServer.usedFridgePorts);
-		f_IPs = new HashMap<Integer, String>();
+		
+		if (f_usedFridgePorts == null){
+			f_usedFridgePorts = new Vector<Integer>(oldServer.usedFridgePorts);
+		}
+
+		if (f_IPs == null){
+			f_IPs = new HashMap<Integer, String>();
+		}
+		
+			if (f_names == null){
 		f_names = new HashMap<Integer, ClientType>();
-		f_temperatures = new Vector<TemperatureRecord>();
+			}
+
+		if (f_temperatures == null){
+			f_temperatures = new Vector<TemperatureRecord>();
+		}
 		
 		for (int i = 0; i < oldServer.IPsID.size(); i++){
 			String IP = oldServer.IPsIP.get(i).toString();
@@ -586,7 +598,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void reaffirmClientsAlive(){
-		/// TODO test
+		/// TODO test and make timer
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
@@ -640,6 +652,34 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 		return false;
 	}
+	
+	public void lookForOldServer(){
+		if (f_isOriginalServer){
+			return;
+		}
+		
+		try{
+			Transceiver client = this.setupTransceiver(f_previousControllerPort, f_previousControllerIP);
+			
+			ControllerComm.Callback proxy;
+			proxy = SpecificRequestor.getClient(ControllerComm.Callback.class, client);
+			
+			if (! proxy.areYouTheOriginalController()){
+				return;
+			}
+			
+			/// TODO copy my data to server, tell clients to no longer listen to me, but to the original dude
+				
+		}catch(Exception e){
+			/// Couldn't contact the previous server, so he's not back yet
+			return;
+		}
+	}
+
+	@Override
+	public boolean areYouTheOriginalController() throws AvroRemoteException {
+		return f_isOriginalServer;
+	}
 
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
@@ -669,6 +709,4 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		controller.stopServer();
 	}
-
-
 }

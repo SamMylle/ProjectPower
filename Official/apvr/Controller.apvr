@@ -183,6 +183,10 @@
 		"getAllClients":{
 			"request": [],
 			"response": {"type": "array", "items": "Client"}
+		},
+		"areYouTheOriginalController":{
+			"request": [],
+			"response": {"type": "boolean"}
 		}
 	}
 
