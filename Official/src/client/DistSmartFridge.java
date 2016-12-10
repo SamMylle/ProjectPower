@@ -344,6 +344,7 @@ public class DistSmartFridge extends SmartFridge {
 				} catch (InterruptedException e1) { }
 				f_userServer.close();
 				f_userServer = null;
+				f_safeToClose = false;
 			}
 		}
 		
