@@ -586,7 +586,59 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void reaffirmClientsAlive(){
-		
+		/// TODO test
+		for(Integer currentID : f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			boolean keep = this.reaffirmClientAlive(currentIP, currentID, currentType);
+			
+			if (! keep){
+				f_names.remove(currentID);
+				f_IPs.remove(currentID);
+			}
+		}
+	}
+	
+	private boolean reaffirmClientAlive(String ip, int port, ClientType type){
+		try{
+			Transceiver client = this.setupTransceiver(port, ip);
+			
+			if (type == ClientType.Light){
+				LightComm.Callback proxy;
+				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+				
+				/// TODO check isAlive
+				return true;
+			}
+			
+			if (type == ClientType.SmartFridge){
+				communicationFridge.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+				
+				/// TODO check isAlive
+				return true;
+			}
+			
+			if (type == ClientType.TemperatureSensor){
+				communicationTempSensor.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+				
+				/// TODO check isAlive
+				return true;
+			}
+			
+			if (type == ClientType.User){
+				communicationUser.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+				
+				/// TODO check isAlive
+				return true;
+			}
+		}catch(Exception e){
+			return false;
+		}
+		return false;
 	}
 
 	public static void main(String[] args) {
