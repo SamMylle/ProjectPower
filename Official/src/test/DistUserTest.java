@@ -22,6 +22,7 @@ import client.exception.AbsentException;
 import client.exception.FridgeOccupiedException;
 import client.exception.MultipleInteractionException;
 import client.exception.NoFridgeConnectionException;
+import client.exception.NoTemperatureMeasures;
 import client.util.LightState;
 
 public class DistUserTest {
@@ -186,15 +187,7 @@ public class DistUserTest {
 		fridge.disconnect();
 		controller.stopServer();
 	}
-	
-	
-	/**
-	 * Tests getCurrentTemperatureHouse and getTemperatureHistory
-	 */
-	@Test
-	public void testTemperatureData() {
-		return;
-	}
+
 	
 	/**
 	 * Tests communicateWithFridge, openFridge and closeFridge
@@ -287,18 +280,120 @@ public class DistUserTest {
 		controller.stopServer();
 	}
 	
+	
+	/**
+	 * Tests getCurrentTemperatureHouse and getTemperatureHistory
+	 */
+	@Test
+	public void testTemperatureData() {
+		return;
+	}
+	
 	/// TODO add tests to cover all distributed methods to controller/fridge
 	/// 
 	/// getCurrentTemperatureHouse
 	/// getTemperatureHistory
-	/// communicateWithFridge
-	/// openFridge
-	/// closeFridge
-	/// addItemFridge
-	/// removeItemFridge
-	/// getFridgeItemsDirectly
 	
 	/// TODO add test cases for exceptions in several methods
 	
+	/**
+	 * Tests if exception gets thrown when the user is trying to perform an action when not being present in the house
+	 */
+	@Test
+	public void testAbsentException() {
+		DistController controller = new DistController(controllerPort, maxTemp, serverIP);
+		DistUser user = new DistUser("test", clientIP, serverIP, controllerPort);
+		Exception ex = null;
+		
+		user.leave();
+		
+		try {
+			user.getAllClients();
+		} catch (MultipleInteractionException e) {
+			ex = e;
+		} catch (AbsentException e) {
+			ex = e;
+		}
+		assertEquals(ex.getClass(), AbsentException.class);
+		ex = null;
+		
+		try {
+			user.getCurrentTemperatureHouse();
+		} catch (MultipleInteractionException e) {
+			ex = e;
+		} catch (AbsentException e) {
+			ex = e;
+		} catch (NoTemperatureMeasures e) {
+			ex = e;
+		}
+		assertEquals(ex.getClass(), AbsentException.class);
+		ex = null;
+		
+		
+		user.disconnect();
+		controller.stopServer();
+	}
+	
+	/**
+	 * Tests if exception gets thrown when the user tries to interact with other clients, whilst having a direct connection to the fridge
+	 */
+	@Test
+	public void testMultipleInteractionException() {
+		DistController controller = new DistController(controllerPort, maxTemp, serverIP);
+		DistUser user = new DistUser("test", clientIP, serverIP, controllerPort);
+		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
+		Exception ex = null;
+		
+		try {
+			user.communicateWithFridge(fridge.getID());
+			user.openFridge();
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | NoFridgeConnectionException e) {
+			ex = e;
+		}
+		assertEquals(ex, null);
+		
+		try {
+			user.getAllClients();
+		} catch (MultipleInteractionException | AbsentException e) {
+			ex = e;
+		}
+		assertEquals(ex.getClass(), MultipleInteractionException.class);
+		
+		ex = null;
+		try {
+			user.closeFridge();
+		} catch (NoFridgeConnectionException | AbsentException e) {
+			ex = e;
+		}
+		assertEquals(ex, null);
+		
+		fridge.disconnect();
+		user.disconnect();
+		controller.stopServer();
+	}
+	
+	/**
+	 * Tests if exception gets thrown when the user is trying to call a fridge remote method when no connection is setup yet.
+	 */
+	@Test
+	public void testNoFridgeConnectionException() {
+		return;
+	}
+	
+	/**
+	 * Tests if exception gets thrown when the user asks for the current temperature, but with no measurements available yet
+	 */
+	@Test
+	public void testNoTemperatureMeasuresException() {
+		return;
+	}
+	
+	/**
+	 * Tests if exception gets thrown when the user is trying to connect with a fridge that is already connected with another user
+	 */
+	@Test
+	public void testFridgeOccupiedException() {
+		return;
+	}
 	
 }
