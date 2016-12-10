@@ -80,5 +80,9 @@ public class ConnectionData {
 	public InetSocketAddress toSocketAddress() {
 		return new InetSocketAddress(f_IP, f_PORT);
 	}
+	
+	public String toString() {
+		return "IP = " + f_IP + ", port = " + f_PORT;
+	}
 
 }

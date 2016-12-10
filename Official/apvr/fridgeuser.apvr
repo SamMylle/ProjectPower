@@ -3,14 +3,6 @@
 	"protocol" : "communicationFridgeUser",
 	"doc" : "Methods for the SmartFridge class, specifically destined for the USER",
 
-	"types" : [
-		{
-			"type" :"array",
-			"items" :"string",
-			"name" : "itemArray"
-		}
-	],
-
 	"messages" : {
 		"addItemRemote" : {
 			"request" : [{"name" : "itemName", "type" : "string"}],
@@ -26,11 +18,11 @@
 		},
 		"openFridgeRemote" : {
 			"request" : [],
-			"response" : "boolean"
+			"response" : "null"
 		},
 		"closeFridgeRemote" : {
 			"request" : [],
-			"response" : "boolean"
+			"response" : "null"
 		},
 		"registerUserIP" : {
 			"request" : [{"name" : "userIP", "type" : "string"}, {"name" : "userPort", "type" : "int"}],

@@ -8,11 +8,6 @@
 			"type" : "enum",
 			"name" : "ClientType",
 			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
-		},
-		{
-			"type" :"array",
-			"items" :"string",
-			"name" : "itemArray"
 		}
 	],
 

@@ -11,7 +11,10 @@ import java.util.Set;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.SaslSocketServer;
+import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.Transceiver;
+import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -19,8 +22,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import avro.ProjectPower.Client;
 import avro.ProjectPower.ClientType;
+import avro.ProjectPower.CommData;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.UserStatus;
+import avro.ProjectPower.communicationFridgeUser;
 import avro.ProjectPower.communicationTempSensor;
 import client.*;
 import client.exception.AbsentException;
@@ -113,74 +118,67 @@ public class DistSmartFridgeTest {
 		
 		DistController controller = new DistController(controllerPort, 10, serverIP);
 		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
-		DistUser user = new DistUser("Federico Quin", clientIP, serverIP, controllerPort);
-		DistUser user2 = new DistUser("Sam Mylle", clientIP, serverIP, controllerPort);
-		
 		Exception ex = null;
-		
-		assertEquals(user._getStatus(), UserStatus.present);
+
+		CommData connectiondata = null;
 		try {
-			user.communicateWithFridge(fridge.getID());
-		} catch (MultipleInteractionException e) {
-			ex = e;
-		} catch (AbsentException e) {
-			ex = e;
-		} catch (FridgeOccupiedException e) {
+			connectiondata = controller.setupFridgeCommunication(fridge.getID());
+		} catch (AvroRemoteException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
 		
-		/// * actual tests below
-		
-		assertEquals(user2._getStatus(), UserStatus.present);
+		int fridgeUserServerPort = connectiondata.getID();
+		Transceiver transceiver = null;
+		communicationFridgeUser proxy = null;
 		try {
-			user2.communicateWithFridge(fridge.getID());
-		} catch (MultipleInteractionException e) {
-			ex = e;
-		} catch (AbsentException e) {
-			ex = e;
-		} catch (FridgeOccupiedException e) {
+			transceiver = new SaslSocketTransceiver(new InetSocketAddress(clientIP, fridgeUserServerPort));
+			proxy = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+		} catch (IOException e) {
 			ex = e;
 		}
-		assertNotEquals(ex, null);
-		ex = null;
+		assertEquals(ex, null);
 		
 		try {
-			user.openFridge();
-			user.addItemFridge("cheese");
-			user.addItemFridge("soda");
+			proxy.openFridgeRemote();
+			proxy.addItemRemote("cheese");
+			proxy.addItemRemote("soda");
 			
-			List<String> items = user.getFridgeItemsDirectly();
-			Set<String> items2 = fridge.getItems();
+			List<CharSequence> _items = proxy.getItemsRemote();
+			List<String> items = new ArrayList<String>();
+			for (CharSequence item : _items) {
+				items.add(item.toString());
+			}
 			
-			assertEquals(items.size(), items2.size());
 			assertEquals(items.size(), 2);
 			assertTrue(items.contains("soda"));
 			assertTrue(items.contains("cheese"));
-			assertTrue(items2.contains("cheese"));
-			assertTrue(items2.contains("soda"));
 			
-			user.removeItemFridge("cheese");
-			items = user.getFridgeItemsDirectly();
-			items2 = fridge.getItems();
+			proxy.removeItemRemote("cheese");
+			_items = proxy.getItemsRemote();
+			items = new ArrayList<String>();
+			for (CharSequence item : _items) {
+				items.add(item.toString());
+			}
 			
-			assertEquals(items.size(), items2.size());
 			assertEquals(items.size(), 1);
 			assertEquals(items.get(0).toString(), "soda");
-			assertTrue(items2.contains("soda"));
-			assertFalse(items2.contains("cheese"));
 			
-			user.closeFridge();
-		} catch (NoFridgeConnectionException e) {
+			proxy.closeFridgeRemote();
+		} catch (AvroRemoteException e) {
 			e.printStackTrace();
-		} catch (AbsentException e) {
-			e.printStackTrace();
+			System.out.println(e.getClass().toString());
+			ex = e;
+		}
+		assertEquals(ex, null);
+		try {
+			transceiver.close();
+		} catch (IOException e) {
+			ex = e;
 		}
 		assertEquals(ex, null);
 		
 		fridge.disconnect();
-		user.disconnect();
-		user2.disconnect();
 		controller.stopServer();
 	}
 	

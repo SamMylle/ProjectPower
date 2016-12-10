@@ -3,6 +3,7 @@ package client;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -10,6 +11,7 @@ import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.SaslSocketServer;
 import org.apache.avro.ipc.SaslSocketTransceiver;
 import org.apache.avro.ipc.Server;
+import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
@@ -35,7 +37,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private Thread f_serverThread;
 	private boolean f_serverReady;
 	
-	private boolean f_connectedToFridge;
 	private ConnectionData f_fridgeConnection;
 	
 	/// FAULT TOLERENCE & REPLICATION
@@ -65,7 +66,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
 		f_serverReady = false;
-		f_connectedToFridge = false;
 		f_fridgeConnection = null;
 		
 		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
@@ -188,7 +188,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new AbsentException("The user is not present in the house");
 		}
 
-		if (f_connectedToFridge == true) {
+		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
@@ -225,7 +225,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new AbsentException("The user is not present in the house");
 		}
 
-		if (f_connectedToFridge == true) {
+		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
@@ -250,7 +250,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new AbsentException("The user is not present in the house");
 		}
 
-		if (f_connectedToFridge == true) {
+		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
@@ -281,7 +281,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new AbsentException("The user is not present in the house");
 		}
 
-		if (f_connectedToFridge == true) {
+		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
@@ -316,7 +316,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new AbsentException("The user is not present in the house");
 		}
 
-		if (f_connectedToFridge == true) {
+		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
@@ -337,7 +337,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	}
 	
 	/**
-	 * Summary: request the controller for a list of all the clients connected to the system.
+	 * Request the controller for a list of all the clients connected to the system.
 	 * 
 	 * @return A list with all the clients connected to the system.
 	 */
@@ -345,7 +345,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
-		if (f_connectedToFridge == true) {
+		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
@@ -367,169 +367,210 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return clients;
 	}
 	
+	/**
+	 * Requests direct communication with a fridge, as well as sending user IP and Port to the fridge when connection was accepted.
+	 * @param fridgeID
+	 * 		The ID of the fridge to which the connection is desired.
+	 * @throws MultipleInteractionException if the user is already connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 * @throws FridgeOccupiedException if the fridge is occupied by another user.
+	 */
 	public void communicateWithFridge(int fridgeID) 
 		throws MultipleInteractionException, AbsentException, FridgeOccupiedException {
-		
 		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
+			throw new AbsentException("The user is not present in the house.");
 		}
-
-		if (f_connectedToFridge == true) {
-			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
+		if (f_fridgeConnection != null) {
+			throw new MultipleInteractionException("The user is already connected to a fridge, cannot start another connection.");
 		}
+		CommData connection = null;
+		try {
+			Transceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			connection = proxy.setupFridgeCommunication(fridgeID);
+			transceiver.close();
+		} catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
+		} catch (IOException e) {
+			System.err.println("IOException at communicateWithFridge() in DistUser.");
+		}
+		if (connection.ID == -1) {
+			throw new FridgeOccupiedException("The fridge is already occupied by another user.");
+		}
+		f_fridgeConnection = new ConnectionData(connection);
 		
 		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
-			ControllerComm proxy = 
-				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-			f_fridgeConnection = new ConnectionData(proxy.setupFridgeCommunication(fridgeID));
+			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
+			communicationFridgeUser proxy = 
+					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+			proxy.registerUserIP(f_ownIP, this.getID());
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
+		} catch (AvroRemoteException e) {
+			// TODO handle this more appropriately
 			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
-			return;
-		} 
-		catch (IOException e) {
-			System.err.println("IOException at communicateWithFridge() in DistUser.");
-			return;
-		}
-		
-		if (f_fridgeConnection.getPort() == -1) {
 			f_fridgeConnection = null;
-			throw new FridgeOccupiedException("The fridge is already being used by another user.");
+		} catch (IOException e) {
+			// TODO handle this more appropriately
+			System.err.println("IOException at communicateWithFridge() in DistUser.");
+			f_fridgeConnection = null;
 		}
-		f_connectedToFridge = true;
 	}
 	
-	public void addItemFridge(String item) throws NoFridgeConnectionException, AbsentException {
+	/**
+	 * Adds an item to the fridge.
+	 * @param item
+	 * 		The item that gets added.
+	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
+	public void addItemFridge(String item) 
+			throws NoFridgeConnectionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
+			throw new AbsentException("The user is not present in the house.");
+		}
+		if (f_fridgeConnection == null) {
+			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
 
-		if (f_connectedToFridge == false) {
-			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
-		}
-		
 		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
+			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
-				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.addItemRemote(item);
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
+		} catch (AvroRemoteException e) {
+			// TODO handle this more appropriately
 			System.err.println("AvroRemoteException at addItemFridge() in DistUser.");
-		} 
-		catch (IOException e) {
+		} catch (IOException e) {
+			// TODO handle this more appropriately
 			System.err.println("IOException at addItemFridge() in DistUser.");
 		}
 	}
-	public void removeItemFridge(String item) throws NoFridgeConnectionException, AbsentException {
+	
+	/**
+	 * Removes an items from the fridge.
+	 * @param item
+	 * 		The item that needs to get removed.
+	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
+	public void removeItemFridge(String item) 
+			throws NoFridgeConnectionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
+			throw new AbsentException("The user is not present in the house.");
+		}
+		if (f_fridgeConnection == null) {
+			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
 
-		if (f_connectedToFridge == false) {
-			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
-		}
-		
 		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
+			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
-				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.removeItemRemote(item);
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at removeItemFridge() in DistUser.");
-		} 
-		catch (IOException e) {
-			System.err.println("IOException at removeItemFridge() in DistUser.");
+		} catch (AvroRemoteException e) {
+			// TODO handle this more appropriately
+			System.err.println("AvroRemoteException at removeItemRemote() in DistUser.");
+		} catch (IOException e) {
+			// TODO handle this more appropriately
+			System.err.println("IOException at removeItemRemote() in DistUser.");
 		}
 	}
 	
-	public List<String> getFridgeItemsDirectly() throws NoFridgeConnectionException, AbsentException {
+	/**
+	 * Gets the inventory of a fridge directly (direct communication).
+	 * @return A list of strings, containing the items in the fridge.
+	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
+	public List<String> getFridgeItemsDirectly() 
+			throws NoFridgeConnectionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
+			throw new AbsentException("The user is not present in the house.");
+		}
+		if (f_fridgeConnection == null) {
+			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
 
-		if (f_connectedToFridge == false) {
-			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
-		}
-		
+		List<String> items = new ArrayList<String>();
 		List<CharSequence> _items = null;
 		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
+			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
-				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			_items = proxy.getItemsRemote();
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
+		} catch (AvroRemoteException e) {
+			// TODO handle this more appropriately
 			System.err.println("AvroRemoteException at getFridgeItemsDirectly() in DistUser.");
-		} 
-		catch (IOException e) {
+		} catch (IOException e) {
+			// TODO handle this more appropriately
 			System.err.println("IOException at getFridgeItemsDirectly() in DistUser.");
 		}
-		List<String> items = new Vector<String>();
+		
 		for (CharSequence item : _items) {
 			items.add(item.toString());
 		}
 		return items;
 	}
 	
-	public void openFridge() throws NoFridgeConnectionException, AbsentException {
+	/**
+	 * Opens the fridge.
+	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
+	public void openFridge() 
+			throws NoFridgeConnectionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
+			throw new AbsentException("The user is not present in the house.");
+		}
+		if (f_fridgeConnection == null) {
+			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
 
-		if (f_connectedToFridge == false) {
-			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
-		}
 		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
+			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
-				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.openFridgeRemote();
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
+		} catch (AvroRemoteException e) {
+			// TODO handle this more appropriately
 			System.err.println("AvroRemoteException at openFridge() in DistUser.");
-		} 
-		catch (IOException e) {
+		} catch (IOException e) {
+			// TODO handle this more appropriately
 			System.err.println("IOException at openFridge() in DistUser.");
 		}
 	}
 	
-	public void closeFridge() throws NoFridgeConnectionException, AbsentException {
+	/**
+	 * Closes the fridge, as well as the connection with the fridge.
+	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
+	public void closeFridge() 
+			throws NoFridgeConnectionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
+			throw new AbsentException("The user is not present in the house.");
+		}
+		if (f_fridgeConnection == null) {
+			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
 		
-		if (f_connectedToFridge == false) {
-			throw new NoFridgeConnectionException("No connection has been setup with the SmartFridge yet.");
-		}
 		try {
-			SaslSocketTransceiver transceiver = 
-				new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
+			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
 			communicationFridgeUser proxy = 
-				(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
+					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.closeFridgeRemote();
 			transceiver.close();
+		} catch (AvroRemoteException e) {
+			// TODO handle this more appropriately
+			System.err.println("AvroRemoteException at closeFridge() in DistUser.");
+		} catch (IOException e) {
+			// TODO handle this more appropriately
+			System.err.println("IOException at closeFridge() in DistUser.");
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at openFridge() in DistUser.");
-		} 
-		catch (IOException e) {
-			System.err.println("IOException at openFridge() in DistUser.");
-		}
-		
-		f_connectedToFridge = false;
 		f_fridgeConnection = null;
 	}
 	
