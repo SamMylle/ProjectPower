@@ -84,5 +84,10 @@ public class ConnectionData {
 	public String toString() {
 		return "IP = " + f_IP + ", port = " + f_PORT;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		return (o instanceof ConnectionData) && ((ConnectionData) o).f_IP == this.f_IP && ((ConnectionData) o).f_PORT == this.f_PORT;
+	}
 
 }

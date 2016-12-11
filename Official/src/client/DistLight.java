@@ -165,12 +165,10 @@ public class DistLight implements Runnable, LightComm, ControlMessages{
 	}
 
 	@Override
-	public Void newServer(CharSequence newServerIP, int newServerID) throws AvroRemoteException {
+	public void newServer(CharSequence newServerIP, int newServerID) {
 		/// TODO test
 		f_serverip = newServerIP.toString();
 		f_serverPort = newServerID;
-		
-		return null;
 	}
 	
 	public static void main(String[] args) {

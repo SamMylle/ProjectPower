@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import org.apache.avro.AvroRemoteException;
@@ -27,7 +30,7 @@ import client.util.LightState;
 // TODO add method to handle notifications of empty fridges (some type of buffer storing messages?)
 // TODO add fault tolerence between user and fridge directly
 // TODO be able to start a DistController when being elected
-public class DistUser extends User implements communicationUser, Runnable {
+public class DistUser extends User implements communicationUser, Runnable, ControllerCandidate, ControlMessages {
 	
 	private String f_ownIP;
 	
@@ -43,6 +46,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private ConnectionData f_originalControllerConnection; 	// Backup of the connection to the first DistController
 	private ServerData f_replicatedServerData;				// The replicated data from the DistController
 	private DistController f_controller;					// DistController to be used when this object is elected
+	
+	private boolean f_isParticipantElection;					// Equivalent to participant_i in slides
+	private int f_electionID;									// The index of the client in the election
 	
 	
 	
@@ -71,12 +77,17 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
 		f_replicatedServerData = null;
 		f_controller = null;
+		f_isParticipantElection = false;
+		f_electionID = -1;
 		
 		this.setupID();
 		this.setupServer();
 		super._setStatus(UserStatus.present);
 	}
 	
+	/**
+	 * Asks the controller for an initial ID.
+	 */
 	private void setupID() {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
@@ -90,6 +101,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	/**
+	 * Requests and sets a new ID, given by the controller.
+	 */
 	private void getNewID() {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
@@ -103,6 +117,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	/**
+	 * Logs off at the controller.
+	 * @return success of logging off.
+	 */
 	public boolean logOffController() {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
@@ -121,6 +139,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	/**
+	 * Starts the server.
+	 */
 	private void setupServer() {
 		f_serverThread = new Thread(this);
 		f_serverThread.start();
@@ -134,6 +155,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	/**
+	 * Stops the server.
+	 */
 	public void stopServer() {
 		if (f_serverThread == null) {
 			return;
@@ -142,6 +166,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_serverThread = null;
 	}
 	
+	/**
+	 * Log off at the controller and stop the server.
+	 */
 	public void disconnect() {
 		this.logOffController();
 		this.stopServer();
@@ -182,7 +209,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	
 
-	
+	/**
+	 * Gets all the lights and their states.
+	 * @return A list of LightState objects, containing the light IDs and their states respectively.
+	 * @throws MultipleInteractionException if the user is connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
 	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
@@ -220,6 +252,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return lightStates;
 	}
 	
+	/**
+	 * Sets the state of a light.
+	 * @param newState The new state of the chosen light.
+	 * @param lightID The ID of the light from whom the state should be changed.
+	 * @throws MultipleInteractionException if the user is connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
 	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
@@ -245,6 +284,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
+	/**
+	 * Gets and returns the inventory of a fridge.
+	 * @param fridgeID The ID of the fridge from whom the inventory is desired.
+	 * @return A list of strings, representing the items in the fridge.
+	 * @throws MultipleInteractionException if the user is connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
 	public List<String> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
@@ -276,6 +322,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return items;
 	}
 	
+	/**
+	 * Gets the current temperature in the house.
+	 * @return The current temperature in the house.
+	 * @throws MultipleInteractionException if the user is connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 * @throws NoTemperatureMeasures if no temperature measures are available yet.
+	 */
 	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException, NoTemperatureMeasures {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
@@ -311,6 +364,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		throw new NoTemperatureMeasures("No temperature measures are available yet.");
 	}
 	
+	/**
+	 * Gets the history of temperature measurements in the house.
+	 * @throws MultipleInteractionException if the user is connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 */
 	public void getTemperatureHistory() throws MultipleInteractionException, AbsentException {
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
@@ -620,13 +678,289 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return super._getName();
 	}
 	
+	/**
+	 * Starts an election with all the other users/smartfridges.
+	 */
+	private void startElection() {
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		boolean otherCandidates = false;
+		for (ClientType clientType : clientTypes) {
+			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
+				otherCandidates = true;
+				break;
+			}
+		}
+		if (otherCandidates == false) {
+			this.sendNonCandidatesNewServer();
+			
+			// TODO START CONTROLLER SERVER HERE
+			
+			return;
+		}
+		
+		f_electionID = this.getElectionIndex();
+		
+		final ConnectionData nextCandidate = this.getNextCandidate();
+		new Thread() {
+			public void run() {				
+				try {
+					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+					ControllerCandidate proxy = 
+							(ControllerCandidate) SpecificRequestor.getClient(ControllerCandidate.class, transceiver);
+					proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+					transceiver.close();
+				} catch (IOException e) {
+					// TODO handle this more appropriately
+					System.err.println("IOException at startElection() in DistUser.");
+				}
+			}
+		}.start();
+		
+	}
+	
+	/**
+	 * Checks whether this client is still alive.
+	 * @return true
+	 * @throws AvroRemoteException if something went wrong during message transmission.
+	 */
+	@Override
+	public boolean aliveAndKicking() throws AvroRemoteException {
+		return true;
+	}
 
+	/**
+	 * Equivalent to elected function from slides theory (slide 54 - Coordination)
+	 * @param newServerIP
+	 * 		The IP address of the newly elected controller.
+	 * @param newServerID
+	 * 		The Port of the newly elected controller.
+	 * @return
+	 * 		Void.
+	 */
+	@Override
+	public void newServer(final CharSequence newServerIP, final int newServerID) {
+		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+		f_isParticipantElection = false;
+		f_electionID = -1;
+		
+		if (this.getNextCandidate() == f_controllerConnection) {
+			// Do nothing if the next candidate is the new elected controller itself
+			return;
+		}
+		
+		// TODO push this to seperate method, where it can also be used for sendSelfElectedNextCandidate
+		new Thread() {
+			public void run() {				
+				try {
+					ConnectionData nextCandidate = DistUser.this.getNextCandidate();
+					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+					ControlMessages proxy = 
+							(ControlMessages) SpecificRequestor.getClient(ControlMessages.class, transceiver);
+					proxy.newServer(newServerIP, newServerID);
+					transceiver.close();
+				} catch (AvroRemoteException e) {
+					// TODO handle this more appropriately
+					System.err.println("AvroRemoteException at sendSelfElectedNextCandidate() in DistUser.");
+				} catch (IOException e) {
+					// TODO handle this more appropriately
+					System.err.println("IOException at sendSelfElectedNextCandidate() in DistUser.");
+				}
+			}
+		}.start();
+	}
+
+	/**
+	 * Equivalent to election function from slides theory (slide 54 - Coordination)
+	 * @param index
+	 * 		The client index in the election.
+	 * @param clientID
+	 * 		The ID of the client that is currently the highest.
+	 */
+	@Override
+	public void electNewController(final int index, final int clientID) {
+		
+		// Setup index in case of first call
+		if (f_electionID == -1) {
+			f_electionID = this.getElectionIndex();
+		}
+		
+		if (index == f_electionID) {
+			f_isParticipantElection = false;
+			// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
+			// This is in order to fully replicate the algorithm described in the theory.
+			this.sendSelfElectedNextCandidate();
+			this.sendNonCandidatesNewServer();
+			
+			// TODO START NEW CONTROLLER SERVER HERE
+			
+			return;
+		}
+		
+		final ConnectionData nextCandidate = this.getNextCandidate();
+		new Thread() {
+			public void run() {
+				if (clientID > DistUser.this.getID()) {
+					try {
+						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+						ControllerCandidate proxy = 
+								(ControllerCandidate) SpecificRequestor.getClient(ControllerCandidate.class, transceiver);
+						proxy.electNewController(index, clientID);
+						transceiver.close();
+					} catch (IOException e) {
+						// TODO handle this more appropriately
+						System.err.println("IOException at electNewController() in DistUser.");
+					}
+				} else if (clientID <= DistUser.this.getID()) {
+					if (DistUser.this.f_isParticipantElection == false) {
+						try {
+							Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+							ControllerCandidate proxy = 
+									(ControllerCandidate) SpecificRequestor.getClient(ControllerCandidate.class, transceiver);
+							proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+							transceiver.close();
+						} catch (IOException e) {
+							// TODO handle this more appropriately
+							System.err.println("IOException at electNewController() in DistUser.");
+						}
+						DistUser.this.f_isParticipantElection = true;
+					}
+				}
+			}
+		}.start();
+	}
+	
+	/**
+	 * Gets the ConnectionData of the next client in the ring.
+	 * @return
+	 * 		The ConnectionDat of the next client in the ring.
+	 */
+	private ConnectionData getNextCandidate() {
+		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
+		List<Integer> participantIDs = new Vector<Integer>();
+		
+		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		List<Integer> clientIPsID = f_replicatedServerData.getIPsID();
+		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
+		
+		/// This is written in a general way, need to make some changes in order to make this more general
+		// TODO write this more generic if time allows it
+		for (int i = 0; i < clientIDs.size(); i ++) {
+			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
+				participants.put(clientIDs.get(i), clientTypes.get(i));
+				participantIDs.add(clientIDs.get(i));
+			}
+		}
+		
+		if (f_electionID == participantIDs.size()-1){
+			String nextIP = clientIPsIP.get(clientIPsID.indexOf(participantIDs.get(0))).toString();
+			return new ConnectionData(nextIP, participantIDs.get(0).intValue());
+		}
+		
+		String nextIP = clientIPsIP.get( clientIPsID.indexOf(participantIDs.get(f_electionID+1)) ).toString();
+		int nextPort = participantIDs.get(f_electionID+1);
+		return new ConnectionData(nextIP, nextPort);
+	}
+	
+	/**
+	 * Gets the index of the participant in the election, according to the data provided by replication.
+	 * @return
+	 * 		The index of this client in the election process.
+	 */
+	private int getElectionIndex() {
+		List<Integer> participants = new Vector<Integer>();
+		
+		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		
+		/// This is written in a general way, need to make some changes in order to make this more general
+		// TODO write this more generic if time allows it
+		for (int i = 0; i < clientIDs.size(); i ++) {
+			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
+				participants.add(clientIDs.get(i));
+			}
+		}
+		
+		return participants.indexOf(new Integer(this.getID()));
+	}
+	
+	/**
+	 * Notifies the next participant in the ring that this client has been elected.
+	 */
+	private void sendSelfElectedNextCandidate() {
+		new Thread() {
+			public void run() {				
+				try {
+					ConnectionData nextCandidate = DistUser.this.getNextCandidate();
+					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+					ControlMessages proxy = 
+							(ControlMessages) SpecificRequestor.getClient(ControlMessages.class, transceiver);
+					proxy.newServer(f_ownIP, DistUser.this.getID());
+					transceiver.close();
+				} catch (AvroRemoteException e) {
+					// TODO handle this more appropriately
+					System.err.println("AvroRemoteException at sendSelfElectedNextCandidate() in DistUser.");
+				} catch (IOException e) {
+					// TODO handle this more appropriately
+					System.err.println("IOException at sendSelfElectedNextCandidate() in DistUser.");
+				}
+			}
+		}.start();
+	}
+	
+	/**
+	 * Notifies all the clients that did not participate in the election that this client was elected.
+	 */
+	private void sendNonCandidatesNewServer() {
+		HashMap<Integer, ClientType> nonParticipants = new HashMap<Integer, ClientType>();
+		
+		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		List<Integer> clientIPsID = f_replicatedServerData.getIPsID();
+		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
+		
+		/// This is written in a general way, need to make some changes in order to make this more general
+		// TODO write this more generic if time allows it
+		for (int i = 0; i < clientIDs.size(); i ++) {
+			if (clientTypes.get(i) == ClientType.Light || clientTypes.get(i) == ClientType.TemperatureSensor) {
+				nonParticipants.put(clientIDs.get(i), clientTypes.get(i));
+			}
+		}
+		
+		// TODO test this extensively
+		
+		// This part is not asynchronous, since it is not really part of the Roberts-Chang algorithm
+		Iterator it = nonParticipants.entrySet().iterator();
+		while (it.hasNext() == true) {
+			Map.Entry pair = (Map.Entry)it.next();
+			String clientIP = clientIPsIP.get(clientIPsID.indexOf(pair.getKey())).toString();
+			Integer clientPort = (Integer) pair.getKey();
+			
+			try {
+				Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(clientIP, clientPort));
+				ControlMessages proxy = 
+						(ControlMessages) SpecificRequestor.getClient(ControlMessages.class, transceiver);
+				proxy.newServer(f_ownIP, this.getID());
+				transceiver.close();
+			} catch (AvroRemoteException e) {
+				// TODO handle this more appropriately
+				System.err.println("AvroRemoteException at sendNonCandidatesNewServer() in DistUser.");
+			} catch (IOException e) {
+				// TODO handle this more appropriately
+				System.err.println("IOException at sendNonCandidatesNewServer() in DistUser.");
+			}
+		}
+	}
+
+	
+	
+	
 	
 	/**
 	 * Main function, used for testing
 	 */
- 	public static void main(String[] args) {
- 		final int controllerPort = 5000;
+	public static void main(String[] args) {
+		final int controllerPort = 5000;
 		DistController controller = new DistController(controllerPort, 10, System.getProperty("ip"));
 		
 		DistUser remoteUser = 
@@ -656,5 +990,4 @@ public class DistUser extends User implements communicationUser, Runnable {
 		controller.stopServer();
 		System.exit(0);
 	}
-
 }

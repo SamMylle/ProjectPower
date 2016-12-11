@@ -56,7 +56,8 @@
 				{"name": "newServerIP", "type": "string"},
 				{"name": "newServerID", "type": "int"}
 			],
-			"response": "null"
+			"response": "null", 
+			"one-way" : true
 		}
 	}
 
