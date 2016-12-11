@@ -9,6 +9,8 @@ import java.util.Set;
 import org.apache.avro.AvroRemoteException;
 
 import avro.ProjectPower.ClientType;
+import avro.ProjectPower.ControlMessages;
+import avro.ProjectPower.ControllerCandidate;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.ServerData;
 import avro.ProjectPower.communicationFridge;
@@ -224,7 +226,7 @@ public class DistSmartFridge extends SmartFridge {
 	 * This class implements all the methods that the controller needs, 
 	 * 		aswell as running the thread for the DistSmartFridge server respectively.
 	 */
-	public class controllerServer implements Runnable, communicationFridge {
+	public class controllerServer implements Runnable, communicationFridge, ControlMessages, ControllerCandidate {
 		
 		controllerServer() { }
 		
@@ -283,6 +285,41 @@ public class DistSmartFridge extends SmartFridge {
 			f_userServerConnection.setPort(userServerPort);
 			DistSmartFridge.this.startUserServer();
 			return f_userServerConnection.getPort();
+		}
+
+		/**
+		 * Checks if this client is still alive, which it clearly is when answering to the query.
+		 * @throws AvroRemoteException if something went wrong during transmission.
+		 */
+		@Override
+		public boolean aliveAndKicking() throws AvroRemoteException {
+			return true;
+		}
+
+		/**
+		 * Equivalent to elected function from slides theory (slide 54 - Coordination)
+		 * @param newServerIP
+		 * 		The IP address of the newly elected controller.
+		 * @param newServerID
+		 * 		The Port of the newly elected controller.
+		 * @return
+		 * 		Void.
+		 */
+		@Override
+		public void newServer(CharSequence newServerIP, int newServerID) {
+			// TODO write this method.
+		}
+		
+		/**
+		 * Equivalent to election function from slides theory (slide 54 - Coordination)
+		 * @param index
+		 * 		The client index in the election.
+		 * @param clientID
+		 * 		The ID of the client that is currently the highest.
+		 */
+		@Override
+		public void electNewController(int index, int clientID) {
+			// TODO write this method
 		}
 	}
 	/**

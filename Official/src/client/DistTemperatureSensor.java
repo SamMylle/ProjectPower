@@ -22,6 +22,7 @@ import client.util.ConnectionData;
 import controller.DistController;
 import util.Logger;
 import avro.ProjectPower.ClientType;
+import avro.ProjectPower.ControlMessages;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.communicationTempSensor;
 import avro.ProjectPower.communicationUser;
@@ -29,7 +30,7 @@ import avro.ProjectPower.communicationUser;
 
 public class DistTemperatureSensor 
 	extends TemperatureSensor 
-	implements communicationTempSensor, Runnable {
+	implements communicationTempSensor, Runnable, ControlMessages {
 	
 	private ConnectionData f_controllerCommunication;
 	private Server f_server;
@@ -221,6 +222,24 @@ public class DistTemperatureSensor
 			e.printStackTrace();
 		}
 		System.exit(0);
+	}
+
+	/**
+	 * Checks if this client is still alive, which it clearly is when answering to the query.
+	 * @return true.
+	 * @throws AvroRemoteException if something went wrong during transmission.
+	 */
+	@Override
+	public boolean aliveAndKicking() throws AvroRemoteException {
+		return true;
+	}
+
+	/**
+	 * Adjusts the connection to the controller to the new elected controller.
+	 */
+	@Override
+	public void newServer(CharSequence newServerIP, int newServerID) {
+		f_controllerCommunication = new ConnectionData(newServerIP.toString(), newServerID);
 	}
 
 }
