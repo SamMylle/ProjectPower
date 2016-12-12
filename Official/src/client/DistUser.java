@@ -666,13 +666,20 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	
 	
 	/**
-	 * communicationUser interface methods
+	 * Gets the status of the user.
+	 * @return The current status of the user.
+	 * @throws AvroRemoteException if something goes wrong during transmission.
 	 */
 	@Override
 	public UserStatus getStatus() throws AvroRemoteException {
 		return super._getStatus();
 	}
 	
+	/**
+	 * Gets the name of the user.
+	 * @return The name of the user.
+	 * @throws AvroRemoteException if something goes wrong during transmission.
+	 */
 	@Override
 	public String getName() throws AvroRemoteException {
 		return super._getName();
@@ -698,6 +705,7 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 			return;
 		}
 		
+		f_isParticipantElection = true;
 		f_electionID = this.getElectionIndex();
 		
 		final ConnectionData nextCandidate = this.getNextCandidate();
@@ -832,7 +840,7 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	/**
 	 * Gets the ConnectionData of the next client in the ring.
 	 * @return
-	 * 		The ConnectionDat of the next client in the ring.
+	 * 		The ConnectionData of the next client in the ring.
 	 */
 	private ConnectionData getNextCandidate() {
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
