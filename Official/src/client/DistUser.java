@@ -665,6 +665,7 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		}
 		catch (InterruptedException e) {
 			f_server.close();
+			f_server = null;
 //			Logger.getLogger().log("Closed the DistUser server.");
 		}
 		
