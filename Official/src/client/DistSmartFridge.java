@@ -28,6 +28,8 @@ import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
+import client.exception.AbsentException;
+import client.exception.NoFridgeConnectionException;
 import client.util.ConnectionData;
 
 import controller.DistController;
@@ -432,6 +434,12 @@ public class DistSmartFridge extends SmartFridge {
 			f_userServerThread.interrupt();
 			f_userServerThread = null;
 		}
+		
+		while (f_userServer != null) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) { }
+		}
 	}
 	
 	private class UserServer implements Runnable, communicationFridgeUser {
@@ -689,6 +697,30 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 
+	
+	private void startControllerTakeOver() {
+		this.stopServerController();
+		if (this.f_userServerConnection != null) {
+			this.closeFridge();
+			this.stopUserServer();
+		}
+		this.f_userServerConnection = null;
+		
+		new Thread() {
+			public void run() {
+				DistSmartFridge.this.f_replicatedServerData.setPort(DistSmartFridge.this.getID());
+				DistSmartFridge.this.f_replicatedServerData.setIp(DistSmartFridge.this.f_ownIP);
+				DistSmartFridge.this.f_controller = new DistController(DistSmartFridge.this.f_replicatedServerData);
+				while (DistSmartFridge.this.f_controller.serverIsActive() == true) {
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException e) { }
+				}
+				DistSmartFridge.this.f_controller = null;
+				DistSmartFridge.this.startControllerServer();
+			}
+		}.start();
+	}
 	
 	
 	

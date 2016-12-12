@@ -164,6 +164,12 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		}
 		f_serverThread.interrupt();
 		f_serverThread = null;
+		
+		while (f_server != null) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) { }
+		}
 	}
 	
 	/**
@@ -686,6 +692,15 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	}
 	
 	/**
+	 * Notification that the fridge has been closed.
+	 */
+	@Override
+	public void notifyFridgeClosed() {
+		f_fridgeConnection = null;
+	}
+	
+	
+	/**
 	 * Starts an election with all the other users/smartfridges.
 	 */
 	private void startElection() {
@@ -800,6 +815,7 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 			this.sendNonCandidatesNewServer();
 			
 			// TODO START NEW CONTROLLER SERVER HERE
+			this.startControllerTakeOver();
 			
 			return;
 		}
@@ -961,6 +977,31 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	}
 
 	
+	private void startControllerTakeOver() {
+		this.stopServer();
+		if (this.f_fridgeConnection != null) {
+			try {
+				this.closeFridge();
+			} catch (NoFridgeConnectionException e) {} 
+			  catch (AbsentException e) {}
+		}
+		this.f_fridgeConnection = null;
+		
+		new Thread() {
+			public void run() {
+				DistUser.this.f_replicatedServerData.setPort(DistUser.this.getID());
+				DistUser.this.f_replicatedServerData.setIp(DistUser.this.f_ownIP);
+				DistUser.this.f_controller = new DistController(DistUser.this.f_replicatedServerData);
+				while (DistUser.this.f_controller.serverIsActive() == true) {
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException e) { }
+				}
+				DistUser.this.f_controller = null;
+				DistUser.this.setupServer();
+			}
+		}.start();
+	}
 	
 	
 	
@@ -998,4 +1039,6 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		controller.stopServer();
 		System.exit(0);
 	}
+
+
 }

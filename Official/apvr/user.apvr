@@ -24,6 +24,11 @@
 		"getName" : {
 			"request" : [],
 			"response" : "string"
+		},
+		"notifyFridgeClosed" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
 		}
 	}
 }
