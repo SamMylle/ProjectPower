@@ -30,7 +30,7 @@ import client.util.LightState;
 // TODO add method to handle notifications of empty fridges (some type of buffer storing messages?)
 // TODO add fault tolerence between user and fridge directly
 // TODO be able to start a DistController when being elected
-public class DistUser extends User implements communicationUser, Runnable, ControllerCandidate, ControlMessages {
+public class DistUser extends User implements communicationUser, Runnable, ControllerCandidate {
 	
 	private String f_ownIP;
 	

@@ -14,7 +14,6 @@ import java.util.Vector;
 import org.apache.avro.AvroRemoteException;
 
 import avro.ProjectPower.ClientType;
-import avro.ProjectPower.ControlMessages;
 import avro.ProjectPower.ControllerCandidate;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.ServerData;
@@ -238,7 +237,7 @@ public class DistSmartFridge extends SmartFridge {
 	 * This class implements all the methods that the controller needs, 
 	 * 		aswell as running the thread for the DistSmartFridge server respectively.
 	 */
-	public class controllerServer implements Runnable, communicationFridge, ControlMessages, ControllerCandidate {
+	public class controllerServer implements Runnable, communicationFridge, ControllerCandidate {
 		
 		controllerServer() { }
 		

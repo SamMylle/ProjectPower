@@ -9,10 +9,12 @@ package avro.ProjectPower;
 /** Methods for the User class */
 @org.apache.avro.specific.AvroGenerated
 public interface communicationUser {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationUser\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the User class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]},{\"type\":\"enum\",\"name\":\"UserStatus\",\"symbols\":[\"present\",\"absent\"]}],\"messages\":{\"getStatus\":{\"request\":[],\"response\":\"UserStatus\"},\"getName\":{\"request\":[],\"response\":\"string\"},\"notifyFridgeClosed\":{\"request\":[],\"response\":\"null\",\"one-way\":true}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationUser\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the User class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]},{\"type\":\"enum\",\"name\":\"UserStatus\",\"symbols\":[\"present\",\"absent\"]},{\"type\":\"record\",\"name\":\"ServerData\",\"fields\":[{\"name\":\"port\",\"type\":\"int\"},{\"name\":\"originalControllerPort\",\"type\":\"int\"},{\"name\":\"maxTemperatures\",\"type\":\"int\"},{\"name\":\"currentMaxPort\",\"type\":\"int\"},{\"name\":\"ip\",\"type\":\"string\"},{\"name\":\"previousControllerIP\",\"type\":\"string\"},{\"name\":\"usedFridgePorts\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IPsID\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IPsIP\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"namesID\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"namesClientType\",\"type\":{\"type\":\"array\",\"items\":\"ClientType\"}},{\"name\":\"temperatures\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"array\",\"items\":\"double\"}}},{\"name\":\"temperaturesIDs\",\"type\":{\"type\":\"array\",\"items\":\"int\"}}]}],\"messages\":{\"getStatus\":{\"request\":[],\"response\":\"UserStatus\"},\"getName\":{\"request\":[],\"response\":\"string\"},\"notifyFridgeClosed\":{\"request\":[],\"response\":\"null\",\"one-way\":true},\"aliveAndKicking\":{\"request\":[],\"response\":\"boolean\"},\"newServer\":{\"request\":[{\"name\":\"newServerIP\",\"type\":\"string\"},{\"name\":\"newServerID\",\"type\":\"int\"}],\"response\":\"null\",\"one-way\":true}}}");
   avro.ProjectPower.UserStatus getStatus() throws org.apache.avro.AvroRemoteException;
   java.lang.CharSequence getName() throws org.apache.avro.AvroRemoteException;
   void notifyFridgeClosed();
+  boolean aliveAndKicking() throws org.apache.avro.AvroRemoteException;
+  void newServer(java.lang.CharSequence newServerIP, int newServerID);
 
   @SuppressWarnings("all")
   /** Methods for the User class */
@@ -20,5 +22,6 @@ public interface communicationUser {
     public static final org.apache.avro.Protocol PROTOCOL = avro.ProjectPower.communicationUser.PROTOCOL;
     void getStatus(org.apache.avro.ipc.Callback<avro.ProjectPower.UserStatus> callback) throws java.io.IOException;
     void getName(org.apache.avro.ipc.Callback<java.lang.CharSequence> callback) throws java.io.IOException;
+    void aliveAndKicking(org.apache.avro.ipc.Callback<java.lang.Boolean> callback) throws java.io.IOException;
   }
 }

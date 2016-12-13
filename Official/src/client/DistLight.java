@@ -19,7 +19,7 @@ import util.Logger;
 
 import avro.ProjectPower.*;
 
-public class DistLight implements Runnable, LightComm, ControlMessages{
+public class DistLight implements Runnable, LightComm{
 	public Light f_light;
 	private Server f_server;
 	private Thread f_serverThread;

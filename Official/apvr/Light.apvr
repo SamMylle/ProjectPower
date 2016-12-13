@@ -19,6 +19,18 @@
 		"getState" : {
 			"request" : [],
 			"response" : "int"
+		},
+		"aliveAndKicking":{
+			"request": [],
+			"response": "boolean"
+		},
+		"newServer":{
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null", 
+			"one-way" : true
 		}
 	}
 }

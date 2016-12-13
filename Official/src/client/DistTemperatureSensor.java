@@ -22,7 +22,6 @@ import client.util.ConnectionData;
 import controller.DistController;
 import util.Logger;
 import avro.ProjectPower.ClientType;
-import avro.ProjectPower.ControlMessages;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.communicationTempSensor;
 import avro.ProjectPower.communicationUser;
@@ -30,7 +29,7 @@ import avro.ProjectPower.communicationUser;
 
 public class DistTemperatureSensor 
 	extends TemperatureSensor 
-	implements communicationTempSensor, Runnable, ControlMessages {
+	implements communicationTempSensor, Runnable {
 	
 	private ConnectionData f_controllerCommunication;
 	private Server f_server;

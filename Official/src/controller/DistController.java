@@ -52,8 +52,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		//f_controller = new Controller(port + 1, 10);
 		f_myPort = port;
-		f_previousControllerPort = -1;
-		f_previousControllerIP = "";
+		f_previousControllerPort = port;
+		f_previousControllerIP = ip;
 		f_serverActive = false;
 		f_IPs = new HashMap<Integer, String>();
 		f_ownIP = new String(ip);
@@ -655,6 +655,35 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				continue;
 			}
 		}
+	}
+	
+	public ServerData makeBackup(){
+		ServerData data = new ServerData();
+		
+		data.setCurrentMaxPort(this.f_nextID);
+		data.setIp(f_ownIP);
+		data.setPort(f_myPort);
+		data.setMaxTemperatures(f_maxTemperatures);
+		if (this.f_isOriginalServer){
+			data.setOriginalControllerPort(this.f_myPort);
+			data.setPreviousControllerIP(this.f_ownIP);
+		}else{
+			data.setOriginalControllerPort(this.f_previousControllerPort);
+			data.setPreviousControllerIP(this.f_previousControllerIP);
+		}
+		data.setIPsID(new LinkedList<Integer>(f_IPs.keySet()));
+		data.setIPsIP(new LinkedList<CharSequence>(f_IPs.values()));
+		data.setNamesClientType(new LinkedList<ClientType>(f_names.values()));
+		data.setNamesID(new LinkedList<Integer>(f_names.keySet()));
+		
+		/// TODO add temperatures, don't feel like it ATM
+		List<Integer> temperatureIDs = new LinkedList<Integer>();
+		List<List<Double>> temperatures = new LinkedList<List<Double>> ();
+		
+		data.setTemperaturesIDs(temperatureIDs);
+		data.setTemperatures(temperatures);
+		
+		return data;
 	}
 
 	public static void main(String[] args) {

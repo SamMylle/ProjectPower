@@ -8,6 +8,25 @@
 			"type" : "enum",
 			"name" : "ClientType",
 			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		},
+		{
+			"type": "record",
+			"name": "ServerData",
+			"fields": [
+				{"name": "port", "type": "int"},
+				{"name": "originalControllerPort", "type": "int"},
+				{"name": "maxTemperatures", "type": "int"},
+				{"name": "currentMaxPort", "type": "int"},
+				{"name": "ip", "type": "string"},
+				{"name": "previousControllerIP", "type": "string"},
+				{"name": "usedFridgePorts", "type": {"type": "array", "items": "int"}},
+				{"name": "IPsID", "type": {"type": "array", "items": "int"}},
+				{"name": "IPsIP", "type": {"type": "array", "items": "string"}},
+				{"name": "namesID", "type": {"type": "array", "items": "int"}},
+				{"name": "namesClientType", "type": {"type": "array", "items": "ClientType"}},
+				{"name": "temperatures", "type": {"type": "array", "items": {"type": "array", "items": "double"}}},
+				{"name": "temperaturesIDs", "type": {"type": "array", "items": "int"}}
+			]
 		}
 	],
 
@@ -23,6 +42,18 @@
 		"requestFridgeCommunication":{
 			"request": [{"name" : "userServerPort", "type" : "int"}],
 			"response": "int"
+		},
+		"aliveAndKicking":{
+			"request": [],
+			"response": "boolean"
+		},
+		"newServer":{
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null", 
+			"one-way" : true
 		}
 	}
 }

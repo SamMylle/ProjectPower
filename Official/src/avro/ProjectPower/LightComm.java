@@ -6,18 +6,21 @@
 package avro.ProjectPower;
 
 @SuppressWarnings("all")
-/** Methods for the SmartFridge class */
+/** Methods for the Light class */
 @org.apache.avro.specific.AvroGenerated
 public interface LightComm {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"LightComm\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the SmartFridge class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"setState\":{\"request\":[{\"name\":\"state\",\"type\":\"int\"}],\"response\":\"null\"},\"getState\":{\"request\":[],\"response\":\"int\"}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"LightComm\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the Light class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"setState\":{\"request\":[{\"name\":\"state\",\"type\":\"int\"}],\"response\":\"null\"},\"getState\":{\"request\":[],\"response\":\"int\"},\"aliveAndKicking\":{\"request\":[],\"response\":\"boolean\"},\"newServer\":{\"request\":[{\"name\":\"newServerIP\",\"type\":\"string\"},{\"name\":\"newServerID\",\"type\":\"int\"}],\"response\":\"null\",\"one-way\":true}}}");
   java.lang.Void setState(int state) throws org.apache.avro.AvroRemoteException;
   int getState() throws org.apache.avro.AvroRemoteException;
+  boolean aliveAndKicking() throws org.apache.avro.AvroRemoteException;
+  void newServer(java.lang.CharSequence newServerIP, int newServerID);
 
   @SuppressWarnings("all")
-  /** Methods for the SmartFridge class */
+  /** Methods for the Light class */
   public interface Callback extends LightComm {
     public static final org.apache.avro.Protocol PROTOCOL = avro.ProjectPower.LightComm.PROTOCOL;
     void setState(int state, org.apache.avro.ipc.Callback<java.lang.Void> callback) throws java.io.IOException;
     void getState(org.apache.avro.ipc.Callback<java.lang.Integer> callback) throws java.io.IOException;
+    void aliveAndKicking(org.apache.avro.ipc.Callback<java.lang.Boolean> callback) throws java.io.IOException;
   }
 }
