@@ -54,6 +54,13 @@
 			],
 			"response": "null", 
 			"one-way" : true
+		},
+		"makeBackup":{
+			"request": [
+				{"name": "data", "type": "ServerData"}
+			],
+			"response": "null", 
+			"one-way" : true
 		}
 	}
 }
