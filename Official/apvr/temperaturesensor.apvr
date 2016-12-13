@@ -12,10 +12,6 @@
 	],
 
 	"messages" : {
-		"isAlive" : {
-			"request" : [],
-			"response" : "boolean"
-		},
 		"aliveAndKicking":{
 			"request": [],
 			"response": "boolean"

@@ -165,12 +165,6 @@ public class DistTemperatureSensor
 		}
 	}
 	
-	@Override
-	public boolean isAlive() throws AvroRemoteException {
-		return true;
-	}
-
-	
 	class sendTemperatureTask extends TimerTask {
 		private DistTemperatureSensor remoteSensor;
 		

@@ -30,7 +30,7 @@ import client.util.LightState;
 // TODO add method to handle notifications of empty fridges (some type of buffer storing messages?)
 // TODO add fault tolerence between user and fridge directly
 // TODO be able to start a DistController when being elected
-public class DistUser extends User implements communicationUser, Runnable, ControllerCandidate {
+public class DistUser extends User implements communicationUser, Runnable {
 	
 	private String f_ownIP;
 	
@@ -701,6 +701,13 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	}
 	
 	
+	
+	/// |===================================|
+	/// |	Replication & Fault Tolerence	|
+	/// |		Enter at your own risk		|
+	/// |===================================|
+	
+	
 	/**
 	 * Starts an election with all the other users/smartfridges.
 	 */
@@ -716,22 +723,28 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		if (otherCandidates == false) {
 			this.sendNonCandidatesNewServer();
 			
-			// TODO START CONTROLLER SERVER HERE
-			
+			this.startControllerTakeOver();
 			return;
 		}
 		
 		f_isParticipantElection = true;
 		f_electionID = this.getElectionIndex();
 		
-		final ConnectionData nextCandidate = this.getNextCandidate();
+		final ConnectionData nextCandidate = this.getNextCandidateConnection();
+		final ClientType nextCandidateType = this.getNextCandidateType();
 		new Thread() {
 			public void run() {				
 				try {
 					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					ControllerCandidate proxy = 
-							(ControllerCandidate) SpecificRequestor.getClient(ControllerCandidate.class, transceiver);
-					proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+					if (nextCandidateType == ClientType.SmartFridge) {
+						communicationFridge proxy = (communicationFridge) 
+								SpecificRequestor.getClient(communicationFridge.class, transceiver);
+						proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+					} else if (nextCandidateType == ClientType.User) {
+						communicationUser proxy = (communicationUser) 
+								SpecificRequestor.getClient(communicationUser.class, transceiver);
+						proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+					}
 					transceiver.close();
 				} catch (IOException e) {
 					// TODO handle this more appropriately
@@ -767,7 +780,7 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		f_isParticipantElection = false;
 		f_electionID = -1;
 		
-		if (this.getNextCandidate() == f_controllerConnection) {
+		if (this.getNextCandidateConnection() == f_controllerConnection) {
 			// Do nothing if the next candidate is the new elected controller itself
 			return;
 		}
@@ -776,11 +789,18 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		new Thread() {
 			public void run() {				
 				try {
-					ConnectionData nextCandidate = DistUser.this.getNextCandidate();
+					ConnectionData nextCandidate = DistUser.this.getNextCandidateConnection();
 					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					ControlMessages proxy = 
-							(ControlMessages) SpecificRequestor.getClient(ControlMessages.class, transceiver);
-					proxy.newServer(newServerIP, newServerID);
+					ClientType nextCandidateType = DistUser.this.getNextCandidateType();
+					if (nextCandidateType == ClientType.SmartFridge) {
+						communicationFridge proxy = (communicationFridge) 
+								SpecificRequestor.getClient(communicationFridge.class, transceiver);
+						proxy.newServer(newServerIP, newServerID);
+					} else if (nextCandidateType == ClientType.User) {
+						communicationUser proxy = (communicationUser) 
+								SpecificRequestor.getClient(communicationUser.class, transceiver);
+						proxy.newServer(newServerIP, newServerID);
+					}
 					transceiver.close();
 				} catch (AvroRemoteException e) {
 					// TODO handle this more appropriately
@@ -815,21 +835,26 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 			this.sendSelfElectedNextCandidate();
 			this.sendNonCandidatesNewServer();
 			
-			// TODO START NEW CONTROLLER SERVER HERE
 			this.startControllerTakeOver();
-			
 			return;
 		}
 		
-		final ConnectionData nextCandidate = this.getNextCandidate();
+		final ConnectionData nextCandidate = this.getNextCandidateConnection();
+		final ClientType nextCandidateType = this.getNextCandidateType();
 		new Thread() {
 			public void run() {
 				if (clientID > DistUser.this.getID()) {
 					try {
 						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-						ControllerCandidate proxy = 
-								(ControllerCandidate) SpecificRequestor.getClient(ControllerCandidate.class, transceiver);
-						proxy.electNewController(index, clientID);
+						if (nextCandidateType == ClientType.SmartFridge) {
+							communicationFridge proxy = (communicationFridge) 
+									SpecificRequestor.getClient(communicationFridge.class, transceiver);
+							proxy.electNewController(index, clientID);
+						} else if (nextCandidateType == ClientType.User) {
+							communicationUser proxy = (communicationUser) 
+									SpecificRequestor.getClient(communicationUser.class, transceiver);
+							proxy.electNewController(index, clientID);
+						}
 						transceiver.close();
 					} catch (IOException e) {
 						// TODO handle this more appropriately
@@ -839,9 +864,15 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 					if (DistUser.this.f_isParticipantElection == false) {
 						try {
 							Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-							ControllerCandidate proxy = 
-									(ControllerCandidate) SpecificRequestor.getClient(ControllerCandidate.class, transceiver);
-							proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+							if (nextCandidateType == ClientType.SmartFridge) {
+								communicationFridge proxy = (communicationFridge) 
+										SpecificRequestor.getClient(communicationFridge.class, transceiver);
+								proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+							} else if (nextCandidateType == ClientType.User) {
+								communicationUser proxy = (communicationUser) 
+										SpecificRequestor.getClient(communicationUser.class, transceiver);
+								proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+							}
 							transceiver.close();
 						} catch (IOException e) {
 							// TODO handle this more appropriately
@@ -859,7 +890,7 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	 * @return
 	 * 		The ConnectionData of the next client in the ring.
 	 */
-	private ConnectionData getNextCandidate() {
+	private ConnectionData getNextCandidateConnection() {
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
 		List<Integer> participantIDs = new Vector<Integer>();
 		
@@ -888,9 +919,34 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 	}
 	
 	/**
+	 * Gets the type of the next candidate in the ring.
+	 * @return The type of the client that is next in the ring.
+	 */
+	private ClientType getNextCandidateType() {
+		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
+		List<Integer> participantIDs = new Vector<Integer>();
+		
+		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		
+		/// This is written in a general way, need to make some changes in order to make this more general
+		// TODO write this more generic if time allows it
+		for (int i = 0; i < clientIDs.size(); i ++) {
+			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
+				participants.put(clientIDs.get(i), clientTypes.get(i));
+				participantIDs.add(clientIDs.get(i));
+			}
+		}
+		
+		if (f_electionID == participantIDs.size()-1) {
+			return participants.get(participantIDs.get(0));
+		}
+		return participants.get(participantIDs.get(f_electionID+1));
+	}
+	
+	/**
 	 * Gets the index of the participant in the election, according to the data provided by replication.
-	 * @return
-	 * 		The index of this client in the election process.
+	 * @return The index of this client in the election process.
 	 */
 	private int getElectionIndex() {
 		List<Integer> participants = new Vector<Integer>();
@@ -916,11 +972,18 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		new Thread() {
 			public void run() {				
 				try {
-					ConnectionData nextCandidate = DistUser.this.getNextCandidate();
+					ConnectionData nextCandidate = DistUser.this.getNextCandidateConnection();
+					ClientType nextCandidateType = DistUser.this.getNextCandidateType();
 					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					ControlMessages proxy = 
-							(ControlMessages) SpecificRequestor.getClient(ControlMessages.class, transceiver);
-					proxy.newServer(f_ownIP, DistUser.this.getID());
+					if (nextCandidateType == ClientType.SmartFridge) {
+						communicationFridge proxy = (communicationFridge) 
+								SpecificRequestor.getClient(communicationFridge.class, transceiver);
+						proxy.newServer(f_ownIP, DistUser.this.getID());
+					} else if (nextCandidateType == ClientType.User) {
+						communicationUser proxy = (communicationUser) 
+								SpecificRequestor.getClient(communicationUser.class, transceiver);
+						proxy.newServer(f_ownIP, DistUser.this.getID());
+					}
 					transceiver.close();
 				} catch (AvroRemoteException e) {
 					// TODO handle this more appropriately
@@ -960,12 +1023,19 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 			Map.Entry pair = (Map.Entry)it.next();
 			String clientIP = clientIPsIP.get(clientIPsID.indexOf(pair.getKey())).toString();
 			Integer clientPort = (Integer) pair.getKey();
+			ClientType clientType = nonParticipants.get(clientPort);
 			
 			try {
 				Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(clientIP, clientPort));
-				ControlMessages proxy = 
-						(ControlMessages) SpecificRequestor.getClient(ControlMessages.class, transceiver);
-				proxy.newServer(f_ownIP, this.getID());
+				if (clientType == ClientType.Light) {
+					LightComm proxy = (LightComm) 
+							SpecificRequestor.getClient(LightComm.class, transceiver);
+					proxy.newServer(f_ownIP, this.getID());
+				} else if (clientType == ClientType.TemperatureSensor) {
+					communicationTempSensor proxy = (communicationTempSensor) 
+							SpecificRequestor.getClient(communicationTempSensor.class, transceiver);
+					proxy.newServer(f_ownIP, this.getID());
+				}
 				transceiver.close();
 			} catch (AvroRemoteException e) {
 				// TODO handle this more appropriately
@@ -1004,6 +1074,16 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		}.start();
 	}
 	
+
+	/**
+	 * Makes a backup of the serverdata (replication).
+	 * @param data The data which needs to be backed up.
+	 */
+	@Override
+	public void makeBackup(ServerData data) {
+		f_replicatedServerData = data;
+	}
+	
 	
 	
 	/**
@@ -1040,6 +1120,8 @@ public class DistUser extends User implements communicationUser, Runnable, Contr
 		controller.stopServer();
 		System.exit(0);
 	}
+
+
 
 
 }
