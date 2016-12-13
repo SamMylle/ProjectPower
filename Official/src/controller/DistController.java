@@ -214,6 +214,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				e.printStackTrace();
 			}
 		}
+		/// TODO notify clients i am controller if federico fails
 	}
 
 	public boolean serverIsActive(){
@@ -262,8 +263,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	private Transceiver setupTransceiver(int ID, String ip){
-		
-		if (ID == this.f_myPort && ip == this.f_ownIP){
+		if (new Integer(ID).equals(new Integer(this.f_myPort)) &&
+				ip.equals(this.f_ownIP)){
+			
+			System.out.print("SHOULDBE\n");
 			return null;
 		}
 		
@@ -491,7 +494,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (fridge == null){
 				// If connection can't be established, just say no to the other guy
 				/// TODO return error msg?
-				return null;
+				return new ArrayList<CharSequence>();
 			}
 	
 			/// get the inventory and return it
@@ -499,7 +502,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, fridge);
 			return new ArrayList<CharSequence>(proxy.getItemsRemote());
 		} catch (Exception e) {
-			return null;
+			return new ArrayList<CharSequence>();
 		}
 	}
 
@@ -509,7 +512,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// return 0 on success
 
 		try {
-			System.out.print(f_names.toString());
 			if (f_names.get(ID) != ClientType.Light){
 				return -1;
 			}
@@ -536,6 +538,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			return 0;
 		} catch (Exception e) {
+			e.printStackTrace();
 			return -4;
 		}
 	}
@@ -583,6 +586,14 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 		/// Ugliest for loop in the history of for loops
 		for (Map.Entry<Integer, ClientType> entry : f_names.entrySet()){
+			
+			if (new Integer(entry.getKey()).equals(new Integer(f_myPort)) && 
+					f_IPs.get(new Integer(entry.getKey())).equals(f_ownIP)){
+				
+				System.out.println("\nSkippyyyyy, skippyyyyy.");
+				continue;
+			}
+			
 			Client newClient = new Client(entry.getValue(), entry.getKey());
 			ret.add(newClient);
 		}
@@ -768,7 +779,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
 		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"),
-				System.getProperty("ip"), 5000); 
+				System.getProperty("ip"), 5000);
+		fridge.addItem("Chunks of dead children");
 		DistUser user2 = new DistUser("le me", System.getProperty("clientip"),
 				System.getProperty("ip"), 5000); 
 		DistUser user3 = new DistUser("le me", System.getProperty("clientip"),
@@ -791,12 +803,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			ControllerComm.Callback proxy =
 					SpecificRequestor.getClient(ControllerComm.Callback.class, client);
 
-			System.out.print(proxy.getAllClients().toString() + "\nLightState: ");
-			System.out.print(proxy.setLight(5005, 10));
-			System.in.read();
-			System.out.print(proxy.getLightState(5005));
+			System.out.println("clients " + proxy.getAllClients().toString());
+
+			System.out.println("clients from usr " + user2.getAllClients().toString());
 			
-		} catch (IOException e) {
+			client.close();
+			
+		} catch (IOException | MultipleInteractionException | AbsentException e) {
 			System.out.print("NOOOOOOOOOOO\n");
 		}
 		

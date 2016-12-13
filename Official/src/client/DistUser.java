@@ -406,6 +406,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return A list with all the clients connected to the system.
 	 */
 	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException {
+		System.out.print(f_controllerConnection.toString());
 		if (super._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house");
 		}
