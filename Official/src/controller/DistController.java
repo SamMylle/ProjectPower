@@ -257,6 +257,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	private Transceiver setupTransceiver(int ID, String ip){
+		
+		if (ID == this.f_myPort && ip == this.f_ownIP){
+			return null;
+		}
+		
 		try{
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
 			return client;
@@ -293,6 +298,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public Void logOff(int ID) throws AvroRemoteException{
 		/// Remove ID from the system
 		/// TODO, special case when the client is a temperatureSensor
+		/// TODO if this is a second server and the ID is the one of the fridge/user itself?
 		this.removeID(ID);
 		this.f_IPs.remove(ID);
 
@@ -336,6 +342,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			Transceiver client = this.setupTransceiver(ID, ip);
 
 			if (client == null){
+				/// TODO error string here? => client == null if the current fridge is a controller
 				return new CommData(-1, "");
 			}
 
@@ -478,6 +485,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 			if (fridge == null){
 				// If connection can't be established, just say no to the other guy
+				/// TODO return error msg?
 				return null;
 			}
 	
@@ -578,7 +586,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void reaffirmClientsAlive(){
-		/// TODO test and make timer to run this
+		/// TODO test and make timer to run this, keep in mind that the ID might be equal to this.f_myPort ==> accept no matter what
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
