@@ -662,8 +662,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (! proxy.areYouTheOriginalController()){
 				return;
 			}
-			
-			/// TODO copy my data to server, tell clients to no longer listen to me, but to the original dude
+
+			/// NOTE: this call has to be synchronous
+				/// because this server can only stop when the other server is done
+			proxy.recoverData(this.makeBackup());
+			this.stopServer();
 				
 		}catch(Exception e){
 			/// Couldn't contact the previous server, so he's not back yet
@@ -743,6 +746,14 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		data.setTemperatures(temperatures);
 		
 		return data;
+	}
+
+	@Override
+	public boolean recoverData(ServerData data) throws AvroRemoteException {
+		// TODO Recover data, tell everyone to listen to me, request relogin if needed
+		Logger.getLogger().log("Came to the recover part.\nData:\n");
+		Logger.getLogger().log(data.toString());
+		return false;
 	}
 
 	public static void main(String[] args) {

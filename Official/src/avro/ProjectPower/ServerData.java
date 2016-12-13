@@ -7,7 +7,7 @@ package avro.ProjectPower;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class ServerData extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ServerData\",\"namespace\":\"avro.ProjectPower\",\"fields\":[{\"name\":\"port\",\"type\":\"int\"},{\"name\":\"originalControllerPort\",\"type\":\"int\"},{\"name\":\"maxTemperatures\",\"type\":\"int\"},{\"name\":\"currentMaxPort\",\"type\":\"int\"},{\"name\":\"ip\",\"type\":\"string\"},{\"name\":\"previousControllerIP\",\"type\":\"string\"},{\"name\":\"usedFridgePorts\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IPsID\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IPsIP\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"namesID\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"namesClientType\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}}},{\"name\":\"temperatures\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"array\",\"items\":\"double\"}}},{\"name\":\"temperaturesIDs\",\"type\":{\"type\":\"array\",\"items\":\"int\"}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ServerData\",\"namespace\":\"avro.ProjectPower\",\"fields\":[{\"name\":\"port\",\"type\":\"int\"},{\"name\":\"originalControllerPort\",\"type\":\"int\"},{\"name\":\"maxTemperatures\",\"type\":\"int\"},{\"name\":\"currentMaxPort\",\"type\":\"int\"},{\"name\":\"ip\",\"type\":\"string\"},{\"name\":\"previousControllerIP\",\"type\":\"string\"},{\"name\":\"usedFridgePorts\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IPsID\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IPsIP\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"namesID\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"namesClientType\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}}},{\"name\":\"temperatures\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"array\",\"items\":\"double\"}}},{\"name\":\"temperaturesIDs\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"IP\",\"type\":\"string\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public int port;
   @Deprecated public int originalControllerPort;
@@ -22,6 +22,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
   @Deprecated public java.util.List<avro.ProjectPower.ClientType> namesClientType;
   @Deprecated public java.util.List<java.util.List<java.lang.Double>> temperatures;
   @Deprecated public java.util.List<java.lang.Integer> temperaturesIDs;
+  @Deprecated public java.lang.CharSequence IP;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -33,7 +34,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
   /**
    * All-args constructor.
    */
-  public ServerData(java.lang.Integer port, java.lang.Integer originalControllerPort, java.lang.Integer maxTemperatures, java.lang.Integer currentMaxPort, java.lang.CharSequence ip, java.lang.CharSequence previousControllerIP, java.util.List<java.lang.Integer> usedFridgePorts, java.util.List<java.lang.Integer> IPsID, java.util.List<java.lang.CharSequence> IPsIP, java.util.List<java.lang.Integer> namesID, java.util.List<avro.ProjectPower.ClientType> namesClientType, java.util.List<java.util.List<java.lang.Double>> temperatures, java.util.List<java.lang.Integer> temperaturesIDs) {
+  public ServerData(java.lang.Integer port, java.lang.Integer originalControllerPort, java.lang.Integer maxTemperatures, java.lang.Integer currentMaxPort, java.lang.CharSequence ip, java.lang.CharSequence previousControllerIP, java.util.List<java.lang.Integer> usedFridgePorts, java.util.List<java.lang.Integer> IPsID, java.util.List<java.lang.CharSequence> IPsIP, java.util.List<java.lang.Integer> namesID, java.util.List<avro.ProjectPower.ClientType> namesClientType, java.util.List<java.util.List<java.lang.Double>> temperatures, java.util.List<java.lang.Integer> temperaturesIDs, java.lang.CharSequence IP) {
     this.port = port;
     this.originalControllerPort = originalControllerPort;
     this.maxTemperatures = maxTemperatures;
@@ -47,6 +48,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
     this.namesClientType = namesClientType;
     this.temperatures = temperatures;
     this.temperaturesIDs = temperaturesIDs;
+    this.IP = IP;
   }
 
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -66,6 +68,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
     case 10: return namesClientType;
     case 11: return temperatures;
     case 12: return temperaturesIDs;
+    case 13: return IP;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -86,6 +89,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
     case 10: namesClientType = (java.util.List<avro.ProjectPower.ClientType>)value$; break;
     case 11: temperatures = (java.util.List<java.util.List<java.lang.Double>>)value$; break;
     case 12: temperaturesIDs = (java.util.List<java.lang.Integer>)value$; break;
+    case 13: IP = (java.lang.CharSequence)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -285,6 +289,21 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
     this.temperaturesIDs = value;
   }
 
+  /**
+   * Gets the value of the 'IP' field.
+   */
+  public java.lang.CharSequence getIP() {
+    return IP;
+  }
+
+  /**
+   * Sets the value of the 'IP' field.
+   * @param value the value to set.
+   */
+  public void setIP(java.lang.CharSequence value) {
+    this.IP = value;
+  }
+
   /** Creates a new ServerData RecordBuilder */
   public static avro.ProjectPower.ServerData.Builder newBuilder() {
     return new avro.ProjectPower.ServerData.Builder();
@@ -319,6 +338,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
     private java.util.List<avro.ProjectPower.ClientType> namesClientType;
     private java.util.List<java.util.List<java.lang.Double>> temperatures;
     private java.util.List<java.lang.Integer> temperaturesIDs;
+    private java.lang.CharSequence IP;
 
     /** Creates a new Builder */
     private Builder() {
@@ -380,6 +400,10 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
         this.temperaturesIDs = data().deepCopy(fields()[12].schema(), other.temperaturesIDs);
         fieldSetFlags()[12] = true;
       }
+      if (isValidValue(fields()[13], other.IP)) {
+        this.IP = data().deepCopy(fields()[13].schema(), other.IP);
+        fieldSetFlags()[13] = true;
+      }
     }
     
     /** Creates a Builder by copying an existing ServerData instance */
@@ -436,6 +460,10 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
       if (isValidValue(fields()[12], other.temperaturesIDs)) {
         this.temperaturesIDs = data().deepCopy(fields()[12].schema(), other.temperaturesIDs);
         fieldSetFlags()[12] = true;
+      }
+      if (isValidValue(fields()[13], other.IP)) {
+        this.IP = data().deepCopy(fields()[13].schema(), other.IP);
+        fieldSetFlags()[13] = true;
       }
     }
 
@@ -760,6 +788,31 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
       return this;
     }
 
+    /** Gets the value of the 'IP' field */
+    public java.lang.CharSequence getIP() {
+      return IP;
+    }
+    
+    /** Sets the value of the 'IP' field */
+    public avro.ProjectPower.ServerData.Builder setIP(java.lang.CharSequence value) {
+      validate(fields()[13], value);
+      this.IP = value;
+      fieldSetFlags()[13] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'IP' field has been set */
+    public boolean hasIP() {
+      return fieldSetFlags()[13];
+    }
+    
+    /** Clears the value of the 'IP' field */
+    public avro.ProjectPower.ServerData.Builder clearIP() {
+      IP = null;
+      fieldSetFlags()[13] = false;
+      return this;
+    }
+
     @Override
     public ServerData build() {
       try {
@@ -777,6 +830,7 @@ public class ServerData extends org.apache.avro.specific.SpecificRecordBase impl
         record.namesClientType = fieldSetFlags()[10] ? this.namesClientType : (java.util.List<avro.ProjectPower.ClientType>) defaultValue(fields()[10]);
         record.temperatures = fieldSetFlags()[11] ? this.temperatures : (java.util.List<java.util.List<java.lang.Double>>) defaultValue(fields()[11]);
         record.temperaturesIDs = fieldSetFlags()[12] ? this.temperaturesIDs : (java.util.List<java.lang.Integer>) defaultValue(fields()[12]);
+        record.IP = fieldSetFlags()[13] ? this.IP : (java.lang.CharSequence) defaultValue(fields()[13]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

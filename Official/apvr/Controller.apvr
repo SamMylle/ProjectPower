@@ -187,6 +187,10 @@
 		"areYouTheOriginalController":{
 			"request": [],
 			"response": {"type": "boolean"}
+		},
+		"recoverData":{
+			"request": [{"name": "data", "type": "ServerData"}],
+			"response": {"type": "boolean"}
 		}
 	}
 
