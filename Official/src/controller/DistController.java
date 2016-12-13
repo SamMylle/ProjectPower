@@ -596,12 +596,41 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
 			
+			if (type == ClientType.SmartFridge){
+				communicationFridge.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+				
+				if (proxy.aliveAndKicking()){
+					return true;
+				}
+			}
 
-			ControlMessages.Callback proxy;
-			proxy = SpecificRequestor.getClient(ControlMessages.Callback.class, client);
 			
-			if (proxy.aliveAndKicking()){
-				return true;
+			if (type == ClientType.Light){
+				LightComm.Callback proxy;
+				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+				
+				if (proxy.aliveAndKicking()){
+					return true;
+				}
+			}
+			
+			if (type == ClientType.User){
+				communicationUser.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+				
+				if (proxy.aliveAndKicking()){
+					return true;
+				}
+			}
+			
+			if (type == ClientType.TemperatureSensor){
+				communicationTempSensor.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+				
+				if (proxy.aliveAndKicking()){
+					return true;
+				}
 			}
 			
 		}catch(Exception e){
@@ -645,11 +674,33 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				String ip = f_IPs.get(ID);
 				
 				Transceiver client = this.setupTransceiver(ID, ip);
+				ClientType type = this.f_names.get(ID);
 
-				ControlMessages.Callback proxy;
-				proxy = SpecificRequestor.getClient(ControlMessages.Callback.class, client);
+
+				if (type == ClientType.SmartFridge){
+					communicationFridge.Callback proxy;
+					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+					proxy.newServer(f_ownIP, f_myPort);
+				}
+
 				
-				proxy.newServer(f_ownIP, f_myPort);
+				if (type == ClientType.Light){
+					LightComm.Callback proxy;
+					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+					proxy.newServer(f_ownIP, f_myPort);
+				}
+				
+				if (type == ClientType.User){
+					communicationUser.Callback proxy;
+					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+					proxy.newServer(f_ownIP, f_myPort);
+				}
+				
+				if (type == ClientType.TemperatureSensor){
+					communicationTempSensor.Callback proxy;
+					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+					proxy.newServer(f_ownIP, f_myPort);
+				}
 				
 			}catch(Exception e){
 				continue;
