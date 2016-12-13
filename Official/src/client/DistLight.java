@@ -149,6 +149,8 @@ public class DistLight implements Runnable, LightComm{
 	@Override
 	public Void setState(int state) throws AvroRemoteException {
 		f_light.setState(state);
+		Logger.getLogger().log("Setting to: ", false);
+		Logger.getLogger().log(new Integer(f_light.getState()).toString());
 		return null;
 	}
 

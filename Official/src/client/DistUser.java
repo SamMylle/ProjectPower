@@ -711,16 +711,17 @@ public class DistUser extends User implements communicationUser, Runnable {
 	/**
 	 * Starts an election with all the other users/smartfridges.
 	 */
-	private void startElection() {
+	public void startElection() {
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		boolean otherCandidates = false;
+		int count = 0;
 		for (ClientType clientType : clientTypes) {
 			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
-				otherCandidates = true;
+				count++;
 				break;
 			}
 		}
-		if (otherCandidates == false) {
+		if (count <= 1) {
 			this.sendNonCandidatesNewServer();
 			
 			this.startControllerTakeOver();
@@ -1072,6 +1073,18 @@ public class DistUser extends User implements communicationUser, Runnable {
 				DistUser.this.setupServer();
 			}
 		}.start();
+		
+		while(f_controller == null){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) { }
+		}
+		
+		while (DistUser.this.f_controller.serverIsActive() == false) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) { }
+		}
 	}
 	
 

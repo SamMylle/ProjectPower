@@ -439,6 +439,10 @@ public class DistSmartFridge extends SmartFridge {
 			f_replicatedServerData = data;
 		}
 	}
+
+	public void backderpdata(ServerData data) {
+		f_replicatedServerData = data;
+	}
 	/**
 	 * Starts the user server with own IP and legal Port (port is not guaranteed to be consistent every call)
 	 */
@@ -563,16 +567,16 @@ public class DistSmartFridge extends SmartFridge {
 	/**
 	 * Starts an election with all the other users/smartfridges.
 	 */
-	private void startElection() {
+	public void startElection() {
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
-		boolean otherCandidates = false;
+		int count = 0;
 		for (ClientType clientType : clientTypes) {
 			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
-				otherCandidates = true;
+				count++;
 				break;
 			}
 		}
-		if (otherCandidates == false) {
+		if (count <= 1) {
 			this.sendNonCandidatesNewServer();
 			
 			this.startControllerTakeOver();
@@ -604,7 +608,6 @@ public class DistSmartFridge extends SmartFridge {
 				}
 			}
 		}.start();
-		
 	}
 	
 	
@@ -797,6 +800,18 @@ public class DistSmartFridge extends SmartFridge {
 				DistSmartFridge.this.startControllerServer();
 			}
 		}.start();
+
+		while(f_controller == null){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) { }
+		}
+		
+		while (DistSmartFridge.this.f_controller.serverIsActive() == false) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) { }
+		}
 	}
 	
 	

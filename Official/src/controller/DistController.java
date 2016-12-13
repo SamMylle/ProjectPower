@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
+import java.net.UnknownHostException;
 
 import org.apache.avro.AvroRemoteException ;
 import org.apache.avro.ipc.CallFuture;
@@ -14,8 +15,12 @@ import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
+import client.DistLight;
 import client.DistSmartFridge;
+import client.DistUser;
 import client.SmartFridge;
+import client.exception.AbsentException;
+import client.exception.MultipleInteractionException;
 
 import util.Logger;
 
@@ -504,6 +509,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// return 0 on success
 
 		try {
+			System.out.print(f_names.toString());
 			if (f_names.get(ID) != ClientType.Light){
 				return -1;
 			}
@@ -511,7 +517,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			String ip = this.getIPAddress(ID);
 			
 			if (ip == ""){
-				return -1;
+				return -2;
 			}
 	
 			// We know the type is a light (AND it exists if it hasn't failed)
@@ -519,7 +525,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 			if (light == null){
 				// If connection can't be established, just say no to the other guy
-				return -1;
+				return -3;
 			}
 
 			/// set the state and thangs
@@ -530,7 +536,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			return 0;
 		} catch (Exception e) {
-			return -1;
+			return -4;
 		}
 	}
 
@@ -544,7 +550,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			String ip = this.getIPAddress(ID);
 			
 			if (ip == ""){
-				return -1;
+				return -2;
 			}
 	
 			// We know the type is a light (AND it exists)
@@ -558,16 +564,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 			if (light == null){
 				// If connection can't be established, just say no to the other guy
-				return -1;
+				return -3;
 			}
 
 			/// set the state and thangs
 			LightComm.Callback proxy;
 			proxy = SpecificRequestor.getClient(LightComm.Callback.class, light);
-
 			return proxy.getState();
 		} catch (Exception e) {
-			return -1;
+			return -4;
 		}
 
 	}
@@ -601,6 +606,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	private boolean reaffirmClientAlive(String ip, int port, ClientType type){
+		/// TODO test
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
 			
@@ -680,6 +686,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void notifyClientsIAmServer(){
+		/// TODO test
 		for(Integer ID: f_names.keySet()){
 			try{
 				String ip = f_IPs.get(ID);
@@ -720,6 +727,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public ServerData makeBackup(){
+		/// TODO test
 		ServerData data = new ServerData();
 		
 		data.setCurrentMaxPort(this.f_nextID);
@@ -753,35 +761,45 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		// TODO Recover data, tell everyone to listen to me, request relogin if needed
 		Logger.getLogger().log("Came to the recover part.\nData:\n");
 		Logger.getLogger().log(data.toString());
-		return false;
+		return true;
 	}
 
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
-		DistController controller = new DistController(5000, 10, System.getProperty("ip"));;
-
-		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"), System.getProperty("ip"), 5000);
-		fridge.addItem("bacon");
-		Logger.getLogger().log("Servers started");
+		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
+		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"),
+				System.getProperty("ip"), 5000); 
+		DistUser user2 = new DistUser("le me", System.getProperty("clientip"),
+				System.getProperty("ip"), 5000); 
+		DistUser user3 = new DistUser("le me", System.getProperty("clientip"),
+				System.getProperty("ip"), 5000); 
+		DistUser user4 = new DistUser("le me", System.getProperty("clientip"),
+				System.getProperty("ip"), 5000);
 		
-		fridge.stopServerController();
-		fridge = null;
+		DistLight light = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
+		light.connectToServer(5000, System.getProperty("ip"));
 		
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
-		
-		try {
-			controller.setupFridgeCommunication(5001);
-		} catch (AvroRemoteException e) {
-			System.out.print("here\n");
-			e.printStackTrace();
-		}
-		System.out.print("here toos\n");
-		
-		
+		fridge.backderpdata(controller.makeBackup());
 		controller.stopServer();
+		
+		System.out.print("\n\n\n\n\n\n\n\n\n\n\n\n");
+		
+		fridge.startElection();
+		
+		try {
+			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(System.getProperty("clientip")), 5001));
+			ControllerComm.Callback proxy =
+					SpecificRequestor.getClient(ControllerComm.Callback.class, client);
+
+			System.out.print(proxy.getAllClients().toString() + "\nLightState: ");
+			System.out.print(proxy.setLight(5005, 10));
+			System.in.read();
+			System.out.print(proxy.getLightState(5005));
+			
+		} catch (IOException e) {
+			System.out.print("NOOOOOOOOOOO\n");
+		}
+		
+		
 	}
 }
