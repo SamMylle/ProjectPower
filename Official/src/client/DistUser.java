@@ -840,7 +840,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			this.sendSelfElectedNextCandidate();
 			this.sendNonCandidatesNewServer();
 			
-			this.startControllerTakeOver();
 			return;
 		}
 		
