@@ -52,7 +52,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private boolean f_isOriginalServer;
 	private int f_previousControllerPort;
 	private String f_previousControllerIP;
-	private Timer f_timer;
+	public Timer f_timer;
 
 	public DistController(int port, int maxTemperatures, String ip){
 		/// TODO  throws java.net.BindException
@@ -100,22 +100,28 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		mustAllBeTrue.add(new Boolean(this.f_nextID == otherController.f_nextID));
 		
 		if (this.f_temperatures.size() != otherController.f_temperatures.size()){
+			System.out.println("NOT TRUE TEMP");
 			return false;
 		}
 		
 		for (int i = 0; i < this.f_temperatures.size(); i++){
 			if(! this.f_temperatures.elementAt(i).toString().equals(
 					otherController.f_temperatures.elementAt(i).toString())){
+				System.out.println("NOT TRUE TEMP2");
 				return false;
 			}
 		}
 		
 		for(int i = 0; i < mustAllBeTrue.size(); i++){
 			if (!mustAllBeTrue.elementAt(i)){
+				System.out.println(this.f_IPs.toString());
+				System.out.println(otherController.f_IPs.toString());
+				
 				return false;
 			}
 		}
 
+		System.out.println("TRUE");
 		return true;
 	}
 	
@@ -199,7 +205,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 
 		for (int i = 0; i < oldServer.temperatures.size(); i++){
-			System.out.print("adding ");
 			TemperatureRecord newRecord =
 					new TemperatureRecord(f_maxTemperatures,
 							oldServer.temperaturesIDs.get(i),
@@ -207,6 +212,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			f_temperatures.add(newRecord);
 			
 		}
+		
+		System.out.println("SET: " + f_names.toString());
 
 		/// Make a thread, the "run" method will execute in a new thread
 		/// The run method must be implemented by a Runnable object (see implements in this class)
@@ -280,6 +287,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	private Transceiver setupTransceiver(int ID, String ip){
+		System.out.println("In System: " + f_names.toString());
+		System.out.println("Contacting: " + ID + " " + ip);
 		if (new Integer(ID).equals(new Integer(this.f_myPort)) &&
 				ip.equals(this.f_ownIP)){
 			
@@ -289,15 +298,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try{
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
 			return client;
-		}catch(IOException e){
-			System.err.println("Error connecting to the client server...");
+		}catch(Exception e){
+			System.err.println("Error lel...");
 			return null;
 		}
 	}
 
 	@Override
 	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
-		System.out.print("give new ID");
+		System.out.println("\nADDING");
 		int newID = this.giveNextID(clientType);
 		ip.toString();
 		f_IPs.put(newID, ip.toString());
@@ -673,7 +682,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			
 			if (type == ClientType.Light){
-				System.out.print("light\n");
 				LightComm.Callback proxy;
 				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
 				
@@ -701,16 +709,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 			
 		}catch(Exception e){
-			System.out.print("execpt\n");
 			return false;
 		}
-		System.out.print("end\n");
 		return false;
 	}
 	
 	private class ClientPoll extends TimerTask{
 		@Override
 		public void run() {
+			System.out.println("\nPolling...");
 			DistController.this.reaffirmClientsAlive();
 		}
 	}
@@ -823,12 +830,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	public void sendBackupToAll(){
 		/// TODO test
-		System.out.print("Sending backup to: ");
 		for(Integer currentID : f_names.keySet()){
-			System.out.print(currentID.toString() + ", ");
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
-			System.out.print(currentIP.toString() + ", ");
 			this.sendBackupToSpecific(currentIP, currentID, currentType);
 		}
 	}
@@ -852,10 +856,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			
 		}catch(Exception e){
 			e.printStackTrace();
-			System.out.print("execpt\n");
 			return false;
 		}
-		System.out.print("end\n");
 		return false;
 	}
 

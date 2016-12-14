@@ -130,6 +130,6 @@ public class Controller {
 	
 	protected int f_nextID;
 	protected final int f_maxTemperatures;
-	protected HashMap<Integer, ClientType> f_names;
+	public HashMap<Integer, ClientType> f_names;
 	protected Vector<TemperatureRecord> f_temperatures;
 }
