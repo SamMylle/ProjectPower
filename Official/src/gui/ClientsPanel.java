@@ -7,6 +7,7 @@ package gui;
 
 import avro.ProjectPower.Client;
 import client.exception.AbsentException;
+import client.exception.TakeoverException;
 import client.exception.MultipleInteractionException;
 import java.util.List;
 import javax.swing.table.DefaultTableModel;
@@ -96,6 +97,8 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
             System.out.println("error multiple interactions at user.");
         } catch(AbsentException e) {
             System.out.println("the user is not present in the system.");
+        } catch(TakeoverException e) {
+            // TODO do something here
         }
     }
     

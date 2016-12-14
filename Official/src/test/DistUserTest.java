@@ -23,6 +23,7 @@ import client.exception.FridgeOccupiedException;
 import client.exception.MultipleInteractionException;
 import client.exception.NoFridgeConnectionException;
 import client.exception.NoTemperatureMeasures;
+import client.exception.TakeoverException;
 import client.util.LightState;
 
 public class DistUserTest {
@@ -83,7 +84,7 @@ public class DistUserTest {
 		List<Client> clients = null;
 		try {
 			clients = user.getAllClients();
-		} catch (MultipleInteractionException | AbsentException e) {
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -91,7 +92,7 @@ public class DistUserTest {
 		assertEquals(clients.size(), 3);
 		try {
 			assertEquals(clients, user2.getAllClients());
-		} catch (MultipleInteractionException | AbsentException e) {
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -124,7 +125,7 @@ public class DistUserTest {
 		List<LightState> lightstates = null;
 		try {
 			lightstates = user.getLightStates();
-		} catch (MultipleInteractionException | AbsentException e) {
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -136,7 +137,7 @@ public class DistUserTest {
 		try {
 			user.setLightState(1, light2.f_light.getID());
 			lightstates = user.getLightStates();
-		} catch (MultipleInteractionException | AbsentException e) {
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -173,7 +174,7 @@ public class DistUserTest {
 		List<String> items = null;
 		try {
 			items = user.getFridgeItems(fridge.getID());
-		} catch (MultipleInteractionException | AbsentException e) {
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -201,14 +202,14 @@ public class DistUserTest {
 		
 		try {
 			user.communicateWithFridge(fridge.getID());
-		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException e) {
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
 		
 		try {
 			user.openFridge();
-		} catch (NoFridgeConnectionException | AbsentException e) {
+		} catch (NoFridgeConnectionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -216,7 +217,7 @@ public class DistUserTest {
 		
 		try {
 			user.closeFridge();
-		} catch (NoFridgeConnectionException | AbsentException e) {
+		} catch (NoFridgeConnectionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -227,6 +228,8 @@ public class DistUserTest {
 		} catch (NoFridgeConnectionException e) {
 			ex = e;
 		} catch (AbsentException e) {
+			assertTrue(false);
+		} catch (TakeoverException e) {
 			assertTrue(false);
 		}
 		assertNotEquals(ex, null);
@@ -270,7 +273,7 @@ public class DistUserTest {
 			assertFalse(items.contains("Beer"));
 			
 			user.closeFridge();
-		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | NoFridgeConnectionException e) {
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | NoFridgeConnectionException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
@@ -313,6 +316,8 @@ public class DistUserTest {
 			ex = e;
 		} catch (AbsentException e) {
 			ex = e;
+		} catch (TakeoverException e) {
+			ex = e;
 		}
 		assertEquals(ex.getClass(), AbsentException.class);
 		ex = null;
@@ -324,6 +329,8 @@ public class DistUserTest {
 		} catch (AbsentException e) {
 			ex = e;
 		} catch (NoTemperatureMeasures e) {
+			ex = e;
+		} catch (TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex.getClass(), AbsentException.class);
@@ -347,14 +354,14 @@ public class DistUserTest {
 		try {
 			user.communicateWithFridge(fridge.getID());
 			user.openFridge();
-		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | NoFridgeConnectionException e) {
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | NoFridgeConnectionException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
 		
 		try {
 			user.getAllClients();
-		} catch (MultipleInteractionException | AbsentException e) {
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex.getClass(), MultipleInteractionException.class);
@@ -362,7 +369,7 @@ public class DistUserTest {
 		ex = null;
 		try {
 			user.closeFridge();
-		} catch (NoFridgeConnectionException | AbsentException e) {
+		} catch (NoFridgeConnectionException | AbsentException | TakeoverException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);

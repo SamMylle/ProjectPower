@@ -49,17 +49,17 @@ public class DistSmartFridge extends SmartFridge {
 	private String f_ownIP;									// The IP address of the client itself
 	
 	private ConnectionData f_controllerConnection;			// Data of the current connection to the controller of the system
-	private ConnectionData f_userConnection;				// Data of the current connection to the user which is using the fridge
 	private ConnectionData f_userServerConnection;			// Data of the current connection to the own user server
+	private ConnectionData f_userConnection;				// Data of the current connection to the user which is using the fridge
 	
-	private boolean f_serverControllerReady;				// Boolean used to determine if the server for the controller has finished setting up.
+	private boolean f_controllerServerReady;				// Boolean used to determine if the server for the controller has finished setting up.
 	private boolean f_userServerReady;						// Boolean used to determine if the server for the user has finished setting up.
 	private boolean f_safeToClose;							// TODO test
 	
 	private Server f_fridgeControllerServer;				// The server for the SmartFridge itself
 	private Thread f_fridgeControllerThread;				// The thread used to run the server and handle the requests it gets.
-	private Server f_userServer;							// The server for the User
-	private Thread f_userServerThread;						// The thread used to run the userServer
+	private Server f_fridgeUserServer;						// The server for the User
+	private Thread f_fridgeUserThread;						// The thread used to run the userServer
 	
 	
 	/// FAULT TOLERENCE & REPLICATION
@@ -93,14 +93,14 @@ public class DistSmartFridge extends SmartFridge {
 		f_userConnection = null;
 		f_userServerConnection = new ConnectionData(ownIP, -1);
 		
-		f_serverControllerReady = false;
+		f_controllerServerReady = false;
 		f_userServerReady = false;
 		f_safeToClose = true;
 		
 		f_fridgeControllerServer = null;
 		f_fridgeControllerThread = null;
-		f_userServer = null;
-		f_userServerThread = null;
+		f_fridgeUserServer = null;
+		f_fridgeUserThread = null;
 		
 		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
 		f_replicatedServerData = null;
@@ -162,7 +162,7 @@ public class DistSmartFridge extends SmartFridge {
 	private void startControllerServer() {
 		f_fridgeControllerThread = new Thread(new controllerServer());
 		f_fridgeControllerThread.start();
-		while (f_serverControllerReady == false) {
+		while (f_controllerServerReady == false) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
@@ -179,7 +179,13 @@ public class DistSmartFridge extends SmartFridge {
 			return;
 		}
 		f_fridgeControllerThread.interrupt();
-		f_fridgeControllerThread = null;		
+		f_fridgeControllerThread = null;
+		
+		while (f_fridgeControllerServer != null) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {}
+		}
 	}
 	
 	/**
@@ -247,12 +253,12 @@ public class DistSmartFridge extends SmartFridge {
 		@Override
 		public void run() {
 			/// repeat untill the server can bind to a valid port
-			while (f_serverControllerReady == false) {
+			while (f_controllerServerReady == false) {
 				try {
 					f_fridgeControllerServer = new SaslSocketServer(
 							new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(f_ownIP, getID()) );
 					f_fridgeControllerServer.start();
-					f_serverControllerReady = true;
+					f_controllerServerReady = true;
 				}
 				catch (BindException e) {
 					getNewID();
@@ -384,11 +390,8 @@ public class DistSmartFridge extends SmartFridge {
 				// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
 				// This is in order to fully replicate the algorithm described in the theory.
 				
-				// TODO CHANGED THIS
 				DistSmartFridge.this.sendSelfElectedNextCandidate();
 				DistSmartFridge.this.sendNonCandidatesNewServer();
-				
-//				DistSmartFridge.this.startControllerTakeOver();
 				return;
 			}
 			
@@ -449,16 +452,18 @@ public class DistSmartFridge extends SmartFridge {
 			f_replicatedServerData = data;
 		}
 	}
-
-	public void backderpdata(ServerData data) {
-		f_replicatedServerData = data;
+	
+	
+	public void backderpdata(ServerData backup) {
+		this.f_replicatedServerData = backup;
 	}
+	
 	/**
 	 * Starts the user server with own IP and legal Port (port is not guaranteed to be consistent every call)
 	 */
 	private void startUserServer() {
-		f_userServerThread = new Thread(new UserServer());
-		f_userServerThread.start();
+		f_fridgeUserThread = new Thread(new UserServer());
+		f_fridgeUserThread.start();
 		
 		while (f_userServerReady == false) {
 			try {
@@ -474,12 +479,12 @@ public class DistSmartFridge extends SmartFridge {
 		f_userServerReady = false;
 		f_userConnection = null;
 		f_userServerConnection.setPort(-1);
-		if (f_userServerThread != null) {
-			f_userServerThread.interrupt();
-			f_userServerThread = null;
+		if (f_fridgeUserThread != null) {
+			f_fridgeUserThread.interrupt();
+			f_fridgeUserThread = null;
 		}
 		
-		while (f_userServer != null) {
+		while (f_fridgeUserServer != null) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) { }
@@ -511,9 +516,9 @@ public class DistSmartFridge extends SmartFridge {
 		public void run() {
 			while (f_userServerReady == false) {
 				try {
-					f_userServer = new SaslSocketServer(
+					f_fridgeUserServer = new SaslSocketServer(
 							new SpecificResponder(communicationFridgeUser.class, this), f_userServerConnection.toSocketAddress());
-					f_userServer.start();
+					f_fridgeUserServer.start();
 					f_userServerReady = true;
 				} catch (BindException e) {
 					f_userServerConnection.setPort(f_userServerConnection.getPort()-1);
@@ -523,7 +528,7 @@ public class DistSmartFridge extends SmartFridge {
 			}
 			
 			try {
-				f_userServer.join();
+				f_fridgeUserServer.join();
 			} catch (InterruptedException e) {
 				while (f_safeToClose == false) {
 					try {
@@ -533,8 +538,8 @@ public class DistSmartFridge extends SmartFridge {
 				try {
 					Thread.sleep(50);					
 				} catch (InterruptedException e1) { }
-				f_userServer.close();
-				f_userServer = null;
+				f_fridgeUserServer.close();
+				f_fridgeUserServer = null;
 				f_safeToClose = false;
 			}
 		}
@@ -852,10 +857,12 @@ public class DistSmartFridge extends SmartFridge {
 	
 	
 	public static void main(String[] args) {
-		// DistController controller = new DistController(6789, 10);
+		String serverIP = System.getProperty("ip");
+		String clientIP = System.getProperty("clientip");
 		
-		DistSmartFridge remoteFridge = 
-				new DistSmartFridge(System.getProperty("clientip"), System.getProperty("ip"), 5000);
+//		DistController controller = new DistController(6789, 10, serverIP);
+		
+		DistSmartFridge remoteFridge = new DistSmartFridge(clientIP, serverIP, 5000);
 
 		try {
 			System.in.read();
@@ -863,61 +870,8 @@ public class DistSmartFridge extends SmartFridge {
 
 		}
 
-		remoteFridge.logOffController();
-		remoteFridge.stopServerController();
+		remoteFridge.disconnect();
 		System.exit(0);
-		
-		// try {
-		// 	Logger logger = Logger.getLogger();
-		// 	logger.f_active = true;
-		// 	logger.log(remoteFridge.toString());
-		
-		// 	Transceiver transceiverController = new SaslSocketTransceiver(new InetSocketAddress(6790));
-		// 	communicationFridge proxyController = (communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiverController);
-			
-		// 	proxyController.requestFridgeCommunication(15000);
-			
-		// 	Transceiver transceiverUser = new SaslSocketTransceiver(new InetSocketAddress(15000));
-		// 	communicationFridgeUser proxyUser = (communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiverUser);
-			
-		// 	proxyUser.openFridgeRemote();
-		// 	proxyUser.addItemRemote("bacon");
-		// 	proxyUser.addItemRemote("parmesan cheese");
-			
-		// 	List<CharSequence> items = proxyController.getItemsRemote();
-		// 	logger.log("Items retrieved from remote function in controller: ");
-		// 	for (CharSequence item : items) {
-		// 		logger.log("\t" + item.toString());
-		// 	}
-						
-		// 	proxyUser.addItemRemote("milk");
-		// 	items = proxyUser.getItemsRemote();
-		// 	logger.log("");
-		// 	logger.log("Items retrieved from remote function in user: ");
-		// 	for (CharSequence item : items) {
-		// 		logger.log("\t" + item.toString());
-		// 	}
-		// 	logger.log("");
-			
-		// 	proxyUser.closeFridgeRemote();
-		// 	transceiverUser.close();
-			
-			
-		// 	if (remoteFridge.logOffController() == true) {
-		// 		logger.log("Logged off succesfully.");
-		// 	}
-		// 	else {
-		// 		logger.log("Could not log off.");
-		// 	}
-		// 	remoteFridge.stopServerController();
-		// 	transceiverController.close();
-		// }
-		// catch (AvroRemoteException e) {
-		// 	System.err.println("AvroRemoteException at main class in DistSmartFridge.");
-		// } catch (IOException e) {
-		// 	System.err.println("IOException at main class in DistSmartFridge.");
-		// }
-		// System.exit(0);
 	}
 
 }

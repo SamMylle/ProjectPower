@@ -220,11 +220,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return A list of LightState objects, containing the light IDs and their states respectively.
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
+	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -264,11 +263,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param lightID The ID of the light from whom the state should be changed.
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
+	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -296,11 +294,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return A list of strings, representing the items in the fridge.
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public List<String> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
+	public List<String> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -334,11 +331,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws NoTemperatureMeasures if no temperature measures are available yet.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException, NoTemperatureMeasures {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
+	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException, NoTemperatureMeasures, TakeoverException {
+		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -374,11 +370,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Gets the history of temperature measurements in the house.
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public void getTemperatureHistory() throws MultipleInteractionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
+	public void getTemperatureHistory() throws MultipleInteractionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -404,11 +399,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Request the controller for a list of all the clients connected to the system.
 	 * 
 	 * @return A list with all the clients connected to the system.
+	 * @throws MultipleInteractionException if the user is connected to a fridge.
+	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house");
-		}
+	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -438,12 +434,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is already connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws FridgeOccupiedException if the fridge is occupied by another user.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public void communicateWithFridge(int fridgeID) 
-		throws MultipleInteractionException, AbsentException, FridgeOccupiedException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house.");
-		}
+		throws MultipleInteractionException, AbsentException, FridgeOccupiedException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is already connected to a fridge, cannot start another connection.");
 		}
@@ -486,12 +481,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * 		The item that gets added.
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public void addItemFridge(String item) 
-			throws NoFridgeConnectionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house.");
-		}
+			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
@@ -517,12 +511,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * 		The item that needs to get removed.
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public void removeItemFridge(String item) 
-			throws NoFridgeConnectionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house.");
-		}
+			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
@@ -547,12 +540,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return A list of strings, containing the items in the fridge.
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public List<String> getFridgeItemsDirectly() 
-			throws NoFridgeConnectionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house.");
-		}
+			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
@@ -583,12 +575,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Opens the fridge.
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+ 	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public void openFridge() 
-			throws NoFridgeConnectionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house.");
-		}
+			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
@@ -612,12 +603,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Closes the fridge, as well as the connection with the fridge.
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
+	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public void closeFridge() 
-			throws NoFridgeConnectionException, AbsentException {
-		if (super._getStatus() != UserStatus.present) {
-			throw new AbsentException("The user is not present in the house.");
-		}
+			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
 		}
@@ -636,6 +626,16 @@ public class DistUser extends User implements communicationUser, Runnable {
 			System.err.println("IOException at closeFridge() in DistUser.");
 		}
 		f_fridgeConnection = null;
+	}
+	
+	
+	private void checkInvariantExceptions() throws AbsentException, TakeoverException {
+		if (this._getStatus() != UserStatus.present) {
+			throw new AbsentException("The user is not present in the house.");
+		}
+		if (f_controller != null) {
+			throw new TakeoverException("The user has been elected to act as the controller of the system.");
+		}
 	}
 	
 	/**
@@ -1059,7 +1059,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			try {
 				this.closeFridge();
 			} catch (NoFridgeConnectionException e) {} 
-			  catch (AbsentException e) {}
+			  catch (AbsentException e) {} 
+			  catch (TakeoverException e) {}
 		}
 		this.f_fridgeConnection = null;
 		

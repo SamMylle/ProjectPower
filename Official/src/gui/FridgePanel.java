@@ -10,6 +10,7 @@ import gui.PanelInterface;
 import avro.ProjectPower.Client;
 import client.exception.AbsentException;
 import client.exception.MultipleInteractionException;
+import client.exception.TakeoverException;
 import java.util.List;
 import java.util.Vector;
 import avro.ProjectPower.ClientType;
@@ -122,6 +123,8 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
             // TODO do something here
         } catch (MultipleInteractionException e) {
             // TODO do something here
+        } catch (TakeoverException e) {
+            // TODO do something here
         }
         
         cbbSelectFridge.removeAllItems();
@@ -142,7 +145,9 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         } catch (AbsentException e) {
             // TODO do something here
         } catch (MultipleInteractionException e) {
-            // Todo do something here
+            // TODO do something here
+        } catch (TakeoverException e) {
+            // TODO do something here
         }
         
         DefaultTableModel model = new DefaultTableModel();

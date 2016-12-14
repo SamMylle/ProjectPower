@@ -107,6 +107,9 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
         } catch (NoTemperatureMeasures e) {
             lblCurrentTemp.setText("No temperature measurements available yet.");
             return;
+        } catch (TakeoverException e) {
+            // TODO do something here
+            return;
         }
         
         lblCurrentTemp.setText(String.valueOf(currentTemp));
