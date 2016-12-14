@@ -9,11 +9,14 @@
 ********************************
 
 
-	> In clients DistUser and DistSmartFridge, connect to other clients in order to resolve controller election
-	> Implement Roberts-Chang algorithm in clients, start Controller Server and stop self if elected
-	> Notify other clients for new Controller IP and PORT (system controller unavailable during setup)
-	> Controller polling at arbitrary interval, to check if client is still alive
-		-> Special case: SmartFridge with own PORT for user, close the port accordingly
-	> User or SmartFridge fail during direct communication -> handle properly, notify Controller if User fails
+	> Fede: Fix Ring-algo
+	> Fede: Fix new ports in fridges and users that lost the election #MAGA
+	> Fede: GUI
+	> Fede: Check Exceptions
+	> Fede + Sam: relogin request from server
+	> Sam: Make backup at right moment
+	> Sam: Append recovered data to original controller
+	> Sam: Notify others you are server
+	> Sam  + Fede: testing
 
 	

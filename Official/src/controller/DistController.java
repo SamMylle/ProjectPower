@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 
@@ -50,6 +52,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private boolean f_isOriginalServer;
 	private int f_previousControllerPort;
 	private String f_previousControllerIP;
+	private Timer f_timer;
 
 	public DistController(int port, int maxTemperatures, String ip){
 		/// TODO  throws java.net.BindException
@@ -82,6 +85,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				e.printStackTrace();
 			}
 		}
+		
+		/// TODO make dynamic schedule time
+		f_timer = new Timer();
+		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
 	
 	public boolean equals(DistController otherController){
@@ -148,6 +155,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				e.printStackTrace();
 			}
 		}
+		
+		/// TODO make dynamic schedule time
+		f_timer = new Timer();
+		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -213,9 +224,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				Logger.getLogger().f_active = true;
 				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
+			} catch(Exception e){
+				Logger.getLogger().log("Wat\n");
 			}
 		}
 		/// TODO notify clients i am controller if federico fails
+		
+		/// TODO make dynamic schedule time
+		f_timer = new Timer();
+		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
 
 	public boolean serverIsActive(){
@@ -253,10 +270,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		while (f_server != null){
 			try {
 				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-			}
+			} catch (InterruptedException e) {}
 			
 		}
 
@@ -307,9 +321,14 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public Void logOff(int ID) throws AvroRemoteException{
 		/// Remove ID from the system
 		/// TODO, special case when the client is a temperatureSensor
-		/// TODO if this is a second server and the ID is the one of the fridge/user itself?
 		this.removeID(ID);
 		this.f_IPs.remove(ID);
+		for (int i = 0; i < f_temperatures.size(); i++){
+			if (new Integer(ID).equals(new Integer(f_temperatures.elementAt(i).getID()))){
+				f_temperatures.remove(i);
+				break;
+			}
+		}
 
 		return null;
 	}
@@ -603,6 +622,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	public void reaffirmClientsAlive(){
 		/// TODO test and make timer to run this, keep in mind that the ID might be equal to this.f_myPort ==> accept no matter what
+		System.out.print("ASKING\n");
+		System.out.println(f_names.toString());
+		System.out.println(f_IPs.toString());
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
@@ -610,8 +632,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			boolean keep = this.reaffirmClientAlive(currentIP, currentID, currentType);
 			
 			if (! keep){
+				System.out.print("Before: ");
+				System.out.println(f_names.toString());
+				System.out.println(f_IPs.toString());
 				f_names.remove(currentID);
 				f_IPs.remove(currentID);
+				System.out.print("after: ");
+				System.out.println(f_names.toString());
+				System.out.println(f_IPs.toString());
+				/// TODO special case if tempsensor
 			}
 		}
 	}
@@ -632,6 +661,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			
 			if (type == ClientType.Light){
+				System.out.print("light\n");
 				LightComm.Callback proxy;
 				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
 				
@@ -659,9 +689,18 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 			
 		}catch(Exception e){
+			System.out.print("execpt\n");
 			return false;
 		}
+		System.out.print("end\n");
 		return false;
+	}
+	
+	private class ClientPoll extends TimerTask{
+		@Override
+		public void run() {
+			DistController.this.reaffirmClientsAlive();
+		}
 	}
 	
 	public void lookForOldServer(){
@@ -778,68 +817,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
-		DistUser user2 = new DistUser("le me", System.getProperty("clientip"),
-				System.getProperty("ip"), 5000); 
-		DistUser user3 = new DistUser("le me", System.getProperty("clientip"),
-				System.getProperty("ip"), 5000); 
-		DistUser user4 = new DistUser("le me", System.getProperty("clientip"),
-				System.getProperty("ip"), 5000);
-		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"),
-				System.getProperty("ip"), 5000);
-		DistSmartFridge fridge2 = new DistSmartFridge(System.getProperty("clientip"),
-				System.getProperty("ip"), 5000);
-		fridge.addItem("Chunks of dead children");
 		
-		try {
-			user2.communicateWithFridge(fridge2.getID());
-		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException e2) {
-			System.out.println("please not here");
-		}
-		
-		DistLight light = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
-		light.connectToServer(5000, System.getProperty("ip"));
-		
-		fridge.backderpdata(controller.makeBackup());
-		fridge2.backderpdata(controller.makeBackup());
-		user2.makeBackup(controller.makeBackup());
-		user3.makeBackup(controller.makeBackup());
-		user4.makeBackup(controller.makeBackup());
-		controller.stopServer();
-		
-		System.out.print("\n\n\n\n\n\n\n\n\n\n\n\n");
-		
-		user2.startElection();
-		
-		
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		try {
-			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(System.getProperty("clientip")), fridge2.getID()));
-			ControllerComm.Callback proxy =
-					SpecificRequestor.getClient(ControllerComm.Callback.class, client);
-
-			System.out.println("clients " + proxy.getAllClients().toString());
-
-			System.out.println("clients from usr " + user2.getAllClients().toString());
-			
-			user2.communicateWithFridge(fridge.getID());
-			user2.openFridge();
-			user2.addItemFridge("bacon");
-			System.out.println("Fridge items directly: " + user2.getFridgeItemsDirectly().toString());
-			user2.closeFridge();
-			System.out.println("Fridge items indirectly: " + user2.getFridgeItems(fridge.getID()));
-			
-			client.close();
-			
-		} catch (IOException | MultipleInteractionException | AbsentException | NoFridgeConnectionException | FridgeOccupiedException e) {
-			System.out.print("NOOOOOOOOOOO\n");
-			System.exit(1);
-		}
-		
-		System.exit(0);
 	}
 }

@@ -163,6 +163,7 @@ public class DistLight implements Runnable, LightComm{
 
 	@Override
 	public boolean aliveAndKicking() throws AvroRemoteException {
+		System.out.println("Asking light if its alive\n");
 		return true;
 	}
 
@@ -174,8 +175,8 @@ public class DistLight implements Runnable, LightComm{
 	}
 	
 	public static void main(String[] args) {
-		DistLight newLight = new DistLight(System.getProperty("ip"), System.getProperty("serverip"));
-		newLight.connectToServer(5000, "127.0.1.1");
+		DistLight newLight = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
+		newLight.connectToServer(5000, "143.169.217.124");
 		try {
 			System.in.read();
 		} catch (IOException e) {
