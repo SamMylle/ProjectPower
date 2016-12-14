@@ -230,6 +230,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 		/// TODO notify clients i am controller if federico fails
 		
+		this.sendBackupToAll();
+		
 		/// TODO make dynamic schedule time
 		f_timer = new Timer();
 		f_timer.schedule(new ClientPoll(), 0, 500);
@@ -281,7 +283,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		if (new Integer(ID).equals(new Integer(this.f_myPort)) &&
 				ip.equals(this.f_ownIP)){
 			
-			System.out.print("SHOULDBE\n");
 			return null;
 		}
 		
@@ -300,6 +301,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		int newID = this.giveNextID(clientType);
 		ip.toString();
 		f_IPs.put(newID, ip.toString());
+		
+		/// TODO this will have to return and send the backup data afterwards
+		/// Suggestion: send successful login to server
+		/// this.sendBackupToAll();
 		return newID;
 	}
 	
@@ -309,6 +314,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		Logger.getLogger().log("give renewed ID");
 		this.removeID(oldID);
 		int newID = this.giveNextID(clientType);
+		
+		/// TODO this will have to return and send the backup data afterwards
+		/// Suggestion: send successful login to server
+		/// this.sendBackupToAll();
 		return newID;
 	}
 
@@ -329,6 +338,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				break;
 			}
 		}
+		this.sendBackupToAll();
 
 		return null;
 	}
@@ -336,6 +346,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
 		this.addTemperature(temperature, ID);
+		this.sendBackupToAll();
 		return null;
 	}
 
@@ -622,26 +633,27 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	public void reaffirmClientsAlive(){
 		/// TODO test and make timer to run this, keep in mind that the ID might be equal to this.f_myPort ==> accept no matter what
-		System.out.print("ASKING\n");
-		System.out.println(f_names.toString());
-		System.out.println(f_IPs.toString());
+		boolean removed = false;
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
 			
+			if (this.f_ownIP.equals(f_ownIP) && new Integer(currentID).equals(new Integer(this.f_myPort))){
+				continue;
+			}
+			
 			boolean keep = this.reaffirmClientAlive(currentIP, currentID, currentType);
 			
 			if (! keep){
-				System.out.print("Before: ");
-				System.out.println(f_names.toString());
-				System.out.println(f_IPs.toString());
+				removed = true;
 				f_names.remove(currentID);
 				f_IPs.remove(currentID);
-				System.out.print("after: ");
-				System.out.println(f_names.toString());
-				System.out.println(f_IPs.toString());
 				/// TODO special case if tempsensor
 			}
+		}
+		
+		if (removed){
+			this.sendBackupToAll();
 		}
 	}
 	
@@ -780,6 +792,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// TODO test
 		ServerData data = new ServerData();
 		
+		/// TODO remove this
+		data.setUsedFridgePorts(new LinkedList<Integer>());
+		
 		data.setCurrentMaxPort(this.f_nextID);
 		data.setIp(f_ownIP);
 		data.setPort(f_myPort);
@@ -805,6 +820,44 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		return data;
 	}
+	
+	public void sendBackupToAll(){
+		/// TODO test
+		System.out.print("Sending backup to: ");
+		for(Integer currentID : f_names.keySet()){
+			System.out.print(currentID.toString() + ", ");
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			System.out.print(currentIP.toString() + ", ");
+			this.sendBackupToSpecific(currentIP, currentID, currentType);
+		}
+	}
+	
+	private boolean sendBackupToSpecific(String ip, int port, ClientType type){
+		/// TODO test
+		try{
+			Transceiver client = this.setupTransceiver(port, ip);
+			
+			if (type == ClientType.SmartFridge){
+				communicationFridge.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+				proxy.makeBackup(this.makeBackup());
+			}
+			
+			if (type == ClientType.User){
+				communicationUser.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+				proxy.makeBackup(this.makeBackup());
+			}
+			
+		}catch(Exception e){
+			e.printStackTrace();
+			System.out.print("execpt\n");
+			return false;
+		}
+		System.out.print("end\n");
+		return false;
+	}
 
 	@Override
 	public boolean recoverData(ServerData data) throws AvroRemoteException {
@@ -818,5 +871,24 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
 		
+		DistUser user = new DistUser("me", System.getProperty("ip"), System.getProperty("ip"), 5000);
+		
+		try {
+			System.in.read();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		DistLight light = new DistLight(System.getProperty("ip"), System.getProperty("ip"));
+		light.connectToServer(5000, System.getProperty("ip"));
+		
+		light.disconnect();
+		
+		//DistSmartFridge
+		user.disconnect();
+		user.stopServer();
+		controller.stopServer();
 	}
 }
