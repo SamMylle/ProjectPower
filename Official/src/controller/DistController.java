@@ -641,7 +641,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	public void reaffirmClientsAlive(){
-		/// TODO test and make timer to run this, keep in mind that the ID might be equal to this.f_myPort ==> accept no matter what
+		/// TODO test
 		boolean removed = false;
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
@@ -864,8 +864,75 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public boolean recoverData(ServerData data) throws AvroRemoteException {
 		// TODO Recover data, tell everyone to listen to me, request relogin if needed
+		/// TODO test
 		Logger.getLogger().log("Came to the recover part.\nData:\n");
 		Logger.getLogger().log(data.toString());
+		
+		List<java.lang.Integer> IPsID = data.getIPsID();
+		List<java.lang.CharSequence> IPsIP = data.getIPsIP();
+		List<java.lang.Integer> namesID = data.getNamesID();
+		List<avro.ProjectPower.ClientType> namesClientType = data.getNamesClientType();
+		List<java.lang.Integer> temperaturesIDs = data.getTemperaturesIDs();
+		
+		for (int i = 0; i < IPsID.size(); i++){
+			int currentID = IPsID.get(i);
+			if (new Integer(currentID).equals(new Integer(data.getPort()))){
+				continue;
+			}
+			String currentIP = IPsIP.get(i).toString();
+			ClientType currentType = null;
+
+			for (int j = 0; j < namesID.size(); j++){
+				if (new Integer(namesID.get(j)).equals(new Integer(currentID))){
+					currentType = namesClientType.get(j);
+					break;
+				}
+			}
+			
+			if (currentIP == null || currentType == null){
+				continue;
+			}
+			
+			Transceiver client = this.setupTransceiver(currentID, currentIP);
+			
+			if (client == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.SmartFridge){
+				communicationFridge.Callback proxy;
+				try {
+					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+					/// TODO relogin
+				} catch (IOException e) {}
+			}
+
+			
+			if (currentType == ClientType.Light){
+				LightComm.Callback proxy;
+				try {
+					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+					/// TODO relogin
+				} catch (IOException e) {}
+			}
+			
+			if (currentType == ClientType.User){
+				communicationUser.Callback proxy;
+				try {
+					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+					/// TODO relogin
+				} catch (IOException e) {}
+			}
+			
+			if (currentType == ClientType.TemperatureSensor){
+				communicationTempSensor.Callback proxy;
+				try {
+					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+					/// TODO relogin
+				} catch (IOException e) {}
+			}
+		}
+		
 		return true;
 	}
 
