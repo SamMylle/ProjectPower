@@ -808,17 +808,17 @@ public class DistSmartFridge extends SmartFridge {
 
 	
 	private void startControllerTakeOver() {
-		this.stopServerController();
 		if (this.f_userServerConnection != null) {
 			this.closeFridge();
 			
 			/// notify the user that the direct connection should be stopped, if the user has send his address already, too bad otherwise
 			// TODO find out why this part throws a ClosedByInterruptException
 			
-//			this.notifyUserClosingFridge();
+			this.notifyUserClosingFridge();
 
 			this.stopUserServer();
 		}
+		this.stopServerController();
 		this.f_userServerConnection = null;
 		
 		new Thread() {

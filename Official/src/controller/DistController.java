@@ -591,7 +591,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (new Integer(entry.getKey()).equals(new Integer(f_myPort)) && 
 					f_IPs.get(new Integer(entry.getKey())).equals(f_ownIP)){
 				
-				System.out.println("\nSkippyyyyy, skippyyyyy.");
 				continue;
 			}
 			
@@ -791,11 +790,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				System.getProperty("ip"), 5000);
 		fridge.addItem("Chunks of dead children");
 		
-//		try {
-//			user2.communicateWithFridge(fridge.getID());
-//		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException e2) {
-//			System.out.println("please not here");
-//		}
+		try {
+			user2.communicateWithFridge(fridge2.getID());
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException e2) {
+			System.out.println("please not here");
+		}
 		
 		DistLight light = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
 		light.connectToServer(5000, System.getProperty("ip"));
