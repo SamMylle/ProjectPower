@@ -1,5 +1,6 @@
 package client.util;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import avro.ProjectPower.CommData;
@@ -85,9 +86,9 @@ public class ConnectionData {
 		return "IP = " + f_IP + ", port = " + f_PORT;
 	}
 	
-	@Override
-	public boolean equals(Object o) {
-		return (o instanceof ConnectionData) && ((ConnectionData) o).f_IP == this.f_IP && ((ConnectionData) o).f_PORT == this.f_PORT;
+
+	public boolean equals(ConnectionData o) {
+		return o.f_IP.equals(f_IP) && new Integer(o.f_PORT).equals(new Integer(this.f_PORT));
 	}
 
 }

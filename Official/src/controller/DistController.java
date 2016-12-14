@@ -20,8 +20,9 @@ import client.DistSmartFridge;
 import client.DistUser;
 import client.SmartFridge;
 import client.exception.AbsentException;
+import client.exception.FridgeOccupiedException;
 import client.exception.MultipleInteractionException;
-
+import client.exception.NoFridgeConnectionException;
 import util.Logger;
 
 import java.util.ArrayList;
@@ -778,28 +779,47 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
-		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"),
-				System.getProperty("ip"), 5000);
-		fridge.addItem("Chunks of dead children");
 		DistUser user2 = new DistUser("le me", System.getProperty("clientip"),
 				System.getProperty("ip"), 5000); 
 		DistUser user3 = new DistUser("le me", System.getProperty("clientip"),
 				System.getProperty("ip"), 5000); 
 		DistUser user4 = new DistUser("le me", System.getProperty("clientip"),
 				System.getProperty("ip"), 5000);
+		DistSmartFridge fridge = new DistSmartFridge(System.getProperty("clientip"),
+				System.getProperty("ip"), 5000);
+		DistSmartFridge fridge2 = new DistSmartFridge(System.getProperty("clientip"),
+				System.getProperty("ip"), 5000);
+		fridge.addItem("Chunks of dead children");
+		
+//		try {
+//			user2.communicateWithFridge(fridge.getID());
+//		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException e2) {
+//			System.out.println("please not here");
+//		}
 		
 		DistLight light = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
 		light.connectToServer(5000, System.getProperty("ip"));
 		
 		fridge.backderpdata(controller.makeBackup());
+		fridge2.backderpdata(controller.makeBackup());
+		user2.makeBackup(controller.makeBackup());
+		user3.makeBackup(controller.makeBackup());
+		user4.makeBackup(controller.makeBackup());
 		controller.stopServer();
 		
 		System.out.print("\n\n\n\n\n\n\n\n\n\n\n\n");
 		
-		fridge.startElection();
+		user2.startElection();
+		
 		
 		try {
-			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(System.getProperty("clientip")), 5001));
+			Thread.sleep(10000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(System.getProperty("clientip")), fridge2.getID()));
 			ControllerComm.Callback proxy =
 					SpecificRequestor.getClient(ControllerComm.Callback.class, client);
 
@@ -807,12 +827,20 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 			System.out.println("clients from usr " + user2.getAllClients().toString());
 			
+			user2.communicateWithFridge(fridge.getID());
+			user2.openFridge();
+			user2.addItemFridge("bacon");
+			System.out.println("Fridge items directly: " + user2.getFridgeItemsDirectly().toString());
+			user2.closeFridge();
+			System.out.println("Fridge items indirectly: " + user2.getFridgeItems(fridge.getID()));
+			
 			client.close();
 			
-		} catch (IOException | MultipleInteractionException | AbsentException e) {
+		} catch (IOException | MultipleInteractionException | AbsentException | NoFridgeConnectionException | FridgeOccupiedException e) {
 			System.out.print("NOOOOOOOOOOO\n");
+			System.exit(1);
 		}
 		
-		
+		System.exit(0);
 	}
 }

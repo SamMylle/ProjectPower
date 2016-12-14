@@ -321,22 +321,29 @@ public class DistSmartFridge extends SmartFridge {
 		 */
 		@Override
 		public void newServer(final CharSequence newServerIP, final int newServerID) {
+			
+			if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
+				DistSmartFridge.this.startControllerTakeOver();
+				f_electionID = -1;
+				return;
+			}
+			final ConnectionData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
+			final ClientType nextCandidateType = DistSmartFridge.this.getNextCandidateType();
 			DistSmartFridge.this.f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 			DistSmartFridge.this.f_isParticipantElection = false;
 			DistSmartFridge.this.f_electionID = -1;
 			
-			if (DistSmartFridge.this.getNextCandidateConnection() == DistSmartFridge.this.f_controllerConnection) {
-				// Do nothing if the next candidate is the new elected controller itself
-				return;
-			}
+			System.out.println("");
+			System.out.println("New controller address (" + f_controllerConnection.toString() + ") in fridge with ID=" + DistSmartFridge.this.getID());
+			System.out.println("");
+			
+			
 			
 			// TODO push this to seperate method, where it can also be used for sendSelfElectedNextCandidate
 			new Thread() {
 				public void run() {				
 					try {
-						ConnectionData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
 						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-						ClientType nextCandidateType = DistSmartFridge.this.getNextCandidateType();
 						if (nextCandidateType == ClientType.SmartFridge) {
 							communicationFridge proxy = (communicationFridge) 
 									SpecificRequestor.getClient(communicationFridge.class, transceiver);
@@ -367,7 +374,6 @@ public class DistSmartFridge extends SmartFridge {
 		 */
 		@Override
 		public void electNewController(final int index, final int clientID) {
-			
 			// Setup index in case of first call
 			if (f_electionID == -1) {
 				f_electionID = DistSmartFridge.this.getElectionIndex();
@@ -377,18 +383,22 @@ public class DistSmartFridge extends SmartFridge {
 				f_isParticipantElection = false;
 				// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
 				// This is in order to fully replicate the algorithm described in the theory.
+				
+				// TODO CHANGED THIS
 				DistSmartFridge.this.sendSelfElectedNextCandidate();
 				DistSmartFridge.this.sendNonCandidatesNewServer();
 				
-				DistSmartFridge.this.startControllerTakeOver();
+//				DistSmartFridge.this.startControllerTakeOver();
 				return;
 			}
 			
 			final ConnectionData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
 			final ClientType nextCandidateType = DistSmartFridge.this.getNextCandidateType();
+
 			new Thread() {
 				public void run() {
 					if (clientID > DistSmartFridge.this.getID()) {
+						
 						try {
 							Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
 							if (nextCandidateType == ClientType.SmartFridge) {
@@ -407,6 +417,7 @@ public class DistSmartFridge extends SmartFridge {
 						}
 					} else if (clientID <= DistSmartFridge.this.getID()) {
 						if (DistSmartFridge.this.f_isParticipantElection == false) {
+							DistSmartFridge.this.f_isParticipantElection = true;
 							try {
 								Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
 								if (nextCandidateType == ClientType.SmartFridge) {
@@ -423,7 +434,6 @@ public class DistSmartFridge extends SmartFridge {
 								// TODO handle this more appropriately
 								System.err.println("IOException at electNewController() in DistSmartFridge.");
 							}
-							DistSmartFridge.this.f_isParticipantElection = true;
 						}
 					}
 				}
@@ -473,6 +483,23 @@ public class DistSmartFridge extends SmartFridge {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) { }
+		}
+	}
+	
+	private void notifyUserClosingFridge() {
+		if (f_userConnection != null) {
+			try {
+				System.out.println("Trying to setup the transceiver...");
+				Transceiver transceiver = new SaslSocketTransceiver(f_userConnection.toSocketAddress());
+				System.out.println("Trying to setup the proxy...");
+				communicationUser proxy = (communicationUser) 
+						SpecificRequestor.getClient(communicationUser.class, transceiver);
+				System.out.println("Trying to notify the controller that the direct communication is closing...");
+				proxy.notifyFridgeClosed();
+				transceiver.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}			
 		}
 	}
 	
@@ -551,7 +578,6 @@ public class DistSmartFridge extends SmartFridge {
 		@Override
 		public Void registerUserIP(CharSequence userIP, int userPort) throws AvroRemoteException {
 			f_userConnection = new ConnectionData(userIP.toString(), userPort);
-			System.out.println(f_userConnection.toString());
 			f_safeToClose = true;
 			return null;
 		}
@@ -573,7 +599,6 @@ public class DistSmartFridge extends SmartFridge {
 		for (ClientType clientType : clientTypes) {
 			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
 				count++;
-				break;
 			}
 		}
 		if (count <= 1) {
@@ -639,7 +664,7 @@ public class DistSmartFridge extends SmartFridge {
 			return new ConnectionData(nextIP, participantIDs.get(0).intValue());
 		}
 		
-		String nextIP = clientIPsIP.get( clientIPsID.indexOf(participantIDs.get(f_electionID+1)) ).toString();
+		String nextIP = clientIPsIP.get( clientIPsID.indexOf( new Integer(participantIDs.get(f_electionID+1)) ) ).toString();
 		int nextPort = participantIDs.get(f_electionID+1);
 		return new ConnectionData(nextIP, nextPort);
 	}
@@ -697,6 +722,10 @@ public class DistSmartFridge extends SmartFridge {
 	 * Notifies the next participant in the ring that this client has been elected.
 	 */
 	private void sendSelfElectedNextCandidate() {
+		final ConnectionData nextCandidate = this.getNextCandidateConnection();
+		final ClientType nextCandidateType = this.getNextCandidateType();
+		
+		
 		new Thread() {
 			public void run() {				
 				try {
@@ -782,6 +811,12 @@ public class DistSmartFridge extends SmartFridge {
 		this.stopServerController();
 		if (this.f_userServerConnection != null) {
 			this.closeFridge();
+			
+			/// notify the user that the direct connection should be stopped, if the user has send his address already, too bad otherwise
+			// TODO find out why this part throws a ClosedByInterruptException
+			
+//			this.notifyUserClosingFridge();
+
 			this.stopUserServer();
 		}
 		this.f_userServerConnection = null;
