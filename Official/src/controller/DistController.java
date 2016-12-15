@@ -316,8 +316,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_notConfirmed.add(new Integer(newID));
 		f_IPs.put(newID, ip.toString());
 		
-		/// TODO this will have to return and send the backup data afterwards
-		/// Suggestion: send successful login to server
 		return newID;
 	}
 	
@@ -330,9 +328,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		int newID = this.giveNextID(clientType);
 		f_notConfirmed.add(new Integer(newID));
 		
-		/// TODO this will have to return and send the backup data afterwards
-		/// Suggestion: send successful login to server
-		/// this.sendBackupToAll();
 		return newID;
 	}
 
@@ -350,7 +345,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public Void logOff(int ID) throws AvroRemoteException{
 		/// Remove ID from the system
-		/// TODO, special case when the client is a temperatureSensor
+		/// TODO test with tempsensor
 		this.removeID(ID);
 		this.f_IPs.remove(ID);
 		for (int i = 0; i < f_temperatures.size(); i++){
@@ -585,7 +580,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				removed = true;
 				f_names.remove(currentID);
 				f_IPs.remove(currentID);
-				/// TODO special case if tempsensor
+				for (int i = 0; i < f_temperatures.size(); i++){
+					if (new Integer(currentID).equals(new Integer(f_temperatures.elementAt(i).getID()))){
+						f_temperatures.remove(i);
+						break;
+					}
+				}
 			}
 		}
 		
