@@ -190,6 +190,11 @@
 		"recoverData":{
 			"request": [{"name": "data", "type": "ServerData"}],
 			"response": {"type": "boolean"}
+		},
+		"loginSuccessful":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
 		}
 	}
 

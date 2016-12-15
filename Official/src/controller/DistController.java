@@ -27,6 +27,7 @@ import util.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,10 +54,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private int f_previousControllerPort;
 	private String f_previousControllerIP;
 	public Timer f_timer;
+	private Set<Integer> f_notConfirmed;
 
 	public DistController(int port, int maxTemperatures, String ip){
 		/// TODO  throws java.net.BindException
 		super(port + 1, maxTemperatures);
+		f_notConfirmed = new HashSet<Integer>();
 		f_isOriginalServer = true;
 		
 		//f_controller = new Controller(port + 1, 10);
@@ -131,6 +134,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			HashMap<Integer, ClientType> names, Vector<TemperatureRecord> temperatures){
 		/// TODO  throws java.net.BindException
 		super(currentMaxPort, maxTemperatures);
+		f_notConfirmed = new HashSet<Integer>();
 		f_isOriginalServer = false;
 		
 		//f_controller = new Controller(port + 1, 10);
@@ -172,6 +176,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// Precondition: valid stuff in data
 		/// I'm not proud of this
 		super(oldServer.currentMaxPort, oldServer.maxTemperatures);
+		f_notConfirmed = new HashSet<Integer>();
 		f_isOriginalServer = false;
 		
 		//f_controller = new Controller(port + 1, 10);
@@ -310,6 +315,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		int newID = this.giveNextID(clientType);
 		ip.toString();
 		f_IPs.put(newID, ip.toString());
+		f_notConfirmed.add(new Integer(newID));
 		
 		/// TODO this will have to return and send the backup data afterwards
 		/// Suggestion: send successful login to server
@@ -322,12 +328,19 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// TODO write test
 		Logger.getLogger().log("give renewed ID");
 		this.removeID(oldID);
+		f_notConfirmed.remove(new Integer(oldID));
 		int newID = this.giveNextID(clientType);
+		f_notConfirmed.add(new Integer(newID));
 		
 		/// TODO this will have to return and send the backup data afterwards
 		/// Suggestion: send successful login to server
 		/// this.sendBackupToAll();
 		return newID;
+	}
+
+	@Override
+	public void loginSuccessful(int ID) {
+		f_notConfirmed.remove(new Integer(ID));
 	}
 
 	@Override
@@ -647,7 +660,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
 			
-			if (this.f_ownIP.equals(f_ownIP) && new Integer(currentID).equals(new Integer(this.f_myPort))){
+			if ((this.f_ownIP.equals(f_ownIP) && new Integer(currentID).equals(new Integer(this.f_myPort)))
+					|| f_notConfirmed.contains(new Integer(currentID))){
 				continue;
 			}
 			
@@ -831,6 +845,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public void sendBackupToAll(){
 		/// TODO test
 		for(Integer currentID : f_names.keySet()){
+			if (f_notConfirmed.contains(new Integer(currentID))){
+				continue;
+			}
+			
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
 			this.sendBackupToSpecific(currentIP, currentID, currentType);
