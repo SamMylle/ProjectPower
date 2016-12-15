@@ -169,6 +169,7 @@ public class DistSmartFridge extends SmartFridge {
 				e.printStackTrace();
 			}
 		}
+		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -195,6 +196,24 @@ public class DistSmartFridge extends SmartFridge {
 		this.logOffController();
 		this.stopServerController();
 		this.stopUserServer();
+	}
+	
+	/**
+	 * Notifies the controller of successful login.
+	 */
+	private void notifySuccessfulLogin() {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.loginSuccessful(this.getID());
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at notifySuccessfulLogin() in DistSmartFridge.");
+		}
+		catch (IOException e) {
+			System.err.println("IOException at notifySuccessfulLogin() in DistSmartFridge.");
+		}
 	}
 	
 	

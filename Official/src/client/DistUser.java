@@ -81,7 +81,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_electionID = -1;
 		
 		this.setupID();
-		this.setupServer();
+		this.startServer();
 		super._setStatus(UserStatus.present);
 	}
 	
@@ -142,7 +142,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	/**
 	 * Starts the server.
 	 */
-	private void setupServer() {
+	private void startServer() {
 		f_serverThread = new Thread(this);
 		f_serverThread.start();
 		
@@ -153,6 +153,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				e.printStackTrace();
 			}
 		}
+		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -178,6 +179,25 @@ public class DistUser extends User implements communicationUser, Runnable {
 	public void disconnect() {
 		this.logOffController();
 		this.stopServer();
+	}
+	
+	
+	/**
+	 * Notifies the controller of successful login.
+	 */
+	private void notifySuccessfulLogin() {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.loginSuccessful(this.getID());
+			transceiver.close();
+		}
+		catch (AvroRemoteException e) {
+			System.err.println("AvroRemoteException at notifySuccessfulLogin() in DistUser.");
+		}
+		catch (IOException e) {
+			System.err.println("IOException at notifySuccessfulLogin() in DistUser.");
+		}
 	}
 	
 	// TODO make sure exception handling isn't screwed up when using this method
@@ -1075,7 +1095,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					} catch (InterruptedException e) { }
 				}
 				DistUser.this.f_controller = null;
-				DistUser.this.setupServer();
+				DistUser.this.startServer();
 			}
 		}.start();
 		
