@@ -313,13 +313,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
 		System.out.println("\nADDING");
 		int newID = this.giveNextID(clientType);
-		ip.toString();
-		f_IPs.put(newID, ip.toString());
 		f_notConfirmed.add(new Integer(newID));
+		f_IPs.put(newID, ip.toString());
 		
 		/// TODO this will have to return and send the backup data afterwards
 		/// Suggestion: send successful login to server
-		/// this.sendBackupToAll();
 		return newID;
 	}
 	
@@ -341,6 +339,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public void loginSuccessful(int ID) {
 		f_notConfirmed.remove(new Integer(ID));
+		this.sendBackupToAll();
 	}
 
 	@Override
@@ -422,109 +421,23 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			return new CommData(-1, "");
 		}
 	}
-	
-	
-	/*@Deprecated
-	public int getFridgePort(int start){
-		/// -1 for default start port
-		///  It will NOT take the start port into consideration
-		int ret = f_myPort;
-		
-		if (start != -1){
-			ret = start;
-		}
-		
-		if (ret < 0){
-			return -1;
-		}
-		
-		boolean portAlreadyInUse = true;
-		
-		if(f_usedFridgePorts.size() == 0){
-			portAlreadyInUse = false;
-			ret--;
-		}
-
-		while(portAlreadyInUse){
-			ret--;
-			portAlreadyInUse = false;
-			
-			for (int i = 0; i < f_usedFridgePorts.size(); i++){
-				if (f_usedFridgePorts.elementAt(i).equals(new Integer(ret))){
-					portAlreadyInUse = true;
-					break;
-				}
-			}
-		}
-		
-		if (ret < 0){
-			return -1;
-		}
-		
-		f_usedFridgePorts.add(new Integer(ret));
-		
-		return ret;
-	}*/
-	
-	
 	@Deprecated
 	@Override
 	public CommData reSetupFridgeCommunication(int fridgeID, int wrongID) throws AvroRemoteException {
-		/*/// Only needs a port
-		try {
-			if (f_names.get(fridgeID) != ClientType.SmartFridge){
-				return new CommData(-1, "");
-			}
-			
-			String ip = this.getIPAddress(fridgeID);
-			
-			if (ip == ""){
-				return new CommData(-1, "");
-			}
-
-			Transceiver client = this.setupTransceiver(fridgeID, ip);
-
-			/// Don't think this is necessary
-			if (client == null){
-				return new CommData(-1, "");
-			}
-
-			/// Connect to fridge
-			communicationFridge.Callback proxy =
-					SpecificRequestor.getClient(communicationFridge.Callback.class, client);
-
-			/// Ask the fridge if it's okay to connect a user to it
-			int newID = this.getFridgePort(wrongID);
-			if (proxy.requestFridgeCommunication(newID) == true){
-				return new CommData(newID, ip);
-			}else{
-				f_usedFridgePorts.removeElement(newID);
-				return new CommData(-1, "");
-			}
-		}catch(Exception e){
-			return new CommData(-1, "");
-		}*/
+		
 		return new CommData(-1, "");
 	}
 
 	@Deprecated
 	@Override
 	public Void endFridgeCommunication(int usedPort) throws AvroRemoteException {
-		/*for (int i = 0; i < f_usedFridgePorts.size(); i++){
-			if(f_usedFridgePorts.elementAt(i) == usedPort){
-				f_usedFridgePorts.remove(i);
-				break;
-			}
-		}*/
+		
 		return null;
 	}
 
 	@Override
 	@Deprecated
 	public Void listenToMe(int port, ClientType type) throws AvroRemoteException {
-		/// Remote call by e.g. a fridge, to indicate the server can reach him on this port
-			/// (usually the ID of the client)
-		//this.setupTransceiver(type, port);
 		return null;
 	}
 
@@ -659,12 +572,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		for(Integer currentID : f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
-			
+
+			System.out.println("Asking before " + currentID.toString() + " " + currentType.toString());
 			if ((this.f_ownIP.equals(f_ownIP) && new Integer(currentID).equals(new Integer(this.f_myPort)))
 					|| f_notConfirmed.contains(new Integer(currentID))){
 				continue;
 			}
-			
+			System.out.println("Asking " + currentID.toString());
 			boolean keep = this.reaffirmClientAlive(currentIP, currentID, currentType);
 			
 			if (! keep){
@@ -731,7 +645,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private class ClientPoll extends TimerTask{
 		@Override
 		public void run() {
-			System.out.println("\nPolling...");
 			DistController.this.reaffirmClientsAlive();
 		}
 	}
@@ -844,19 +757,25 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	public void sendBackupToAll(){
 		/// TODO test
+		System.out.print("Backup Start\n");
 		for(Integer currentID : f_names.keySet()){
 			if (f_notConfirmed.contains(new Integer(currentID))){
 				continue;
 			}
+			System.out.print("Sending backup\n");
 			
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
+
 			this.sendBackupToSpecific(currentIP, currentID, currentType);
 		}
 	}
 	
 	private boolean sendBackupToSpecific(String ip, int port, ClientType type){
 		/// TODO test
+		if (type != ClientType.SmartFridge || type != ClientType.User){
+			return false;
+		}
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
 			
@@ -864,16 +783,18 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				communicationFridge.Callback proxy;
 				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
 				proxy.makeBackup(this.makeBackup());
+				client.close();
+				return true;
 			}
 			
 			if (type == ClientType.User){
 				communicationUser.Callback proxy;
 				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
 				proxy.makeBackup(this.makeBackup());
+				client.close();
+				return true;
 			}
-			
 		}catch(Exception e){
-			e.printStackTrace();
 			return false;
 		}
 		return false;
@@ -960,17 +881,16 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		DistUser user = new DistUser("me", System.getProperty("ip"), System.getProperty("ip"), 5000);
 		
+		DistLight light = new DistLight(System.getProperty("ip"), System.getProperty("ip"));
+		light.connectToServer(5000, System.getProperty("ip"));
+		
+		
 		try {
 			System.in.read();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		DistLight light = new DistLight(System.getProperty("ip"), System.getProperty("ip"));
-		light.connectToServer(5000, System.getProperty("ip"));
-		
 		light.disconnect();
 		
 		//DistSmartFridge

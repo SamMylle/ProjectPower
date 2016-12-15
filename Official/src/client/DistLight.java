@@ -79,6 +79,7 @@ public class DistLight implements Runnable, LightComm{
 	public void connectToServer(int port, String serverIP){
 		try{
 			/// Setup connection
+			System.out.print("TEST\n");
 			Transceiver transceiver =
 					new SaslSocketTransceiver(new InetSocketAddress(serverIP, port));
 
@@ -88,10 +89,11 @@ public class DistLight implements Runnable, LightComm{
 
 			/// Get your ID from the server
 			int ID = proxy.LogOn(ClientType.Light, f_ip);
+			System.out.println("Login");
+			System.out.println("Success");
 
-			transceiver.close();
-			
 			f_light.setID(ID);
+			
 			
 			f_serverThread = new Thread(this);
 			
@@ -100,6 +102,8 @@ public class DistLight implements Runnable, LightComm{
 			while(! f_serverActive){
 				Thread.sleep(50);
 			}
+			proxy.loginSuccessful(ID);
+			transceiver.close();
 
 			//Logger.getLogger().log("j21");
 			///proxy.listenToMe(f_light.getID(), ClientType.Light);
