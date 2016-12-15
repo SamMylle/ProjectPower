@@ -12,17 +12,21 @@
 	],
 
 	"messages" : {
-		"aliveAndKicking":{
+		"aliveAndKicking" : {
 			"request": [],
 			"response": "boolean"
 		},
-		"newServer":{
+		"newServer" : {
 			"request": [
 				{"name": "newServerIP", "type": "string"},
 				{"name": "newServerID", "type": "int"}
 			],
 			"response": "null", 
 			"one-way" : true
+		},
+		"getTemperatureRecords" : {
+			"request" : [],
+			"response" : {"type" : "array", "items" : "double"}
 		}
 	}
 }

@@ -12,6 +12,9 @@ public class TemperatureSensor {
 	private int f_ID;
 	private double f_temperature;
 	private Timer f_timer;
+	protected Double[] f_measures;
+	private int f_measureIndex;
+	
 	public static final ClientType type = ClientType.TemperatureSensor;
 	
 	public TemperatureSensor(double lowTempRange, double highTempRange) {
@@ -22,6 +25,13 @@ public class TemperatureSensor {
 			f_temperature = lowTempRange + (Math.random() * (highTempRange - lowTempRange));
 		else
 			f_temperature = lowTempRange;
+		
+		f_measures = new Double[20];		// ARBITRARY BUFFER SIZE
+		for (int i = 0; i < 20; i++) {
+			f_measures[i] = null;
+		}
+		
+		f_measureIndex = 0;
 		
 		f_timer = new Timer();
 		f_timer.schedule(new generateTempTask(this), 1000, 1000);
@@ -40,12 +50,13 @@ public class TemperatureSensor {
 		return f_temperature;
 	}
 	
-	public double generateTemperature() {
+	public void generateTemperature() {
 		assert f_ID >= 0;
 		double randomValue = Math.random();
 		
+		this.f_measures[f_measureIndex % f_measures.length] = new Double(f_temperature - 1 + (2 * randomValue));
+		f_measureIndex = f_measureIndex + 1;
 		this.f_temperature = this.f_temperature - 1 + (2 * randomValue);
-		return this.f_temperature;
 	}
 	
 	class generateTempTask extends TimerTask {

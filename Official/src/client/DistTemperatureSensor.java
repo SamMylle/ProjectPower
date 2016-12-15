@@ -6,6 +6,8 @@ package client;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +53,7 @@ public class DistTemperatureSensor
 		this.startServer();
 		
 		f_timer = new Timer();
-		f_timer.schedule(new sendTemperatureTask(this), 25, 1000);
+		f_timer.schedule(new sendTemperatureTask(this), 1000, 1000);
 		// TODO remove magic number, argument for time period, same for superclass
 	}
 
@@ -170,6 +172,7 @@ public class DistTemperatureSensor
 		catch (InterruptedException e) {
 			f_server.close();
 			f_server = null;
+			f_serverReady = false;
 		}
 	}
 
@@ -253,6 +256,18 @@ public class DistTemperatureSensor
 	@Override
 	public void newServer(CharSequence newServerIP, int newServerID) {
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+	}
+
+	@Override
+	public List<Double> getTemperatureRecords() throws AvroRemoteException {
+		List<Double> measures = new ArrayList<Double>();
+		
+		for (Double measure : f_measures) {
+			if (measure != null) {
+				measures.add(measure);
+			}
+		}
+		return measures;
 	}
 
 }
