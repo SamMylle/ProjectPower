@@ -877,6 +877,24 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return true;
 	}
 
+	@Override
+	public void fridgeIsEmpty(int ID) {
+		for (Integer currentID: f_names.keySet()){
+			if (f_notConfirmed.contains(currentID) || f_names.get(currentID) != ClientType.User){
+				continue;
+			}
+			try {
+				Transceiver client = this.setupTransceiver(currentID, f_IPs.get(currentID));
+				communicationUser proxy;
+				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+				
+				/// TODO comm with user => federico
+				
+				client.close();
+			} catch (Exception e) {}
+		}
+	}
+
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
