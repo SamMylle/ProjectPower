@@ -32,15 +32,15 @@ import client.util.LightState;
 // TODO be able to start a DistController when being elected
 public class DistUser extends User implements communicationUser, Runnable {
 	
-	private String f_ownIP;
-	
+	private String f_ownIP;	
 	private ConnectionData f_controllerConnection;
+	private ConnectionData f_fridgeConnection;
 	
 	private Server f_server;
 	private Thread f_serverThread;
 	private boolean f_serverReady;
 	
-	private ConnectionData f_fridgeConnection;
+	public List<String> f_notifications;
 	
 	/// FAULT TOLERENCE & REPLICATION
 	private ConnectionData f_originalControllerConnection; 	// Backup of the connection to the first DistController
@@ -73,6 +73,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
 		f_serverReady = false;
 		f_fridgeConnection = null;
+		f_notifications = new Vector<String>();
 		
 		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
 		f_replicatedServerData = null;
@@ -198,6 +199,15 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			System.err.println("IOException at notifySuccessfulLogin() in DistUser.");
 		}
+	}
+	
+	/**
+	 * Notifies the user that a fridge is empty.
+	 * @param fridgeID The ID of the now empty fridge.
+	 */
+	@Override
+	public void notifyFridgeEmpty(int fridgeID) {
+		this.f_notifications.add("The fridge with ID " + Integer.toString(fridgeID) + " is empty.");
 	}
 	
 	// TODO make sure exception handling isn't screwed up when using this method

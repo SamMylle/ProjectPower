@@ -72,6 +72,11 @@
 			"request" : [{"name" : "index", "type" : "int"},{"name" : "clientID", "type" : "int"}],
 			"response" : "null",
 			"one-way" : true
+		},
+		"notifyFridgeEmpty" : {
+			"request" : [{"name" : "fridgeID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
 		}
 	}
 }
