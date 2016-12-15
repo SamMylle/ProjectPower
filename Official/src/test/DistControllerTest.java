@@ -74,10 +74,11 @@ public class DistControllerTest {
 		controller = null;
 	}
 
-	/*@Test
+	@Test
 	@SuppressWarnings("deprecation")
 	public void testDistControllerExtended() {
 		/// TODO uncomment, remove backup in ServerData constructor
+		System.out.println("LETHAL TEST");
 		DistController OtherController = null;
 		DistController controller = null;
 		try{
@@ -136,8 +137,6 @@ public class DistControllerTest {
 			controller = new DistController(data);
 			controller.f_timer.cancel();
 			
-			System.in.read();
-			
 			OtherController = new DistController(5000, maxTemperatures, f_ip);
 			OtherController.f_timer.cancel();
 			try {
@@ -171,7 +170,8 @@ public class DistControllerTest {
 			controller.stopServer();
 			OtherController.stopServer();
 		}
-	}*/
+		System.out.println("LETHAL TEST");
+	}
 
 	@Test
 	public void testServerIsActive() {

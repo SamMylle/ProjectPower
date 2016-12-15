@@ -759,6 +759,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// TODO test
 		System.out.print("Backup Start\n");
 		for(Integer currentID : f_names.keySet()){
+			System.out.println(f_notConfirmed.toString());
+			System.out.println(f_names.toString());
 			if (f_notConfirmed.contains(new Integer(currentID))){
 				continue;
 			}
