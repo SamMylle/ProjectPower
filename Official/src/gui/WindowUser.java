@@ -38,7 +38,7 @@ public class WindowUser extends javax.swing.JFrame {
      */
     public WindowUser() {
         initComponents();
-        String localIP = "192.168.1.7";
+        String localIP = "192.168.1.8";
         f_controller = new DistController(5000, 10, localIP);
         f_user = new DistUser("", localIP, localIP, 5000);
         f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
@@ -70,6 +70,11 @@ public class WindowUser extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(800, 500));
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         jtpPanelSwitch.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -135,6 +140,11 @@ public class WindowUser extends javax.swing.JFrame {
         panelinterface.update();
         this.updateStatus(); // TODO maybe remove this here
     }//GEN-LAST:event_jtpPanelSwitchStateChanged
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        // TODO add your handling code here:
+        f_user.disconnect();
+    }//GEN-LAST:event_formWindowClosing
 
     
     private void updateStatus() {

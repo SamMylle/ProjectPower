@@ -8,9 +8,7 @@ package gui;
 import client.DistUser;
 import gui.PanelInterface;
 import avro.ProjectPower.Client;
-import client.exception.AbsentException;
-import client.exception.MultipleInteractionException;
-import client.exception.TakeoverException;
+import client.exception.*;
 import java.util.List;
 import java.util.Vector;
 import avro.ProjectPower.ClientType;
@@ -50,6 +48,7 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         cbbSelectFridge = new javax.swing.JComboBox<>();
         scpScrollPaneFridgeInventory = new javax.swing.JScrollPane();
         tblFridgeInventory = new javax.swing.JTable();
+        btnCommunicate = new javax.swing.JButton();
 
         setPreferredSize(new java.awt.Dimension(600, 400));
 
@@ -75,18 +74,27 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         ));
         scpScrollPaneFridgeInventory.setViewportView(tblFridgeInventory);
 
+        btnCommunicate.setText("Communicate directly");
+        btnCommunicate.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnCommunicateMouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(scpScrollPaneFridgeInventory, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(lblFridgeText)
-                        .addGap(18, 18, 18)
-                        .addComponent(cbbSelectFridge, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(scpScrollPaneFridgeInventory, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(lblFridgeText)
+                            .addGap(18, 18, 18)
+                            .addComponent(cbbSelectFridge, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(btnCommunicate))
                 .addContainerGap(287, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -98,7 +106,9 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
                     .addComponent(cbbSelectFridge, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(scpScrollPaneFridgeInventory, javax.swing.GroupLayout.PREFERRED_SIZE, 244, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(98, Short.MAX_VALUE))
+                .addGap(27, 27, 27)
+                .addComponent(btnCommunicate)
+                .addContainerGap(41, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -109,6 +119,28 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         }
         this.updateTableFridgeInventory(this.cbbSelectFridge.getSelectedIndex());
     }//GEN-LAST:event_cbbSelectFridgeItemStateChanged
+
+    private void btnCommunicateMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCommunicateMouseClicked
+        int fridgeVectorIndex = this.cbbSelectFridge.getSelectedIndex();
+        try {
+            f_user.communicateWithFridge(f_fridges.get(fridgeVectorIndex).getID());
+            f_user.openFridge();
+        } catch (AbsentException e) {
+            // TODO do something here
+        } catch (TakeoverException e) {
+            // TODO do something here
+        } catch (MultipleInteractionException e) {
+            // TODO do something here
+        } catch (NoFridgeConnectionException e) {
+            // TODO do something here
+        } catch (FridgeOccupiedException e) {
+            // TODO do something here
+        }
+        
+        DirectFridgeFrame frame = new DirectFridgeFrame(f_user);
+        frame.setVisible(true);
+        
+    }//GEN-LAST:event_btnCommunicateMouseClicked
 
     private void updateFridges() {
         f_fridges = new Vector<Client>();
@@ -171,6 +203,7 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnCommunicate;
     private javax.swing.JComboBox<String> cbbSelectFridge;
     private javax.swing.JLabel lblFridgeText;
     private javax.swing.JScrollPane scpScrollPaneFridgeInventory;
