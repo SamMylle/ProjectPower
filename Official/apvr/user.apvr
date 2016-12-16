@@ -58,8 +58,7 @@
 				{"name": "newServerIP", "type": "string"},
 				{"name": "newServerID", "type": "int"}
 			],
-			"response": "null", 
-			"one-way" : true
+			"response": "null"
 		},
 		"makeBackup":{
 			"request": [
@@ -71,6 +70,14 @@
 		"electNewController" : {
 			"request" : [{"name" : "index", "type" : "int"},{"name" : "clientID", "type" : "int"}],
 			"response" : "null",
+			"one-way" : true
+		},
+		"newServerElected" : {
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null", 
 			"one-way" : true
 		},
 		"notifyFridgeEmpty" : {

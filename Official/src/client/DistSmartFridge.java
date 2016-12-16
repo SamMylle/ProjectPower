@@ -335,6 +335,15 @@ public class DistSmartFridge extends SmartFridge {
 		public boolean aliveAndKicking() throws AvroRemoteException {
 			return true;
 		}
+		
+		/**
+		 * Sets new connection data for the controller.
+		 */
+		@Override
+		public Void newServer(CharSequence newServerIP, int newServerID) {
+			f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+			return null;
+		}
 
 		/**
 		 * Equivalent to elected function from slides theory (slide 54 - Coordination)
@@ -346,7 +355,7 @@ public class DistSmartFridge extends SmartFridge {
 		 * 		Void.
 		 */
 		@Override
-		public void newServer(final CharSequence newServerIP, final int newServerID) {
+		public void newServerElected(final CharSequence newServerIP, final int newServerID) {
 			
 			if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
 				DistSmartFridge.this.startControllerTakeOver();
@@ -359,11 +368,6 @@ public class DistSmartFridge extends SmartFridge {
 			DistSmartFridge.this.f_isParticipantElection = false;
 			DistSmartFridge.this.f_electionID = -1;
 			
-			System.out.println("");
-			System.out.println("New controller address (" + f_controllerConnection.toString() + ") in fridge with ID=" + DistSmartFridge.this.getID());
-			System.out.println("");
-			
-			
 			
 			// TODO push this to seperate method, where it can also be used for sendSelfElectedNextCandidate
 			new Thread() {
@@ -373,11 +377,11 @@ public class DistSmartFridge extends SmartFridge {
 						if (nextCandidateType == ClientType.SmartFridge) {
 							communicationFridge proxy = (communicationFridge) 
 									SpecificRequestor.getClient(communicationFridge.class, transceiver);
-							proxy.newServer(newServerIP, newServerID);
+							proxy.newServerElected(newServerIP, newServerID);
 						} else if (nextCandidateType == ClientType.User) {
 							communicationUser proxy = (communicationUser) 
 									SpecificRequestor.getClient(communicationUser.class, transceiver);
-							proxy.newServer(newServerIP, newServerID);
+							proxy.newServerElected(newServerIP, newServerID);
 						}
 						transceiver.close();
 					} catch (AvroRemoteException e) {
@@ -525,12 +529,9 @@ public class DistSmartFridge extends SmartFridge {
 	private void notifyUserClosingFridge() {
 		if (f_userConnection != null) {
 			try {
-				System.out.println("Trying to setup the transceiver...");
 				Transceiver transceiver = new SaslSocketTransceiver(f_userConnection.toSocketAddress());
-				System.out.println("Trying to setup the proxy...");
 				communicationUser proxy = (communicationUser) 
 						SpecificRequestor.getClient(communicationUser.class, transceiver);
-				System.out.println("Trying to notify the controller that the direct communication is closing...");
 				proxy.notifyFridgeClosed();
 				transceiver.close();
 			} catch (IOException e) {
@@ -772,11 +773,11 @@ public class DistSmartFridge extends SmartFridge {
 					if (nextCandidateType == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						proxy.newServer(f_ownIP, DistSmartFridge.this.getID());
+						proxy.newServerElected(f_ownIP, DistSmartFridge.this.getID());
 					} else if (nextCandidateType == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
-						proxy.newServer(f_ownIP, DistSmartFridge.this.getID());
+						proxy.newServerElected(f_ownIP, DistSmartFridge.this.getID());
 					}
 					transceiver.close();
 				} catch (AvroRemoteException e) {
@@ -869,6 +870,7 @@ public class DistSmartFridge extends SmartFridge {
 					} catch (InterruptedException e) { }
 				}
 				DistSmartFridge.this.f_controller = null;
+				DistSmartFridge.this.setupID();
 				DistSmartFridge.this.startControllerServer();
 			}
 		}.start();

@@ -29,8 +29,7 @@
 				{"name": "newServerIP", "type": "string"},
 				{"name": "newServerID", "type": "int"}
 			],
-			"response": "null", 
-			"one-way" : true
+			"response": "null"
 		},
 		"reLogin" : {
 			"request" : [],

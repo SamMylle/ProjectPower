@@ -52,6 +52,13 @@
 				{"name": "newServerIP", "type": "string"},
 				{"name": "newServerID", "type": "int"}
 			],
+			"response": "null"
+		},
+		"newServerElected" : {
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
 			"response": "null", 
 			"one-way" : true
 		},

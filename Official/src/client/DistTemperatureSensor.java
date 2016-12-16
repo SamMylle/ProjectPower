@@ -233,8 +233,9 @@ public class DistTemperatureSensor
 	 * Adjusts the connection to the controller to the new elected controller.
 	 */
 	@Override
-	public void newServer(CharSequence newServerIP, int newServerID) {
+	public Void newServer(CharSequence newServerIP, int newServerID) {
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+		return null;
 	}
 
 	@Override

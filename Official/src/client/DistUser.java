@@ -216,7 +216,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	@Override
 	public void reLogin() {
 		// TODO same concern as in DistSmartFridge
-		System.out.println("relogin request");
 		this.stopServer();
 		this.setupID();
 		this.startServer();
@@ -413,18 +412,22 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public void getTemperatureHistory() throws MultipleInteractionException, AbsentException, TakeoverException {
+	public List<Double> getTemperatureHistory() throws MultipleInteractionException, AbsentException, TakeoverException {
 		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
+		List<Double> values = new ArrayList<Double>();
+		
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			values = proxy.getTempHistory();
+			
 			//TODO add call to get the history of all the stored temperatures.
 			transceiver.close();
 		}
@@ -434,6 +437,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			System.err.println("IOException at getCurrentTemperatureHouse() in DistUser.");
 		}
+		
+		return values;
 	}
 	
 	/**
@@ -742,8 +747,17 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void notifyFridgeClosed() {
-		System.out.println("\n\nFridge connection closed in the user.");
 		f_fridgeConnection = null;
+	}
+	
+	
+	/**
+	 * Sets new connection data for the controller.
+	 */
+	@Override
+	public Void newServer(CharSequence newServerIP, int newServerID) {
+		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+		return null;
 	}
 	
 	
@@ -816,7 +830,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param newServerID The Port of the newly elected controller.
 	 */
 	@Override
-	public void newServer(final CharSequence newServerIP, final int newServerID) {
+	public void newServerElected(final CharSequence newServerIP, final int newServerID) {
 		
 		if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
 			this.startControllerTakeOver();
@@ -829,10 +843,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_isParticipantElection = false;
 		f_electionID = -1;
 		
-		System.out.println("");
-		System.out.println("New controller address (" + f_controllerConnection.toString() + ") in user with ID=" + this.getID());
-		System.out.println("");
-		
 		
 		// TODO push this to separate method, where it can also be used for sendSelfElectedNextCandidate
 		new Thread() {
@@ -842,11 +852,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 					if (nextCandidateType == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						proxy.newServer(newServerIP, newServerID);
+						proxy.newServerElected(newServerIP, newServerID);
 					} else if (nextCandidateType == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
-						proxy.newServer(newServerIP, newServerID);
+						proxy.newServerElected(newServerIP, newServerID);
 					}
 					transceiver.close();
 				} catch (AvroRemoteException e) {
@@ -1023,11 +1033,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 					if (nextCandidateType == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						proxy.newServer(f_ownIP, DistUser.this.getID());
+						proxy.newServerElected(f_ownIP, DistUser.this.getID());
 					} else if (nextCandidateType == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
-						proxy.newServer(f_ownIP, DistUser.this.getID());
+						proxy.newServerElected(f_ownIP, DistUser.this.getID());
 					}
 					transceiver.close();
 				} catch (AvroRemoteException e) {
@@ -1115,6 +1125,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					} catch (InterruptedException e) { }
 				}
 				DistUser.this.f_controller = null;
+				DistUser.this.setupID();
 				DistUser.this.startServer();
 			}
 		}.start();
@@ -1139,7 +1150,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void makeBackup(ServerData data) {
-		System.out.println("got the datar");
 		f_replicatedServerData = data;
 	}
 	
@@ -1149,13 +1159,32 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Main function, used for testing
 	 */
 	public static void main(String[] args) {
-		
+		String clientip = System.getProperty("clientip");
+		String serverip = System.getProperty("ip");
+		DistController controller = new DistController(5000, 10, serverip);
 		DistUser remoteUser = 
-				new DistUser("Federico Quin", System.getProperty("clientip"), System.getProperty("ip"), 5000);
+				new DistUser("Federico Quin", clientip, serverip, 5000);
+		DistTemperatureSensor sensor = new DistTemperatureSensor(-20, -22, clientip, serverip, 5000);
+
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		DistTemperatureSensor sensor2 = new DistTemperatureSensor(20, 22, clientip, serverip, 5000);
 
 		try {
 			System.in.read();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		try {
+			remoteUser.getTemperatureHistory();
+		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

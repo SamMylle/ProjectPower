@@ -267,6 +267,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			f_server.join();
 		}catch(InterruptedException e){
 			System.out.print("Closing server\n");
+			f_timer.cancel();
 			f_server.close();
 			f_server = null;
 		}
@@ -670,13 +671,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return f_isOriginalServer;
 	}
 	
-	public void notifyClientIAmServer(String ip, int port){
+	public void notifyClientIAmServer(String ip, int port, ClientType type){
 		/// TODO test
 		//for(Integer ID: f_names.keySet()){
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
-			ClientType type = this.f_names.get(port);
-
 
 			if (type == ClientType.SmartFridge){
 				communicationFridge.Callback proxy;
@@ -703,7 +702,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				proxy.newServer(f_ownIP, f_myPort);
 			}
 			
-		}catch(Exception e){}
+		}catch(Exception e){
+			System.out.println("would explain alot");
+		}
 		//}
 	}
 	
@@ -802,6 +803,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		List<avro.ProjectPower.ClientType> namesClientType = data.getNamesClientType();
 		List<java.lang.Integer> temperaturesIDs = data.getTemperaturesIDs();
 		
+		System.out.println(IPsID.toString());
+		
 		for (int i = 0; i < IPsID.size(); i++){
 			int currentID = IPsID.get(i);
 			if (new Integer(currentID).equals(new Integer(data.getPort()))){
@@ -821,13 +824,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				continue;
 			}
 			
+			this.notifyClientIAmServer(currentIP, currentID, currentType);
 			Transceiver client = this.setupTransceiver(currentID, currentIP);
 			
 			if (client == null){
 				continue;
 			}
 
-			this.notifyClientIAmServer(currentIP, currentID);
 			
 			if (currentType == ClientType.SmartFridge){
 				communicationFridge.Callback proxy;

@@ -170,10 +170,11 @@ public class DistLight implements Runnable, LightComm{
 	}
 
 	@Override
-	public void newServer(CharSequence newServerIP, int newServerID) {
+	public Void newServer(CharSequence newServerIP, int newServerID) {
 		/// TODO test
 		f_serverip = newServerIP.toString();
 		f_serverPort = newServerID;
+		return null;
 	}
 
 	@Override
