@@ -270,14 +270,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
-		List<LightState> lightStates = null;
+		List<LightState> lightStates = new Vector<LightState>();
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			List<Client> clients = proxy.getAllClients();
-			lightStates = new Vector<LightState>();
 			
 			// TODO check for different options to access fields because the following are deprecated?
 			for (Client client : clients) {
@@ -450,7 +449,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
 		
-		List<Client> clients = null;
+		List<Client> clients = new ArrayList<Client>();
 		try {
 			SaslSocketTransceiver transceiver = 
 				new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
@@ -707,7 +706,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (InterruptedException e) {
 			f_server.close();
 			f_server = null;
-//			Logger.getLogger().log("Closed the DistUser server.");
+			f_serverReady = false;
 		}
 		
 	}
@@ -810,10 +809,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Equivalent to elected function from slides theory (slide 54 - Coordination)
 	 * @param newServerIP
 	 * 		The IP address of the newly elected controller.
-	 * @param newServerID
-	 * 		The Port of the newly elected controller.
-	 * @return
-	 * 		Void.
+	 * @param newServerID The Port of the newly elected controller.
 	 */
 	@Override
 	public void newServer(final CharSequence newServerIP, final int newServerID) {
@@ -932,8 +928,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	/**
 	 * Gets the ConnectionData of the next client in the ring.
-	 * @return
-	 * 		The ConnectionData of the next client in the ring.
+	 * @return The ConnectionData of the next client in the ring.
 	 */
 	private ConnectionData getNextCandidateConnection() {
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();

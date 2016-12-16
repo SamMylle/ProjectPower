@@ -295,6 +295,7 @@ public class DistSmartFridge extends SmartFridge {
 			catch (InterruptedException e) {
 				f_fridgeControllerServer.close();
 				f_fridgeControllerServer = null;
+				f_controllerServerReady = false;
 			}
 		}
 
@@ -570,6 +571,7 @@ public class DistSmartFridge extends SmartFridge {
 				} catch (InterruptedException e1) { }
 				f_fridgeUserServer.close();
 				f_fridgeUserServer = null;
+				f_userServerReady = false;
 				f_safeToClose = false;
 			}
 		}
