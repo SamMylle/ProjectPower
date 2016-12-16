@@ -633,6 +633,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		@Override
 		public void run() {
 			DistController.this.reaffirmClientsAlive();
+			DistController.this.lookForOldServer();
 		}
 	}
 	
