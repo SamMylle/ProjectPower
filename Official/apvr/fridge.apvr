@@ -66,6 +66,11 @@
 			"request" : [{"name" : "index", "type" : "int"},{"name" : "clientID", "type" : "int"}],
 			"response" : "null",
 			"one-way" : true
+		},
+		"reLogin" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
 		}
 	}
 }

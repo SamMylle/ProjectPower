@@ -77,6 +77,11 @@
 			"request" : [{"name" : "fridgeID", "type" : "int"}],
 			"response" : "null",
 			"one-way" : true
+		},
+		"reLogin" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
 		}
 	}
 }

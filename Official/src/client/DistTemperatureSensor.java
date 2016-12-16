@@ -104,6 +104,12 @@ public class DistTemperatureSensor
 		}
 		f_serverThread.interrupt();
 		f_serverThread = null;
+		
+		while (f_server != null) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {}
+		}
 	}
 	
 	public void logOffController() {
@@ -145,6 +151,17 @@ public class DistTemperatureSensor
 		catch (IOException e) {
 			System.err.println("IOException at notifySuccessfulLogin() in DistUser.");
 		}
+	}
+	
+	/**
+	 * Gets a new login from the controller, and restarts the server on the potentially new port
+	 */
+	@Override
+	public void reLogin() {
+		// TODO same concern as in DistSmartFridge
+		this.stopServer();
+		this.setupID();
+		this.startServer();
 	}
 	
 	@Override

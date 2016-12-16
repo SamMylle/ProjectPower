@@ -210,6 +210,17 @@ public class DistUser extends User implements communicationUser, Runnable {
 		this.f_notifications.add("The fridge with ID " + Integer.toString(fridgeID) + " is empty.");
 	}
 	
+	/**
+	 * Gets a new login from the controller, and restarts the server on the potentially new port
+	 */
+	@Override
+	public void reLogin() {
+		// TODO same concern as in DistSmartFridge
+		this.stopServer();
+		this.setupID();
+		this.startServer();
+	}
+	
 	// TODO make sure exception handling isn't screwed up when using this method
 	private SaslSocketTransceiver getControllerTransceiver() throws Exception {
 		SaslSocketTransceiver transceiver = null;
@@ -1168,6 +1179,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		controller.stopServer();
 		System.exit(0);
 	}
+
+
 
 
 

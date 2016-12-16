@@ -470,6 +470,17 @@ public class DistSmartFridge extends SmartFridge {
 		public void makeBackup(ServerData data) {
 			f_replicatedServerData = data;
 		}
+
+		/**
+		 * Gets a new login from the controller, and restarts the server on the potentially new port
+		 */
+		@Override
+		public void reLogin() {
+			// TODO add argument for new connection as well? Take original server address as argument?
+			DistSmartFridge.this.stopServerController();
+			DistSmartFridge.this.setupID();
+			DistSmartFridge.this.startControllerServer();
+		}
 	}
 	
 	

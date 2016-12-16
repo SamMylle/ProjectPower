@@ -27,6 +27,11 @@
 		"getTemperatureRecords" : {
 			"request" : [],
 			"response" : {"type" : "array", "items" : "double"}
+		},
+		"reLogin" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
 		}
 	}
 }

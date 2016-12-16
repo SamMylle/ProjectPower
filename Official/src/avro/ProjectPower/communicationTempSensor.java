@@ -9,10 +9,11 @@ package avro.ProjectPower;
 /** Methods for the TemperatureSensor class */
 @org.apache.avro.specific.AvroGenerated
 public interface communicationTempSensor {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationTempSensor\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the TemperatureSensor class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"aliveAndKicking\":{\"request\":[],\"response\":\"boolean\"},\"newServer\":{\"request\":[{\"name\":\"newServerIP\",\"type\":\"string\"},{\"name\":\"newServerID\",\"type\":\"int\"}],\"response\":\"null\",\"one-way\":true},\"getTemperatureRecords\":{\"request\":[],\"response\":{\"type\":\"array\",\"items\":\"double\"}}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"communicationTempSensor\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the TemperatureSensor class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"aliveAndKicking\":{\"request\":[],\"response\":\"boolean\"},\"newServer\":{\"request\":[{\"name\":\"newServerIP\",\"type\":\"string\"},{\"name\":\"newServerID\",\"type\":\"int\"}],\"response\":\"null\",\"one-way\":true},\"getTemperatureRecords\":{\"request\":[],\"response\":{\"type\":\"array\",\"items\":\"double\"}},\"reLogin\":{\"request\":[],\"response\":\"null\",\"one-way\":true}}}");
   boolean aliveAndKicking() throws org.apache.avro.AvroRemoteException;
   void newServer(java.lang.CharSequence newServerIP, int newServerID);
   java.util.List<java.lang.Double> getTemperatureRecords() throws org.apache.avro.AvroRemoteException;
+  void reLogin();
 
   @SuppressWarnings("all")
   /** Methods for the TemperatureSensor class */
