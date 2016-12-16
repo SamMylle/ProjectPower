@@ -103,28 +103,21 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		mustAllBeTrue.add(new Boolean(this.f_nextID == otherController.f_nextID));
 		
 		if (this.f_temperatures.size() != otherController.f_temperatures.size()){
-			System.out.println("NOT TRUE TEMP");
 			return false;
 		}
 		
 		for (int i = 0; i < this.f_temperatures.size(); i++){
 			if(! this.f_temperatures.elementAt(i).toString().equals(
 					otherController.f_temperatures.elementAt(i).toString())){
-				System.out.println("NOT TRUE TEMP2");
 				return false;
 			}
 		}
 		
 		for(int i = 0; i < mustAllBeTrue.size(); i++){
 			if (!mustAllBeTrue.elementAt(i)){
-				System.out.println(this.f_IPs.toString());
-				System.out.println(otherController.f_IPs.toString());
-				
 				return false;
 			}
 		}
-
-		System.out.println("TRUE");
 		return true;
 	}
 	
@@ -292,8 +285,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	private Transceiver setupTransceiver(int ID, String ip){
-		System.out.println("In System: " + f_names.toString());
-		System.out.println("Contacting: " + ID + " " + ip);
 		if (new Integer(ID).equals(new Integer(this.f_myPort)) &&
 				ip.equals(this.f_ownIP)){
 			
@@ -311,7 +302,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
-		System.out.println("\nADDING");
 		int newID = this.giveNextID(clientType);
 		f_notConfirmed.add(new Integer(newID));
 		f_IPs.put(newID, ip.toString());
@@ -322,7 +312,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	public int retryLogin(int oldID, ClientType clientType) throws AvroRemoteException{
 		/// TODO write test
-		Logger.getLogger().log("give renewed ID");
 		this.removeID(oldID);
 		f_notConfirmed.remove(new Integer(oldID));
 		int newID = this.giveNextID(clientType);
@@ -568,12 +557,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
 
-			System.out.println("Asking before " + currentID.toString() + " " + currentType.toString());
 			if ((this.f_ownIP.equals(f_ownIP) && new Integer(currentID).equals(new Integer(this.f_myPort)))
 					|| f_notConfirmed.contains(new Integer(currentID))){
 				continue;
 			}
-			System.out.println("Asking " + currentID.toString());
 			boolean keep = this.reaffirmClientAlive(currentIP, currentID, currentType);
 			
 			if (! keep){
@@ -759,12 +746,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// TODO test
 		System.out.print("Backup Start\n");
 		for(Integer currentID : f_names.keySet()){
-			System.out.println(f_notConfirmed.toString());
-			System.out.println(f_names.toString());
 			if (f_notConfirmed.contains(new Integer(currentID))){
+				System.out.println("Not sending to " + f_IPs.get(currentID) + " " + currentID);
 				continue;
 			}
-			System.out.print("Sending backup\n");
+			System.out.println("Sending backup to " + f_IPs.get(currentID) + " " + currentID);
 			
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
