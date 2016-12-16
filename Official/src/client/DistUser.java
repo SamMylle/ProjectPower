@@ -216,6 +216,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	@Override
 	public void reLogin() {
 		// TODO same concern as in DistSmartFridge
+		System.out.println("relogin request");
 		this.stopServer();
 		this.setupID();
 		this.startServer();
@@ -484,6 +485,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is already connected to a fridge, cannot start another connection.");
 		}
+		
 		CommData connection = null;
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
@@ -495,6 +497,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOException e) {
 			System.err.println("IOException at communicateWithFridge() in DistUser.");
 		}
+		
 		if (connection.getID() == -1) {
 			throw new FridgeOccupiedException("The fridge is already occupied by another user.");
 		}

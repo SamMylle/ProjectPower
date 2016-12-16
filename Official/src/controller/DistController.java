@@ -290,9 +290,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			
 			return null;
 		}
-		
+		System.out.println("IP: " + ip + ", port: " + ID);
 		try{
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
+			System.out.println("success.");
 			return client;
 		}catch(Exception e){
 			System.err.println("Error lel...");
@@ -863,6 +864,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				} catch (Exception e) {}
 			}
 		}
+		
 		
 		return true;
 	}
