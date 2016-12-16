@@ -670,45 +670,41 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return f_isOriginalServer;
 	}
 	
-	public void notifyClientsIAmServer(){
+	public void notifyClientIAmServer(String ip, int port){
 		/// TODO test
-		for(Integer ID: f_names.keySet()){
-			try{
-				String ip = f_IPs.get(ID);
-				
-				Transceiver client = this.setupTransceiver(ID, ip);
-				ClientType type = this.f_names.get(ID);
+		//for(Integer ID: f_names.keySet()){
+		try{
+			Transceiver client = this.setupTransceiver(port, ip);
+			ClientType type = this.f_names.get(port);
 
 
-				if (type == ClientType.SmartFridge){
-					communicationFridge.Callback proxy;
-					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
-					proxy.newServer(f_ownIP, f_myPort);
-				}
-
-				
-				if (type == ClientType.Light){
-					LightComm.Callback proxy;
-					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
-					proxy.newServer(f_ownIP, f_myPort);
-				}
-				
-				if (type == ClientType.User){
-					communicationUser.Callback proxy;
-					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-					proxy.newServer(f_ownIP, f_myPort);
-				}
-				
-				if (type == ClientType.TemperatureSensor){
-					communicationTempSensor.Callback proxy;
-					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
-					proxy.newServer(f_ownIP, f_myPort);
-				}
-				
-			}catch(Exception e){
-				continue;
+			if (type == ClientType.SmartFridge){
+				communicationFridge.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+				proxy.newServer(f_ownIP, f_myPort);
 			}
-		}
+
+			
+			if (type == ClientType.Light){
+				LightComm.Callback proxy;
+				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+				proxy.newServer(f_ownIP, f_myPort);
+			}
+			
+			if (type == ClientType.User){
+				communicationUser.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+				proxy.newServer(f_ownIP, f_myPort);
+			}
+			
+			if (type == ClientType.TemperatureSensor){
+				communicationTempSensor.Callback proxy;
+				proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+				proxy.newServer(f_ownIP, f_myPort);
+			}
+			
+		}catch(Exception e){}
+		//}
 	}
 	
 	public ServerData makeBackup(){
@@ -830,6 +826,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (client == null){
 				continue;
 			}
+
+			this.notifyClientIAmServer(currentIP, currentID);
 			
 			if (currentType == ClientType.SmartFridge){
 				communicationFridge.Callback proxy;
@@ -885,6 +883,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				client.close();
 			} catch (Exception e) {}
 		}
+	}
+
+	@Override
+	public List<Double> getTempHistory() throws AvroRemoteException {
+		return this.getTemperatureHistory();
 	}
 
 	public static void main(String[] args) {

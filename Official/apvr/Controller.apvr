@@ -200,6 +200,10 @@
 			"request": [{"name": "ID", "type": "int"}],
 			"response": {"type": "null"},
 			"one-way": true
+		},
+		"getTempHistory":{
+			"request": [],
+			"response": {"type": "array", "items": "double"}
 		}
 	}
 
