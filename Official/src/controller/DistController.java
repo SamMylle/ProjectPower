@@ -844,8 +844,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				communicationFridge.Callback proxy;
 				try {
 					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
-					/// TODO relogin
-				} catch (IOException e) {}
+					proxy.reLogin();
+				} catch (Exception e) {}
 			}
 
 			
@@ -853,24 +853,24 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				LightComm.Callback proxy;
 				try {
 					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
-					/// TODO relogin
-				} catch (IOException e) {}
+					proxy.reLogin();
+				} catch (Exception e) {}
 			}
 			
 			if (currentType == ClientType.User){
 				communicationUser.Callback proxy;
 				try {
 					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-					/// TODO relogin
-				} catch (IOException e) {}
+					proxy.reLogin();
+				} catch (Exception e) {}
 			}
 			
 			if (currentType == ClientType.TemperatureSensor){
 				communicationTempSensor.Callback proxy;
 				try {
 					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
-					/// TODO relogin
-				} catch (IOException e) {}
+					proxy.reLogin();
+				} catch (Exception e) {}
 			}
 		}
 		
@@ -888,7 +888,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				communicationUser proxy;
 				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
 				
-				/// TODO comm with user => federico
+				proxy.notifyFridgeEmpty(ID);
 				
 				client.close();
 			} catch (Exception e) {}
@@ -908,7 +908,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try {
 			System.in.read();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		light.disconnect();

@@ -64,7 +64,8 @@ public class DistLight implements Runnable, LightComm{
 		}catch(InterruptedException e){
 			f_server.close();
 			Logger.getLogger().f_active = true;
-			Logger.getLogger().log("server stopped");
+			Logger.getLogger().log("Light server stopped");
+			Logger.getLogger().f_active = false;
 		}
 	}
 	
@@ -79,7 +80,6 @@ public class DistLight implements Runnable, LightComm{
 	public void connectToServer(int port, String serverIP){
 		try{
 			/// Setup connection
-			System.out.print("TEST\n");
 			Transceiver transceiver =
 					new SaslSocketTransceiver(new InetSocketAddress(serverIP, port));
 
@@ -89,8 +89,6 @@ public class DistLight implements Runnable, LightComm{
 
 			/// Get your ID from the server
 			int ID = proxy.LogOn(ClientType.Light, f_ip);
-			System.out.println("Login");
-			System.out.println("Success");
 
 			f_light.setID(ID);
 			
@@ -176,6 +174,18 @@ public class DistLight implements Runnable, LightComm{
 		/// TODO test
 		f_serverip = newServerIP.toString();
 		f_serverPort = newServerID;
+	}
+
+	@Override
+	public void reLogin() {
+		/// Assumes valid stuff 
+		
+		f_serverThread.interrupt();
+		f_server = null;
+		f_serverThread = null;
+		f_serverActive = false;
+		
+		this.connectToServer(f_serverPort, f_serverip);
 	}
 	
 	public static void main(String[] args) {
