@@ -761,7 +761,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	private boolean sendBackupToSpecific(String ip, int port, ClientType type){
 		/// TODO test
-		if (type != ClientType.SmartFridge || type != ClientType.User){
+		if (type != ClientType.SmartFridge && type != ClientType.User){
 			return false;
 		}
 		try{
@@ -778,11 +778,14 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (type == ClientType.User){
 				communicationUser.Callback proxy;
 				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+				System.out.println("Send backup to user on port " + port);
 				proxy.makeBackup(this.makeBackup());
 				client.close();
 				return true;
 			}
+			System.out.println("Did not send backup to " + port);
 		}catch(Exception e){
+			System.out.println("something broke");
 			return false;
 		}
 		return false;
@@ -891,6 +894,16 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 		controller.stopServer();
+		
+		try {
+			System.in.read();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		controller = new DistController(5000, 10, System.getProperty("ip"));
 	}
 }
