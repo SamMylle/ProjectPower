@@ -190,7 +190,7 @@ public class DistLight implements Runnable, LightComm{
 	
 	public static void main(String[] args) {
 		DistLight newLight = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
-		newLight.connectToServer(5000, "143.169.217.124");
+		newLight.connectToServer(5000, System.getProperty("ip"));
 		try {
 			System.in.read();
 		} catch (IOException e) {
@@ -198,6 +198,7 @@ public class DistLight implements Runnable, LightComm{
 			e.printStackTrace();
 		}
 		newLight.disconnect();
-		Logger.getLogger().log("disconnected\n");
+//		Logger.getLogger().log("disconnected\n");
+		System.exit(0);
 	}
 }

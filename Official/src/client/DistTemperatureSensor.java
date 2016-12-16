@@ -218,44 +218,6 @@ public class DistTemperatureSensor
 		}
 	}
 	
-	public static void main(String[] args) {
-		
-		final String clientIP = System.getProperty("clientip");
-		final String serverIP = System.getProperty("ip");
-		final int ControllerPort = 5000;
-		
-		DistTemperatureSensor sensor = new DistTemperatureSensor(
-				19,22, clientIP, serverIP, ControllerPort);
-		try {
-			System.in.read();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-		
-		sensor.stopServer();
-		System.exit(0);
-		DistController controller = new DistController(ControllerPort, 10, serverIP);
-		
-		
-		DistTemperatureSensor remoteSensor = new DistTemperatureSensor(
-				19,22, clientIP, serverIP, ControllerPort);
-		
-		
-		try {
-			Logger logger = Logger.getLogger();
-			logger.f_active = true;
-			for (int i = 0; i < 10; i++) {
-				logger.log(remoteSensor.toString());
-				TimeUnit.SECONDS.sleep(1);
-				logger.log("Average in controller: " + new Double(controller.averageCurrentTemperature()).toString());
-			}
-		} 
-		catch (InterruptedException e) { } 
-		catch (AvroRemoteException e) {
-			e.printStackTrace();
-		}
-		System.exit(0);
-	}
 
 	/**
 	 * Checks if this client is still alive, which it clearly is when answering to the query.
@@ -287,4 +249,22 @@ public class DistTemperatureSensor
 		return measures;
 	}
 
+	
+	public static void main(String[] args) {
+		
+		final String clientIP = System.getProperty("clientip");
+		final String serverIP = System.getProperty("ip");
+		final int ControllerPort = 5000;
+		
+		DistTemperatureSensor sensor = new DistTemperatureSensor(
+				19,22, clientIP, serverIP, ControllerPort);
+		try {
+			System.in.read();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		sensor.disconnect();
+		System.exit(0);
+	}
 }

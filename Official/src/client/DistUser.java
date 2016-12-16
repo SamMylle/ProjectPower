@@ -280,8 +280,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			
 			// TODO check for different options to access fields because the following are deprecated?
 			for (Client client : clients) {
-				if (client.clientType == ClientType.Light) {
-					LightState state = new LightState(client.ID, proxy.getLightState(client.ID));
+				if (client.getClientType() == ClientType.Light) {
+					LightState state = new LightState(client.getID(), proxy.getLightState(client.getID()));
 					lightStates.add(state);
 				}
 			}
@@ -460,9 +460,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		catch (AvroRemoteException e) {
 			System.err.println("AvroRemoteException at getAllClients() in DistUser.");
+			this.startElection();
 		} 
 		catch (IOException e) {
 			System.err.println("IOException at getAllClients() in DistUser.");
+			this.startElection();
 		}
 		return clients;
 	}
@@ -493,7 +495,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOException e) {
 			System.err.println("IOException at communicateWithFridge() in DistUser.");
 		}
-		if (connection.ID == -1) {
+		if (connection.getID() == -1) {
 			throw new FridgeOccupiedException("The fridge is already occupied by another user.");
 		}
 		f_fridgeConnection = new ConnectionData(connection);
@@ -754,7 +756,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	public void startElection() {
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
-		boolean otherCandidates = false;
 		int count = 0;
 		for (ClientType clientType : clientTypes) {
 			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
@@ -1135,6 +1136,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void makeBackup(ServerData data) {
+		System.out.println("got the datar");
 		f_replicatedServerData = data;
 	}
 	
@@ -1144,34 +1146,18 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Main function, used for testing
 	 */
 	public static void main(String[] args) {
-		final int controllerPort = 5000;
-		DistController controller = new DistController(controllerPort, 10, System.getProperty("ip"));
 		
 		DistUser remoteUser = 
-				new DistUser("Federico Quin", System.getProperty("clientip"), System.getProperty("ip"), controllerPort);
-		
+				new DistUser("Federico Quin", System.getProperty("clientip"), System.getProperty("ip"), 5000);
+
 		try {
-			Logger logger = Logger.getLogger();
-			logger.f_active = true;
-			if (remoteUser.getStatus() == UserStatus.present) {
-				logger.log("User status is present.");
-			}
-			
-			
-			if (remoteUser.logOffController() == true) {
-				logger.log("Logged off succesfully.");
-			}
-			else {
-				logger.log("Could not log off.");
-			}
-			remoteUser.stopServer();
-			logger.log("Server stopped.");
-			
+			System.in.read();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at main class in DistSmartFridge.");
-		}
-		controller.stopServer();
+		
+		remoteUser.disconnect();
 		System.exit(0);
 	}
 

@@ -898,23 +898,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
-		
-		DistUser user = new DistUser("me", System.getProperty("ip"), System.getProperty("ip"), 5000);
-		
-		DistLight light = new DistLight(System.getProperty("ip"), System.getProperty("ip"));
-		light.connectToServer(5000, System.getProperty("ip"));
-		
+
 		
 		try {
 			System.in.read();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		light.disconnect();
-		
-		//DistSmartFridge
-		user.disconnect();
-		user.stopServer();
 		controller.stopServer();
 	}
 }

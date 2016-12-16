@@ -28,27 +28,27 @@ import org.apache.avro.AvroRemoteException;
 public class WindowUser extends javax.swing.JFrame {
 
     private DistUser f_user;
-    private DistController f_controller; /// TODO remove this, here for debugging
-    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
-    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
-    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
+//    private DistController f_controller; /// TODO remove this, here for debugging
+//    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
+//    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
+//    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
     
     /**
      * Creates new form MainWindow
      */
     public WindowUser() {
         initComponents();
-        String localIP = "192.168.1.8";
-        f_controller = new DistController(5000, 10, localIP);
+        String localIP = "192.168.1.9";
+//        f_controller = new DistController(5000, 10, localIP);
         f_user = new DistUser("", localIP, localIP, 5000);
-        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
-        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
-        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
-        
-        f_fridge1.addItem("butter");
-        f_fridge2.addItem("cheese");
-        f_fridge2.addItem("milk");
-        
+//        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
+//        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
+//        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
+//        
+//        f_fridge1.addItem("butter");
+//        f_fridge2.addItem("cheese");
+//        f_fridge2.addItem("milk");
+//        
         jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
         jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));
