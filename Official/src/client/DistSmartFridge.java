@@ -585,7 +585,15 @@ public class DistSmartFridge extends SmartFridge {
 
 		@Override
 		public Void removeItemRemote(CharSequence itemName) throws AvroRemoteException {
-			DistSmartFridge.this.removeItem(itemName.toString());
+			if (DistSmartFridge.this.removeItem(itemName.toString()) == false) {
+				return null;
+			}
+			
+			// if the method returned true, check if the fridge is empty
+			if (DistSmartFridge.this.emptyInventory() == true) {
+				DistSmartFridge.this.notifyControllerEmptyInventory();
+			}
+			
 			return null;
 		}
 

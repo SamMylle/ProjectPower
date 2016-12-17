@@ -43,17 +43,14 @@ public class SmartFridge {
 		f_items.add(newItem); //returns boolean to see if the element was added, might be useful later
 	}
 	
-	public void removeItem(String oldItem) {
+	public boolean removeItem(String oldItem) {
 		assert f_items.isEmpty() == false;
 		
 		if (f_items.contains(oldItem) == false) {
-			return;
+			return false;
 		}
 		f_items.remove(oldItem);
-		
-		if (f_items.isEmpty() == true) {
-			System.out.println("send broadcast"); //placeholder function
-		}
+		return true;
 	}
 	
 	public boolean hasItem(String item) {
