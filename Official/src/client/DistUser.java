@@ -63,7 +63,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param controllerPort
 	 * 		The Port number on which the controller serveris running.
 	 */
-	public DistUser(String name, String ownIP, String controllerIP, int controllerPort) {
+	public DistUser(String name, String ownIP, String controllerIP, int controllerPort) throws IOControllerException {
 		super(name);
 		assert controllerPort >= 1000;
 		
@@ -82,6 +82,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_electionID = -1;
 		
 		this.setupID();
+		if (this.getID() == -1) {
+			throw new IOControllerException("Could not connect to the controller.");
+		}
 		this.startServer();
 		super._setStatus(UserStatus.present);
 	}
@@ -98,7 +101,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		catch (IOException e) {
 			// TODO server not reachable, start election
-			System.err.println("IOException in constructor for DistUser (getID).");
+//			System.err.println("IOException in constructor for DistUser (getID).");
 		}
 	}
 	
@@ -1161,35 +1164,40 @@ public class DistUser extends User implements communicationUser, Runnable {
 	public static void main(String[] args) {
 		String clientip = System.getProperty("clientip");
 		String serverip = System.getProperty("ip");
-		DistController controller = new DistController(5000, 10, serverip);
-		DistUser remoteUser = 
-				new DistUser("Federico Quin", clientip, serverip, 5000);
-		DistTemperatureSensor sensor = new DistTemperatureSensor(-20, -22, clientip, serverip, 5000);
-
+//		DistController controller = new DistController(5000, 10, serverip);
+		DistUser remoteUser = null;
 		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			remoteUser = new DistUser("Federico Quin", clientip, serverip, 5002);
+			
+		} catch (IOControllerException e) {
+			System.out.println(e.getMessage());
 		}
-		
-		DistTemperatureSensor sensor2 = new DistTemperatureSensor(20, 22, clientip, serverip, 5000);
-
-		try {
-			System.in.read();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		try {
-			remoteUser.getTemperatureHistory();
-		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		remoteUser.disconnect();
+//		DistTemperatureSensor sensor = new DistTemperatureSensor(-20, -22, clientip, serverip, 5000);
+//
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		
+//		DistTemperatureSensor sensor2 = new DistTemperatureSensor(20, 22, clientip, serverip, 5000);
+//
+//		try {
+//			System.in.read();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		
+//		try {
+//			remoteUser.getTemperatureHistory();
+//		} catch (MultipleInteractionException | AbsentException | TakeoverException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		
+//		remoteUser.disconnect();
 		System.exit(0);
 	}
 
