@@ -21,6 +21,7 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
 
     private DistUser f_user;
     private List<Client> f_fridges;
+    private DirectFridgeFrame f_directFrame;
     
     /**
      * Creates new form FridgePanel
@@ -33,6 +34,8 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         f_user = user;
         this.updateFridges();
         scpScrollPaneFridgeInventory.setVisible(false);
+        f_directFrame = null;
+
     }
 
     /**
@@ -112,6 +115,14 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    
+    private void directWindowClosing(java.awt.event.WindowEvent evt) {
+        if (cbbSelectFridge.getSelectedIndex() != -1) {
+            this.updateTableFridgeInventory(cbbSelectFridge.getSelectedIndex());
+        }
+        f_directFrame = null;
+    }
+    
     private void cbbSelectFridgeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbbSelectFridgeItemStateChanged
         // TODO add your handling code here:
         if (this.cbbSelectFridge.getSelectedIndex() == -1) {
@@ -137,9 +148,13 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
             // TODO do something here
         }
         
-        DirectFridgeFrame frame = new DirectFridgeFrame(f_user);
-        frame.setVisible(true);
-        
+        f_directFrame = new DirectFridgeFrame(f_user);
+        f_directFrame.setVisible(true);
+        f_directFrame.addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                directWindowClosing(evt);
+            }
+        });
     }//GEN-LAST:event_btnCommunicateMouseClicked
 
     private void updateFridges() {

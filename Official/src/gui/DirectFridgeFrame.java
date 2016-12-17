@@ -8,6 +8,7 @@ package gui;
 import client.DistUser;
 import client.exception.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import javax.swing.WindowConstants;
 import javax.swing.JFrame;
 import java.util.Vector;
@@ -24,6 +25,7 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
     
     DistUser f_user;
     Vector<String> f_fridgeItems;
+
     /**
      * Creates new form DirectFridgeFrame
      */
@@ -49,6 +51,7 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         tblFridgeInventory = new javax.swing.JTable();
         btnDelete = new javax.swing.JButton();
         btnAdd = new javax.swing.JButton();
+        btnClose = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -89,6 +92,13 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
             }
         });
 
+        btnClose.setText("Stop communication");
+        btnClose.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnCloseMouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -98,19 +108,22 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 365, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(32, 32, 32)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(btnClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(btnDelete, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(190, Short.MAX_VALUE))
+                    .addComponent(btnAdd, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(137, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnAdd)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnDelete))
+                        .addComponent(btnDelete)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnClose))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 324, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(164, Short.MAX_VALUE))
         );
@@ -122,11 +135,14 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         try {
             f_user.closeFridge();
         } catch (AbsentException e) {
-            // TODO do something here
+            JOptionPane.showMessageDialog(this,
+                "You should be present in the house before you try to close the fridge.",
+                "Error: not present",
+                JOptionPane.ERROR_MESSAGE);
         } catch (TakeoverException e) {
-            // TODO do something here
+            // Do nothing here, since the takeover results in the direct communication being closed
         } catch (NoFridgeConnectionException e) {
-            // TODO do something here
+            // In theory, do nothing here since no connection is available anymore already.
         }
     }//GEN-LAST:event_formWindowClosing
 
@@ -160,6 +176,11 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         }
         this.updateFridgeItems();
     }//GEN-LAST:event_btnAddMouseClicked
+
+    private void btnCloseMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCloseMouseClicked
+        // TODO add your handling code here:
+        this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+    }//GEN-LAST:event_btnCloseMouseClicked
 
     private void deleteSelectedItem() {
         int selectedIndex = tblFridgeInventory.getSelectedRow();
@@ -208,6 +229,7 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
+    private javax.swing.JButton btnClose;
     private javax.swing.JButton btnDelete;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable tblFridgeInventory;
