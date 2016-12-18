@@ -637,7 +637,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 	private class ClientPoll extends TimerTask{
 		@Override
-		public void run() {
+		synchronized public void run() {
 			DistController.this.reaffirmClientsAlive();
 			DistController.this.lookForOldServer();
 		}
