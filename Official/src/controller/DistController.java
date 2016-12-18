@@ -593,6 +593,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
 				
 				if (proxy.aliveAndKicking()){
+					client.close();
 					return true;
 				}
 			}
@@ -603,6 +604,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
 				
 				if (proxy.aliveAndKicking()){
+					client.close();
 					return true;
 				}
 			}
@@ -612,6 +614,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
 				
 				if (proxy.aliveAndKicking()){
+					client.close();
 					return true;
 				}
 			}
@@ -621,6 +624,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
 				
 				if (proxy.aliveAndKicking()){
+					client.close();
 					return true;
 				}
 			}

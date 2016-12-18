@@ -33,7 +33,7 @@ import org.apache.avro.ipc.specific.SpecificResponder;
 import client.exception.AbsentException;
 import client.exception.NoFridgeConnectionException;
 import client.util.ConnectionData;
-
+import client.util.ConnectionTypeData;
 import controller.DistController;
 
 import util.Logger;
@@ -68,6 +68,7 @@ public class DistSmartFridge extends SmartFridge {
 	private DistController f_controller;					// DistController to be used when this object is elected
 	private boolean f_isParticipantElection;				// Equivalent to participant_i in slides
 	private int f_electionID;								// The index of the client in the election
+	private int f_nextCandidateOffset;						// The offset used for the next participant in the election
 	
 	
 	
@@ -107,6 +108,7 @@ public class DistSmartFridge extends SmartFridge {
 		f_controller = null;
 		f_electionID = -1;
 		f_isParticipantElection = false;
+		f_nextCandidateOffset = 1;
 		
 		this.setupID();
 		this.startControllerServer();
@@ -362,8 +364,7 @@ public class DistSmartFridge extends SmartFridge {
 				f_electionID = -1;
 				return;
 			}
-			final ConnectionData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
-			final ClientType nextCandidateType = DistSmartFridge.this.getNextCandidateType();
+			final ConnectionTypeData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
 			DistSmartFridge.this.f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 			DistSmartFridge.this.f_isParticipantElection = false;
 			DistSmartFridge.this.f_electionID = -1;
@@ -374,11 +375,11 @@ public class DistSmartFridge extends SmartFridge {
 				public void run() {				
 					try {
 						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-						if (nextCandidateType == ClientType.SmartFridge) {
+						if (nextCandidate.getType() == ClientType.SmartFridge) {
 							communicationFridge proxy = (communicationFridge) 
 									SpecificRequestor.getClient(communicationFridge.class, transceiver);
 							proxy.newServerElected(newServerIP, newServerID);
-						} else if (nextCandidateType == ClientType.User) {
+						} else if (nextCandidate.getType() == ClientType.User) {
 							communicationUser proxy = (communicationUser) 
 									SpecificRequestor.getClient(communicationUser.class, transceiver);
 							proxy.newServerElected(newServerIP, newServerID);
@@ -413,14 +414,12 @@ public class DistSmartFridge extends SmartFridge {
 				f_isParticipantElection = false;
 				// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
 				// This is in order to fully replicate the algorithm described in the theory.
-				
 				DistSmartFridge.this.sendSelfElectedNextCandidate();
 				DistSmartFridge.this.sendNonCandidatesNewServer();
 				return;
 			}
 			
-			final ConnectionData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
-			final ClientType nextCandidateType = DistSmartFridge.this.getNextCandidateType();
+			final ConnectionTypeData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
 
 			new Thread() {
 				public void run() {
@@ -428,11 +427,11 @@ public class DistSmartFridge extends SmartFridge {
 						
 						try {
 							Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-							if (nextCandidateType == ClientType.SmartFridge) {
+							if (nextCandidate.getType() == ClientType.SmartFridge) {
 								communicationFridge proxy = (communicationFridge) 
 										SpecificRequestor.getClient(communicationFridge.class, transceiver);
 								proxy.electNewController(index, clientID);
-							} else if (nextCandidateType == ClientType.User) {
+							} else if (nextCandidate.getType() == ClientType.User) {
 								communicationUser proxy = (communicationUser) 
 										SpecificRequestor.getClient(communicationUser.class, transceiver);
 								proxy.electNewController(index, clientID);
@@ -447,11 +446,11 @@ public class DistSmartFridge extends SmartFridge {
 							DistSmartFridge.this.f_isParticipantElection = true;
 							try {
 								Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-								if (nextCandidateType == ClientType.SmartFridge) {
+								if (nextCandidate.getType() == ClientType.SmartFridge) {
 									communicationFridge proxy = (communicationFridge) 
 											SpecificRequestor.getClient(communicationFridge.class, transceiver);
 									proxy.electNewController(DistSmartFridge.this.f_electionID, DistSmartFridge.this.getID());
-								} else if (nextCandidateType == ClientType.User) {
+								} else if (nextCandidate.getType() == ClientType.User) {
 									communicationUser proxy = (communicationUser) 
 											SpecificRequestor.getClient(communicationUser.class, transceiver);
 									proxy.electNewController(DistSmartFridge.this.f_electionID, DistSmartFridge.this.getID());
@@ -481,7 +480,6 @@ public class DistSmartFridge extends SmartFridge {
 		 */
 		@Override
 		public void reLogin() {
-			// TODO add argument for new connection as well? Take original server address as argument?
 			DistSmartFridge.this.stopServerController();
 			DistSmartFridge.this.setupID();
 			DistSmartFridge.this.startControllerServer();
@@ -648,26 +646,25 @@ public class DistSmartFridge extends SmartFridge {
 			}
 		}
 		if (count <= 1) {
+			// No other candidates found, elect self, notify others and start controller takeover.
 			this.sendNonCandidatesNewServer();
-			
 			this.startControllerTakeOver();
 			return;
 		}
 		
-		f_electionID = this.getElectionIndex();
 		f_isParticipantElection = true;
+		f_electionID = this.getElectionIndex();
 		
-		final ConnectionData nextCandidate = this.getNextCandidateConnection();
-		final ClientType nextCandidateType = this.getNextCandidateType();
+		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
 		new Thread() {
 			public void run() {				
 				try {
 					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					if (nextCandidateType == ClientType.SmartFridge) {
+					if (nextCandidate.getType() == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
 						proxy.electNewController(f_electionID, getID());
-					} else if (nextCandidateType == ClientType.User) {
+					} else if (nextCandidate.getType() == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
 						proxy.electNewController(f_electionID, getID());
@@ -683,11 +680,10 @@ public class DistSmartFridge extends SmartFridge {
 	
 	
 	/**
-	 * Gets the ConnectionData of the next client in the ring.
-	 * @return
-	 * 		The ConnectionData of the next client in the ring.
+	 * Gets the ConnectionTypeData of the next client in the ring (IP, Port, Type).
+	 * @return The ConnectionTypeData of the next client in the ring (that is accessible).
 	 */
-	private ConnectionData getNextCandidateConnection() {
+	private ConnectionTypeData getNextCandidateConnection() {
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
 		List<Integer> participantIDs = new Vector<Integer>();
 		
@@ -705,47 +701,53 @@ public class DistSmartFridge extends SmartFridge {
 			}
 		}
 		
-		if (f_electionID == participantIDs.size()-1){
-			String nextIP = clientIPsIP.get(clientIPsID.indexOf(participantIDs.get(0))).toString();
-			return new ConnectionData(nextIP, participantIDs.get(0).intValue());
-		}
-		
-		String nextIP = clientIPsIP.get( clientIPsID.indexOf( new Integer(participantIDs.get(f_electionID+1)) ) ).toString();
-		int nextPort = participantIDs.get(f_electionID+1);
-		return new ConnectionData(nextIP, nextPort);
-	}
-	
-	/**
-	 * Gets the type of the next candidate in the ring.
-	 * @return The type of the client that is next in the ring.
-	 */
-	private ClientType getNextCandidateType() {
-		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
-		List<Integer> participantIDs = new Vector<Integer>();
-		
-		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
-		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
-		
-		/// This is written in a general way, need to make some changes in order to make this more general
-		// TODO write this more generic if time allows it
-		for (int i = 0; i < clientIDs.size(); i ++) {
-			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
-				participants.put(clientIDs.get(i), clientTypes.get(i));
-				participantIDs.add(clientIDs.get(i));
-			}
-		}
-		
-		if (f_electionID == participantIDs.size()-1) {
-			return participants.get(participantIDs.get(0));
-		}
-		return participants.get(participantIDs.get(f_electionID+1));
+		/// TODO NEW: tests the next candidates untill it finds one that is still alive
+				f_nextCandidateOffset = 1;
+				Integer nextCandidateID = new Integer(-1);
+				String nextIP = "";
+				ClientType type = null;
+				
+				while (true) {
+					try {
+						nextCandidateID = participantIDs.get((f_electionID+f_nextCandidateOffset) % participantIDs.size());
+						nextIP = clientIPsIP.get( clientIPsID.indexOf(nextCandidateID) ).toString();
+						type = participants.get(nextCandidateID);
+						ConnectionData nextCandidate = new ConnectionData(nextIP, nextCandidateID.intValue());
+						boolean active = false;
+						
+						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+						
+						if (type == ClientType.SmartFridge) {
+							communicationFridge proxy = 
+									(communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiver);
+							active = proxy.aliveAndKicking();
+						} else if (type == ClientType.User) {
+							communicationUser proxy = 
+									(communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
+							active = proxy.aliveAndKicking();
+						}
+						transceiver.close();					
+						if (active == true) {
+							break;
+						}
+						throw new IOException();
+					} catch (IOException | NullPointerException e) {
+						f_nextCandidateOffset += 1;
+					}
+					
+					if (f_nextCandidateOffset > participants.size()) {
+						/// should not be able to get here
+						/// if it gets here though, it means that all the participants (including this object itself) are not reachable
+						return null;
+					}
+				}
+				return new ConnectionTypeData(nextIP, nextCandidateID.intValue(), type);
 	}
 	
 	
 	/**
 	 * Gets the index of the participant in the election, according to the data provided by replication.
-	 * @return
-	 * 		The index of this client in the election process.
+	 * @return The index of this client in the election process.
 	 */
 	private int getElectionIndex() {
 		List<Integer> participants = new Vector<Integer>();
@@ -760,7 +762,6 @@ public class DistSmartFridge extends SmartFridge {
 				participants.add(clientIDs.get(i));
 			}
 		}
-		
 		return participants.indexOf(new Integer(this.getID()));
 	}
 	
@@ -768,21 +769,17 @@ public class DistSmartFridge extends SmartFridge {
 	 * Notifies the next participant in the ring that this client has been elected.
 	 */
 	private void sendSelfElectedNextCandidate() {
-		final ConnectionData nextCandidate = this.getNextCandidateConnection();
-		final ClientType nextCandidateType = this.getNextCandidateType();
-		
+		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
 		
 		new Thread() {
 			public void run() {				
 				try {
-					ConnectionData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
-					ClientType nextCandidateType = DistSmartFridge.this.getNextCandidateType();
 					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					if (nextCandidateType == ClientType.SmartFridge) {
+					if (nextCandidate.getType() == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
 						proxy.newServerElected(f_ownIP, DistSmartFridge.this.getID());
-					} else if (nextCandidateType == ClientType.User) {
+					} else if (nextCandidate.getType() == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
 						proxy.newServerElected(f_ownIP, DistSmartFridge.this.getID());
