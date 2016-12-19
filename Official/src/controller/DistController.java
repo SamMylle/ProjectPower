@@ -242,7 +242,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
 
-	public boolean serverIsActive(){
+	synchronized public boolean serverIsActive(){
 		return f_serverActive;
 	}
 
@@ -285,7 +285,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		f_serverActive = false;
 	}
 
-	private Transceiver setupTransceiver(int ID, String ip){
+	synchronized private Transceiver setupTransceiver(int ID, String ip){
 		if (new Integer(ID).equals(new Integer(this.f_myPort)) &&
 				ip.equals(this.f_ownIP)){
 			
@@ -303,7 +303,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
+	synchronized public int LogOn(ClientType clientType, CharSequence ip) throws AvroRemoteException{
 		int newID = this.giveNextID(clientType);
 		f_notConfirmed.add(new Integer(newID));
 		f_IPs.put(newID, ip.toString());
@@ -312,7 +312,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 	
 	@Override
-	public int retryLogin(int oldID, ClientType clientType) throws AvroRemoteException{
+	synchronized public int retryLogin(int oldID, ClientType clientType) throws AvroRemoteException{
 		/// TODO write test
 		this.removeID(oldID);
 		f_notConfirmed.remove(new Integer(oldID));
@@ -323,18 +323,18 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public void loginSuccessful(int ID) {
+	synchronized public void loginSuccessful(int ID) {
 		f_notConfirmed.remove(new Integer(ID));
 		this.sendBackupToAll();
 	}
 
 	@Override
-	public ClientType getClientType(int ID) throws AvroRemoteException{
+	synchronized public ClientType getClientType(int ID) throws AvroRemoteException{
 		return this.getClType(ID);
 	}
 
 	@Override
-	public Void logOff(int ID) throws AvroRemoteException{
+	synchronized public Void logOff(int ID) throws AvroRemoteException{
 		/// Remove ID from the system
 		/// TODO test with tempsensor
 		this.removeID(ID);
@@ -351,28 +351,28 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
+	synchronized public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
 		this.addTemperature(temperature, ID);
 		this.sendBackupToAll();
 		return null;
 	}
 
 	@Override
-	public double averageCurrentTemperature() throws AvroRemoteException{
+	synchronized public double averageCurrentTemperature() throws AvroRemoteException{
 		return this.averageCurrentTemp();
 	}
 
 	@Override
-	public boolean hasValidTemperatures() throws AvroRemoteException{
+	synchronized public boolean hasValidTemperatures() throws AvroRemoteException{
 		return this.hasValidTemp();
 	}
 
-	public String getIPAddress(int ID){
+	synchronized public String getIPAddress(int ID){
 		return f_IPs.get(ID);
 	}
 	
 	@Override
-	public CommData setupFridgeCommunication(int ID) throws AvroRemoteException {
+	synchronized public CommData setupFridgeCommunication(int ID) throws AvroRemoteException {
 		/// TODO test this better (i tested it but only short, tests were successful)
 		try {
 			if (f_names.get(ID) != ClientType.SmartFridge){
@@ -428,7 +428,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public List<CharSequence> getFridgeInventory(int ID) throws AvroRemoteException {
+	synchronized public List<CharSequence> getFridgeInventory(int ID) throws AvroRemoteException {
 		/// return null on invalid stuff and thangs
 		try{
 			if (f_names.get(ID) != ClientType.SmartFridge){
@@ -459,7 +459,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public int setLight(int newState, int ID) throws AvroRemoteException {
+	synchronized public int setLight(int newState, int ID) throws AvroRemoteException {
 		/// return -1 on invalid stuff and thangs
 		/// return 0 on success
 
@@ -496,7 +496,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public int getLightState(int ID) throws AvroRemoteException {
+	synchronized public int getLightState(int ID) throws AvroRemoteException {
 		try {
 			if (f_names.get(ID) != ClientType.Light){
 				return -1;
@@ -533,7 +533,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public java.util.List<Client> getAllClients() throws AvroRemoteException {
+	synchronized public java.util.List<Client> getAllClients() throws AvroRemoteException {
 		List<Client> ret = new Vector<Client>();
 
 		/// Ugliest for loop in the history of for loops
@@ -552,7 +552,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return ret;
 	}
 	
-	public void reaffirmClientsAlive(){
+	synchronized public void reaffirmClientsAlive(){
 		/// TODO test
 		boolean removed = false;
 		for(Integer currentID : f_names.keySet()){
@@ -583,7 +583,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 	}
 	
-	private boolean reaffirmClientAlive(String ip, int port, ClientType type){
+	synchronized private boolean reaffirmClientAlive(String ip, int port, ClientType type){
 		/// TODO test
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
@@ -643,7 +643,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 	}
 	
-	public void lookForOldServer(){
+	synchronized public void lookForOldServer(){
 		/// TODO test
 		if (f_isOriginalServer){
 			return;
@@ -671,11 +671,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public boolean areYouTheOriginalController() throws AvroRemoteException {
+	synchronized public boolean areYouTheOriginalController() throws AvroRemoteException {
 		return f_isOriginalServer;
 	}
 	
-	public void notifyClientIAmServer(String ip, int port, ClientType type){
+	synchronized public void notifyClientIAmServer(String ip, int port, ClientType type){
 		/// TODO test
 		//for(Integer ID: f_names.keySet()){
 		try{
@@ -712,7 +712,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		//}
 	}
 	
-	public ServerData makeBackup(){
+	synchronized public ServerData makeBackup(){
 		/// TODO test
 		ServerData data = new ServerData();
 		
@@ -745,7 +745,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return data;
 	}
 	
-	public void sendBackupToAll(){
+	synchronized public void sendBackupToAll(){
 		/// TODO test
 		System.out.print("Backup Start\n");
 		for(Integer currentID : f_names.keySet()){
@@ -762,7 +762,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		}
 	}
 	
-	private boolean sendBackupToSpecific(String ip, int port, ClientType type){
+	synchronized private boolean sendBackupToSpecific(String ip, int port, ClientType type){
 		/// TODO test
 		if (type != ClientType.SmartFridge && type != ClientType.User){
 			return false;
@@ -795,7 +795,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public boolean recoverData(ServerData data) throws AvroRemoteException {
+	synchronized public boolean recoverData(ServerData data) throws AvroRemoteException {
 		// TODO Recover data, tell everyone to listen to me, request relogin if needed
 		/// TODO test
 		Logger.getLogger().log("Came to the recover part.\nData:\n");
@@ -875,7 +875,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public void fridgeIsEmpty(int ID) {
+	synchronized public void fridgeIsEmpty(int ID) {
 		for (Integer currentID: f_names.keySet()){
 			if (f_notConfirmed.contains(currentID) || f_names.get(currentID) != ClientType.User){
 				continue;
@@ -893,7 +893,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public List<Double> getTempHistory() throws AvroRemoteException {
+	synchronized public List<Double> getTempHistory() throws AvroRemoteException {
 		return this.getTemperatureHistory();
 	}
 

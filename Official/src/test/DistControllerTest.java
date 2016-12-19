@@ -209,37 +209,7 @@ public class DistControllerTest {
 		controller.stopServer();
 	}
 
-	@Test
-	public void testGetID() {
-		// Tested in controller stuff
-	}
-
-	@Test
-	public void testGetClientType() {
-		// Tested in controller stuff
-	}
-
-	@Test
-	public void testLogOff() {
-		// Tested in controller stuff
-	}
-
-	@Test
-	public void testAddTemperatureIntDouble() {
-		// Tested in controller stuff
-	}
-
-	@Test
-	public void testAverageCurrentTemperature() {
-		// Tested in controller stuff
-	}
-
-	@Test
-	public void testHasValidTemperatures() {
-		// Tested in controller stuff
-	}
-
-	@SuppressWarnings("deprecation")
+	/*@SuppressWarnings("deprecation")
 	@Test
 	public void testSetupFridgeCommunication() {
 		DistController controller = new DistController(5000, 10, f_ip);
@@ -281,79 +251,6 @@ public class DistControllerTest {
 		fridge.stopServerController();
 		fridge2.logOffController();
 		fridge2.stopServerController();
-		controller.stopServer();
-	}
-
-	@Test
-	public void getFridgePort() {
-		// Tested in testSetupFridgeCommunication
-	}
-
-	/*@SuppressWarnings("deprecation")
-	@Test
-	public void reSetupFridgeCommunication() {
-		// I could only do it this way, no multiple fridges and actual fuckups
-		DistController controller = new DistController(5000, 10, f_ip);
-
-		DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
-
-		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
-		try {
-
-			CommData port = controller.reSetupFridgeCommunication(5001, 3001);
-
-			assertEquals(3000, port.ID);
-			assertEquals(f_clientip, port.IP);
-			
-			Vector<Integer> expected = new Vector<Integer>();
-			expected.add(new Integer(3000));
-			assertEquals(expected, controller.getOccupiedPorts());
-
-		} catch (AvroRemoteException e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-		fridge.logOffController();
-		fridge.stopServerController();
-		controller.stopServer();
-	}*/
-	
-
-	/*@SuppressWarnings("deprecation")
-	@Test
-	public void testEndFridgeCommunication() {
-		// I could only do it this way, no multiple fridges and actual fuckups
-		DistController controller = new DistController(5000, 10, f_ip);
-
-		DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
-
-		assertEquals(new Vector<Integer>(), controller.getOccupiedPorts());
-		try {
-
-			CommData port = controller.reSetupFridgeCommunication(5001, 3001);
-
-			assertEquals(3000, port.ID);
-			assertEquals(f_clientip, port.IP);
-			
-			Vector<Integer> expected = new Vector<Integer>();
-			expected.add(new Integer(3000));
-			assertEquals(expected, controller.getOccupiedPorts());
-			
-			controller.endFridgeCommunication(3000);
-			expected = new Vector<Integer>();
-			assertEquals(expected, controller.getOccupiedPorts());
-			
-			/// Test this when the port is unused
-			controller.endFridgeCommunication(3000);
-			assertEquals(expected, controller.getOccupiedPorts());
-			
-
-		} catch (AvroRemoteException e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-		fridge.logOffController();
-		fridge.stopServerController();
 		controller.stopServer();
 	}*/
 
