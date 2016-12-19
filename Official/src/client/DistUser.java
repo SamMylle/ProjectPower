@@ -199,7 +199,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param fridgeID The ID of the now empty fridge.
 	 */
 	@Override
-	public void notifyFridgeEmpty(int fridgeID) {
+	public synchronized void notifyFridgeEmpty(int fridgeID) {
 		this.f_notifications.add("The fridge with ID " + Integer.toString(fridgeID) + " is empty.");
 	}
 
@@ -209,7 +209,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param userID The user that has entered the house.
 	 */
 	@Override
-	public void notifyUserEntered(int userID) {
+	public synchronized void notifyUserEntered(int userID) {
 		this.f_notifications.add("The user with ID " + Integer.toString(userID) + " has entered the house.");
 	}
 	
@@ -218,8 +218,23 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param userID The user that has left the house.
 	 */
 	@Override
-	public void notifyUserLeft(int userID) {
+	public synchronized void notifyUserLeft(int userID) {
 		this.f_notifications.add("The user with ID " + Integer.toString(userID) + " has left the house.");
+	}
+	
+	/**
+	 * Removes the first element in the notification list.
+	 */
+	public synchronized void removeFirstNotification() {
+		this.f_notifications.remove(0);
+	}
+	
+	/**
+	 * Gets the notification list.
+	 * @return The list of strings with the notifications.
+	 */
+	public synchronized List<String> getNotifications() {
+		return new ArrayList<String>(f_notifications);
 	}
 
 	
