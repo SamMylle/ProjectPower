@@ -85,6 +85,11 @@
 			"response" : "null",
 			"one-way" : true
 		},
+		"notifyUserLeft" : {
+			"request" : [{"name" : "userID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
+		},
 		"reLogin" : {
 			"request" : [],
 			"response" : "null",

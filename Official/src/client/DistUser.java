@@ -44,7 +44,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	public List<String> f_notifications;
 	
 	/// FAULT TOLERENCE & REPLICATION
-	private ConnectionData f_originalControllerConnection; 	// Backup of the connection to the first DistController
 	private ServerData f_replicatedServerData;				// The replicated data from the DistController
 	private DistController f_controller;					// DistController to be used when this object is elected
 	
@@ -75,7 +74,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_fridgeConnection = null;
 		f_notifications = new Vector<String>();
 		
-		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
 		f_replicatedServerData = null;
 		f_controller = null;
 		f_isParticipantElection = false;
@@ -204,6 +202,17 @@ public class DistUser extends User implements communicationUser, Runnable {
 	public void notifyFridgeEmpty(int fridgeID) {
 		this.f_notifications.add("The fridge with ID " + Integer.toString(fridgeID) + " is empty.");
 	}
+
+	
+	/**
+	 * Notifies the user that another user has left the house.
+	 * @param userID The user that has left the house.
+	 */
+	@Override
+	public void notifyUserLeft(int userID) {
+		this.f_notifications.add("The user with ID " + Integer.toString(userID) + " has left the house.");
+	}
+
 	
 	/**
 	 * Gets a new login from the controller, and restarts the server on the potentially new port
@@ -605,6 +614,38 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_fridgeConnection = null;
 	}
 	
+	/**
+	 * Enters the house.
+	 */
+	public void enterHouse() {
+		super.enter();
+	}
+	
+	/**
+	 * Leaves the house, as well as closing the direct communication if this is setup, and notifying the controller.
+	 */
+	public void leaveHouse() {
+		if (super._getStatus() == UserStatus.absent) {
+			return;
+		}
+		
+		if (f_fridgeConnection != null) {
+			try {
+				this.closeFridge();
+			} catch (NoFridgeConnectionException | AbsentException | TakeoverException e) {	}
+		}
+		super.leave();
+		this.notifyControllerLeave();
+	}
+	
+	/**
+	 * Notifies the controller that the user has left the house.
+	 */
+	private void notifyControllerLeave() {
+		// TODO write this method
+		return;
+	}
+	
 	
 	private void checkInvariantExceptions() throws AbsentException, TakeoverException {
 		if (this._getStatus() != UserStatus.present) {
@@ -614,6 +655,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new TakeoverException("The user has been elected to act as the controller of the system.");
 		}
 	}
+	
 	
 	/**
 	 * Thread run() method, used to run the User server in the background
@@ -1095,21 +1137,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOException e) {}
 		
 		
-//		try {
-//			Transceiver transceiver = new SaslSocketTransceiver(new ConnectionData(clientip, 5000).toSocketAddress());
-//			transceiver.close();
-//		} catch (IOException e) {
-//			System.out.println("Could not connect and threw the io thingy.");
-//		}
-//		try {
-//			System.in.read();
-//		} catch (IOException e) {}
 		System.exit(0);
 	}
-
-
-
-
-
 
 }

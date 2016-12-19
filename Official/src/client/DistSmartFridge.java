@@ -60,7 +60,6 @@ public class DistSmartFridge extends SmartFridge {
 	
 	
 	/// FAULT TOLERENCE & REPLICATION
-	private ConnectionData f_originalControllerConnection; 	// Backup of the first controller connection
 	private ServerData f_replicatedServerData;				// The replicated data from the DistController
 	private DistController f_controller;					// DistController to be used when this object is elected
 	private boolean f_isParticipantElection;				// Equivalent to participant_i in slides
@@ -100,7 +99,6 @@ public class DistSmartFridge extends SmartFridge {
 		f_fridgeUserServer = null;
 		f_fridgeUserThread = null;
 		
-		f_originalControllerConnection = new ConnectionData(f_controllerConnection);
 		f_replicatedServerData = null;
 		f_controller = null;
 		f_electionID = -1;
