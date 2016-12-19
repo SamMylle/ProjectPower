@@ -9,12 +9,14 @@ package avro.ProjectPower;
 /** Methods for the Light class */
 @org.apache.avro.specific.AvroGenerated
 public interface LightComm {
-  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"LightComm\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the Light class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"setState\":{\"request\":[{\"name\":\"state\",\"type\":\"int\"}],\"response\":\"null\"},\"getState\":{\"request\":[],\"response\":\"int\"},\"aliveAndKicking\":{\"request\":[],\"response\":\"boolean\"},\"newServer\":{\"request\":[{\"name\":\"newServerIP\",\"type\":\"string\"},{\"name\":\"newServerID\",\"type\":\"int\"}],\"response\":\"null\"},\"reLogin\":{\"request\":[],\"response\":\"null\",\"one-way\":true}}}");
+  public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol.parse("{\"protocol\":\"LightComm\",\"namespace\":\"avro.ProjectPower\",\"doc\":\"Methods for the Light class\",\"types\":[{\"type\":\"enum\",\"name\":\"ClientType\",\"symbols\":[\"Light\",\"SmartFridge\",\"User\",\"TemperatureSensor\"]}],\"messages\":{\"setState\":{\"request\":[{\"name\":\"state\",\"type\":\"int\"}],\"response\":\"null\"},\"getState\":{\"request\":[],\"response\":\"int\"},\"aliveAndKicking\":{\"request\":[],\"response\":\"boolean\"},\"newServer\":{\"request\":[{\"name\":\"newServerIP\",\"type\":\"string\"},{\"name\":\"newServerID\",\"type\":\"int\"}],\"response\":\"null\"},\"reLogin\":{\"request\":[],\"response\":\"null\",\"one-way\":true},\"powerSavingMode\":{\"request\":[],\"response\":\"null\",\"one-way\":true},\"powerWastingMode\":{\"request\":[],\"response\":\"null\",\"one-way\":true}}}");
   java.lang.Void setState(int state) throws org.apache.avro.AvroRemoteException;
   int getState() throws org.apache.avro.AvroRemoteException;
   boolean aliveAndKicking() throws org.apache.avro.AvroRemoteException;
   java.lang.Void newServer(java.lang.CharSequence newServerIP, int newServerID) throws org.apache.avro.AvroRemoteException;
   void reLogin();
+  void powerSavingMode();
+  void powerWastingMode();
 
   @SuppressWarnings("all")
   /** Methods for the Light class */

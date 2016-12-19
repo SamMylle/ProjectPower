@@ -901,7 +901,122 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	synchronized public List<Double> getTempHistory() throws AvroRemoteException {
 		return this.getTemperatureHistory();
 	}
-
+	
+	@Override
+	synchronized public void leftHome(int ID) {
+		/// TODO test
+		/// TODO what if user crashes => check if deleted thing was user =>
+			/// if so check all users if they're in or out
+		System.out.println("USR LEFT MSG");
+		if (f_names.get(ID) == null || f_IPs.get(ID) == null || f_IPs.get(ID) == ""){
+			return;
+		}
+		
+		boolean usersPresent = false;
+		for (Integer currentID: f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			if (currentIP == "" || currentIP == null || currentType == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.User){
+				Transceiver client = this.setupTransceiver(currentID, currentIP);
+				
+				try {
+					communicationUser.Callback proxy =
+							SpecificRequestor.getClient(communicationUser.Callback.class, client);
+					proxy.notifyUserLeft(ID);
+					if (proxy.getStatus() == UserStatus.present){
+						usersPresent = true;
+					}
+					client.close();
+					
+				} catch (Exception e) {
+					continue;
+				}
+			}
+		}
+		
+		if (! usersPresent){
+			for (Integer currentID: f_names.keySet()){
+				ClientType currentType = f_names.get(currentID);
+				String currentIP = f_IPs.get(currentID);
+				
+				if (currentIP == "" || currentIP == null || currentType == null){
+					continue;
+				}
+				
+				if (currentType == ClientType.Light){
+					Transceiver client = this.setupTransceiver(currentID, currentIP);
+					
+					try {
+						LightComm.Callback proxy =
+								SpecificRequestor.getClient(LightComm.Callback.class, client);
+						proxy.powerSavingMode();
+						client.close();
+					} catch (Exception e) {
+						continue;
+					}
+				}
+			}
+		}
+	}
+	
+	@Override
+	synchronized public void enteredHome(int ID) {
+		/// TODO test
+		if (f_names.get(ID) == null || f_IPs.get(ID) == null || f_IPs.get(ID) == ""){
+			return;
+		}
+		
+		for (Integer currentID: f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			if (currentIP == "" || currentIP == null || currentType == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.User){
+				Transceiver client = this.setupTransceiver(currentID, currentIP);
+				
+				try {
+					communicationUser.Callback proxy =
+							SpecificRequestor.getClient(communicationUser.Callback.class, client);
+					proxy.notifyUserEntered(ID);
+					client.close();
+					
+				} catch (Exception e) {
+					continue;
+				}
+			}
+		}
+		
+		for (Integer currentID: f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			if (currentIP == "" || currentIP == null || currentType == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.Light){
+				Transceiver client = this.setupTransceiver(currentID, currentIP);
+				
+				try {
+					LightComm.Callback proxy =
+							SpecificRequestor.getClient(LightComm.Callback.class, client);
+					proxy.powerWastingMode();
+					client.close();
+				} catch (Exception e) {
+					continue;
+				}
+			}
+		}
+	}
+	
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
 		DistController controller = new DistController(5000, 10, System.getProperty("ip"));
@@ -924,4 +1039,5 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		controller = new DistController(5000, 10, System.getProperty("ip"));
 	}
+
 }

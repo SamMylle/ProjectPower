@@ -204,6 +204,16 @@
 		"getTempHistory":{
 			"request": [],
 			"response": {"type": "array", "items": "double"}
+		},
+		"leftHome":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
+		},
+		"enteredHome":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
 		}
 	}
 

@@ -35,6 +35,16 @@
 			"request" : [],
 			"response" : "null",
 			"one-way" : true
+		},
+		"powerSavingMode" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		},
+		"powerWastingMode" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
 		}
 	}
 }

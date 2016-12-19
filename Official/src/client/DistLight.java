@@ -189,6 +189,20 @@ public class DistLight implements Runnable, LightComm{
 		this.connectToServer(f_serverPort, f_serverip);
 	}
 	
+	@Override
+	public void powerSavingMode() {
+		System.out.println("POWERSAVINGMODE");
+		f_light.powSavingMode();
+		System.out.println("New Status: " + f_light.getState());
+	}
+	
+	@Override
+	public void powerWastingMode() {
+		System.out.println("POWERWASTINGMODE");
+		f_light.recoverFromPowerSavingMode();
+		System.out.println("New Status: " + f_light.getState());
+	}
+	
 	public static void main(String[] args) {
 		DistLight newLight = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
 		newLight.connectToServer(5000, System.getProperty("ip"));
