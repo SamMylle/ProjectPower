@@ -161,85 +161,89 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		/// TODO make dynamic schedule time
 		f_timer = new Timer();
-		f_timer.schedule(new ClientPoll(), 0, 500);
+		f_timer.schedule(new ClientPoll(), 0, 5000);
 	}
 	
 	@SuppressWarnings("deprecation")
 	public DistController(ServerData oldServer){
 		/// Precondition: valid stuff in data
 		/// I'm not proud of this
+		
 		super(oldServer.currentMaxPort, oldServer.maxTemperatures);
-		f_notConfirmed = new HashSet<Integer>();
-		f_isOriginalServer = false;
-		
-		//f_controller = new Controller(port + 1, 10);
-		f_myPort = oldServer.port;
-		f_previousControllerPort = oldServer.originalControllerPort;
-		f_previousControllerIP = oldServer.previousControllerIP.toString();
-		f_serverActive = false;
-
-		if (f_IPs == null){
-			f_IPs = new HashMap<Integer, String>();
-		}
-		
-			if (f_names == null){
-		f_names = new HashMap<Integer, ClientType>();
-			}
-
-		if (f_temperatures == null){
-			f_temperatures = new Vector<TemperatureRecord>();
-		}
-		
-		for (int i = 0; i < oldServer.IPsID.size(); i++){
-			String IP = oldServer.IPsIP.get(i).toString();
-			Integer ID = oldServer.IPsID.get(i);
-			f_IPs.put(ID, IP);
-		}
-
-		f_ownIP = oldServer.ip.toString();
-
-		for (int i = 0; i < oldServer.namesID.size(); i++){
-			f_names.put(oldServer.namesID.get(i), oldServer.namesClientType.get(i));
-		}
-
-		for (int i = 0; i < oldServer.temperatures.size(); i++){
-			TemperatureRecord newRecord =
-					new TemperatureRecord(f_maxTemperatures,
-							oldServer.temperaturesIDs.get(i),
-							new LinkedList<Double>(oldServer.temperatures.get(i)));
-			f_temperatures.add(newRecord);
+		synchronized(this) {
+			f_notConfirmed = new HashSet<Integer>();
+			f_isOriginalServer = false;
 			
-		}
-		
-		System.out.println("SET: " + f_names.toString());
+			//f_controller = new Controller(port + 1, 10);
+			f_myPort = oldServer.port;
+			f_previousControllerPort = oldServer.originalControllerPort;
+			f_previousControllerIP = oldServer.previousControllerIP.toString();
+			f_serverActive = false;
 
-		/// Make a thread, the "run" method will execute in a new thread
-		/// The run method must be implemented by a Runnable object (see implements in this class)
-		/// Since the server must run on this object, "this" is passed to the thread
-		/// Below, when starting the thread (thread.start()), the thread will call this.run()
-		/// This has to be this way because the server doesn't get out of the eternal loop
-		/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
-		f_serverThread = new Thread(this);
-		f_serverThread.start();
-
-		while (!f_serverActive){
-			try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				Logger.getLogger().f_active = true;
-				Logger.getLogger().log("Server startup failed");
-				e.printStackTrace();
-			} catch(Exception e){
-				Logger.getLogger().log("Wat\n");
+			if (f_IPs == null){
+				f_IPs = new HashMap<Integer, String>();
 			}
-		}
-		/// TODO notify clients i am controller if federico fails
+			
+				if (f_names == null){
+			f_names = new HashMap<Integer, ClientType>();
+				}
+
+			if (f_temperatures == null){
+				f_temperatures = new Vector<TemperatureRecord>();
+			}
+			
+			for (int i = 0; i < oldServer.IPsID.size(); i++){
+				String IP = oldServer.IPsIP.get(i).toString();
+				Integer ID = oldServer.IPsID.get(i);
+				f_IPs.put(ID, IP);
+			}
+
+			f_ownIP = oldServer.ip.toString();
+
+			for (int i = 0; i < oldServer.namesID.size(); i++){
+				f_names.put(oldServer.namesID.get(i), oldServer.namesClientType.get(i));
+			}
+
+			for (int i = 0; i < oldServer.temperatures.size(); i++){
+				TemperatureRecord newRecord =
+						new TemperatureRecord(f_maxTemperatures,
+								oldServer.temperaturesIDs.get(i),
+								new LinkedList<Double>(oldServer.temperatures.get(i)));
+				f_temperatures.add(newRecord);
+				
+			}
+			
+			System.out.println("SET: " + f_names.toString());
+
+			/// Make a thread, the "run" method will execute in a new thread
+			/// The run method must be implemented by a Runnable object (see implements in this class)
+			/// Since the server must run on this object, "this" is passed to the thread
+			/// Below, when starting the thread (thread.start()), the thread will call this.run()
+			/// This has to be this way because the server doesn't get out of the eternal loop
+			/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
+			f_serverThread = new Thread(this);
+			f_serverThread.start();
+
+			while (!f_serverActive){
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					Logger.getLogger().f_active = true;
+					Logger.getLogger().log("Server startup failed");
+					e.printStackTrace();
+				} catch(Exception e){
+					Logger.getLogger().log("Wat\n");
+				}
+			}
+			/// TODO notify clients i am controller if federico fails
+			
+			this.sendBackupToAll();
+			
+			/// TODO make dynamic schedule time
+			f_timer = new Timer();
+			f_timer.schedule(new ClientPoll(), 0, 500);    
+	    }
 		
-		this.sendBackupToAll();
-		
-		/// TODO make dynamic schedule time
-		f_timer = new Timer();
-		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
 
 	synchronized public boolean serverIsActive(){
@@ -555,7 +559,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	synchronized public void reaffirmClientsAlive(){
 		/// TODO test
 		boolean removed = false;
-		for(Integer currentID : f_names.keySet()){
+		Set<Integer> keySet = new HashSet<Integer>(f_names.keySet());
+		for(Integer currentID : keySet){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
 
