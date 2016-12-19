@@ -628,6 +628,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	public void enterHouse() {
 		super.enter();
+		this.notifyControllerEnter();
 	}
 	
 	/**
@@ -651,10 +652,29 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Notifies the controller that the user has left the house.
 	 */
 	private void notifyControllerLeave() {
-		// TODO write this method
-		return;
+		try {
+			Transceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.leftHome(this.getID());
+			transceiver.close();
+		} catch (IOException e) {
+			this.startElection();
+		}
 	}
 	
+	/**
+	 * Notifies the controller that the user has entered the house.
+	 */
+	private void notifyControllerEnter() {
+		try {
+			Transceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			proxy.enteredHome(this.getID());
+			transceiver.close();
+		} catch (IOException e) {
+			this.startElection();
+		}
+	}
 	
 	private void checkInvariantExceptions() throws AbsentException, TakeoverException {
 		if (this._getStatus() != UserStatus.present) {
@@ -1140,13 +1160,37 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOControllerException e) {
 			System.out.println(e.getMessage());
 		}
+
+		try {
+			System.in.read();
+		} catch (IOException e) {}
+		
+		remoteUser.leaveHouse();
 		
 		try {
 			System.in.read();
 		} catch (IOException e) {}
 		
+		remoteUser.enterHouse();
 		
-		System.exit(0);
+		try {
+			System.in.read();
+		} catch (IOException e) {}
+		
+//		while (true) {
+//			System.out.println(remoteUser.f_notifications.toString());
+//			
+//			try {
+//				Thread.sleep(1000);
+//			} catch (InterruptedException e) {}
+//		}
+//		
+//		try {
+//			System.in.read();
+//		} catch (IOException e) {}
+//		
+//		
+//		System.exit(0);
 	}
 
 }

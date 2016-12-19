@@ -28,26 +28,26 @@ import org.apache.avro.AvroRemoteException;
 public class WindowUser extends javax.swing.JFrame {
 
     private DistUser f_user;
-//    private DistController f_controller; /// TODO remove this, here for debugging
-//    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
-//    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
-//    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
+    private DistController f_controller; /// TODO remove this, here for debugging
+    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
+    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
+    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
     
     /**
      * Creates new form MainWindow
      */
     public WindowUser() {
         initComponents();
-        String localIP = "143.169.211.30";
-//        f_controller = new DistController(5000, 10, localIP);
+        String localIP = "192.168.1.7";
+        f_controller = new DistController(5000, 10, localIP);
         f_user = new DistUser("", localIP, localIP, 5000);
-//        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
-//        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
-//        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
-//        
-//        f_fridge1.addItem("butter");
-//        f_fridge2.addItem("cheese");
-//        f_fridge2.addItem("milk");
+        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
+        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
+        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
+        
+        f_fridge1.addItem("butter");
+        f_fridge2.addItem("cheese");
+        f_fridge2.addItem("milk");
        
         jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
@@ -100,7 +100,7 @@ public class WindowUser extends javax.swing.JFrame {
             pnlUserStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pnlUserStatusLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(pnlUserStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnlUserStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(lblStatusText)
                     .addComponent(lblStatus))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -123,9 +123,9 @@ public class WindowUser extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(pnlUserStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(pnlUserStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
+                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 456, Short.MAX_VALUE)
                 .addContainerGap())
         );
 

@@ -43,9 +43,9 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Component id="pnlUserStatus" min="-2" pref="30" max="-2" attributes="0"/>
+              <Component id="pnlUserStatus" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jtpPanelSwitch" pref="468" max="32767" attributes="0"/>
+              <Component id="jtpPanelSwitch" pref="456" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -77,9 +77,9 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="lblStatusText" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="lblStatus" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="lblStatusText" min="-2" max="-2" attributes="0"/>
+                      <Component id="lblStatus" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
