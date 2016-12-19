@@ -205,6 +205,15 @@ public class DistUser extends User implements communicationUser, Runnable {
 
 	
 	/**
+	 * Notifies the user that another user has entered the house.
+	 * @param userID The user that has entered the house.
+	 */
+	@Override
+	public void notifyUserEntered(int userID) {
+		this.f_notifications.add("The user with ID " + Integer.toString(userID) + " has entered the house.");
+	}
+	
+	/**
 	 * Notifies the user that another user has left the house.
 	 * @param userID The user that has left the house.
 	 */
