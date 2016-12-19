@@ -127,7 +127,6 @@ public class DistSmartFridge extends SmartFridge {
 			System.err.println("Error connecting to the controller server, the port number might be wrong.");
 			System.exit(1);
 		}
-		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -158,10 +157,9 @@ public class DistSmartFridge extends SmartFridge {
 		while (f_controllerServerReady == false) {
 			try {
 				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			} catch (InterruptedException e) {}
 		}
+		this.notifySuccessfulLogin();
 	}
 	
 	/**

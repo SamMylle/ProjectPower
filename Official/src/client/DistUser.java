@@ -101,7 +101,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {	}
-		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -147,10 +146,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		while (f_serverReady == false) {
 			try {
 				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			} catch (InterruptedException e) {}
 		}
+		this.notifySuccessfulLogin();
 	}
 	
 	/**
