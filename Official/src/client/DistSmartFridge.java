@@ -39,11 +39,8 @@ import controller.DistController;
 import util.Logger;
 
 
-// TODO check IP arguments to be valid
-// TODO get new Port for the user server when port is already in use.
 // TODO add fault tolerence between user and fridge directly, notification to controller if user dies
-// TODO add IP Address for the user connection
-// TODO be able to start a DistController when being elected
+// TODO refactor or remove field f_safeToClose
 public class DistSmartFridge extends SmartFridge {
 
 	private String f_ownIP;									// The IP address of the client itself
@@ -118,7 +115,6 @@ public class DistSmartFridge extends SmartFridge {
 	 * Summary: gets an ID for the SmartFridge, requesting one from the controller.
 	 */
 	private void setupID() {
-		// TODO retry getting an ID when failing to bind to the port
 		try {
 			Transceiver transceiver = 
 					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
@@ -129,9 +125,9 @@ public class DistSmartFridge extends SmartFridge {
 		}
 		catch (IOException e) {
 			System.err.println("Error connecting to the controller server, the port number might be wrong.");
-			e.printStackTrace(System.err);
 			System.exit(1);
 		}
+		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -148,12 +144,7 @@ public class DistSmartFridge extends SmartFridge {
 			transceiver.close();
 			return true;
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at logOff() in DistSmartFridge.");
-			return false;
-		}
 		catch (IOException e) {
-			System.err.println("IOException at logOff() in DistSmartFridge.");
 			return false;
 		}
 	}
@@ -171,7 +162,6 @@ public class DistSmartFridge extends SmartFridge {
 				e.printStackTrace();
 			}
 		}
-		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -211,6 +201,7 @@ public class DistSmartFridge extends SmartFridge {
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
+			// TODO figure out what to do here
 			System.err.println("AvroRemoteException at notifySuccessfulLogin() in DistSmartFridge.");
 		}
 		catch (IOException e) {
@@ -228,14 +219,12 @@ public class DistSmartFridge extends SmartFridge {
 					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = 
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
-//			proxy.notifyFridgeEmpty(this.getID());	//TODO add method when implemented in controller/user
+			proxy.fridgeIsEmpty(this.getID());
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at logOff() in DistSmartFridge.");
-		}
 		catch (IOException e) {
-			System.err.println("IOException at logOff() in DistSmartFridge.");
+			// TODO should the message be sent to the new controller afterwards?
+			this.startElection();
 		}
 	}
 	
@@ -252,10 +241,31 @@ public class DistSmartFridge extends SmartFridge {
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
+			// TODO handle appropriately
 			System.err.println("AvroRemoteException at getNewID() in DistSmartFridge.");
 		}
 		catch (IOException e) {
 			System.err.println("IOException at getNewID() in DistSmartFridge.");
+		}
+	}
+	
+	/**
+	 * Tests if the user is still connected to the fridge.
+	 */
+	private boolean userConnected() {
+		if (f_userConnection == null) {
+			return false;
+		}
+		
+		try {
+			Transceiver transceiver = new SaslSocketTransceiver(f_userConnection.toSocketAddress());
+			communicationUser proxy = (communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
+			boolean status = proxy.aliveAndKicking();
+			transceiver.close();
+			return status;
+		} catch (IOException e) {
+			this.stopUserServer();
+			return false;
 		}
 	}
 	
@@ -286,7 +296,6 @@ public class DistSmartFridge extends SmartFridge {
 				}
 				catch (IOException e) {
 					System.err.println("Failed to start the SmartFridge server for the controller.");
-					e.printStackTrace(System.err);
 					System.exit(1);
 				}
 			}
@@ -314,14 +323,9 @@ public class DistSmartFridge extends SmartFridge {
 		}
 
 		@Override
-		public boolean testMethod(ClientType clienttype)
-				throws AvroRemoteException {
-			return false;
-		}
-
-		@Override
 		public int requestFridgeCommunication(int userServerPort) throws AvroRemoteException {
-			if (f_userServerConnection.getPort() != -1) {
+			// TODO trouble with concurrency might occur here, not sure how to fix though, send user address via this method instead of separate one
+			if (DistSmartFridge.this.userConnected() == true) {
 				return -1;
 			}
 			f_userServerConnection.setPort(userServerPort);
@@ -370,7 +374,7 @@ public class DistSmartFridge extends SmartFridge {
 			DistSmartFridge.this.f_electionID = -1;
 			
 			
-			// TODO push this to seperate method, where it can also be used for sendSelfElectedNextCandidate
+			// TODO push this to separate method, where it can also be used for sendSelfElectedNextCandidate
 			new Thread() {
 				public void run() {				
 					try {
@@ -386,7 +390,7 @@ public class DistSmartFridge extends SmartFridge {
 						}
 						transceiver.close();
 					} catch (AvroRemoteException e) {
-						// TODO handle this more appropriately
+						// TODO handle this more appropriately, add separate method to cleanup election variables
 						System.err.println("AvroRemoteException at sendSelfElectedNextCandidate() in DistSmartFridge.");
 					} catch (IOException e) {
 						// TODO handle this more appropriately
@@ -486,11 +490,7 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
-	
-	public void backderpdata(ServerData backup) {
-		this.f_replicatedServerData = backup;
-	}
-	
+
 	/**
 	 * Starts the user server with own IP and legal Port (port is not guaranteed to be consistent every call)
 	 */
@@ -533,7 +533,7 @@ public class DistSmartFridge extends SmartFridge {
 				proxy.notifyFridgeClosed();
 				transceiver.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				f_userConnection = null;
 			}			
 		}
 	}
@@ -591,7 +591,6 @@ public class DistSmartFridge extends SmartFridge {
 			if (DistSmartFridge.this.emptyInventory() == true) {
 				DistSmartFridge.this.notifyControllerEmptyInventory();
 			}
-			
 			return null;
 		}
 
@@ -693,7 +692,6 @@ public class DistSmartFridge extends SmartFridge {
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
 		/// This is written in a general way, need to make some changes in order to make this more general
-		// TODO write this more generic if time allows it
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
 				participants.put(clientIDs.get(i), clientTypes.get(i));
@@ -701,47 +699,49 @@ public class DistSmartFridge extends SmartFridge {
 			}
 		}
 		
-		/// TODO NEW: tests the next candidates untill it finds one that is still alive
-				f_nextCandidateOffset = 1;
-				Integer nextCandidateID = new Integer(-1);
-				String nextIP = "";
-				ClientType type = null;
+		f_nextCandidateOffset = 1;
+		Integer nextCandidateID = new Integer(-1);
+		String nextIP = "";
+		ClientType type = null;
+		
+		while (true) {
+			try {
+				nextCandidateID = participantIDs.get((f_electionID+f_nextCandidateOffset) % participantIDs.size());
+				nextIP = clientIPsIP.get( clientIPsID.indexOf(nextCandidateID) ).toString();
+				type = participants.get(nextCandidateID);
+				ConnectionData nextCandidate = new ConnectionData(nextIP, nextCandidateID.intValue());
+				boolean active = false;
 				
-				while (true) {
-					try {
-						nextCandidateID = participantIDs.get((f_electionID+f_nextCandidateOffset) % participantIDs.size());
-						nextIP = clientIPsIP.get( clientIPsID.indexOf(nextCandidateID) ).toString();
-						type = participants.get(nextCandidateID);
-						ConnectionData nextCandidate = new ConnectionData(nextIP, nextCandidateID.intValue());
-						boolean active = false;
-						
-						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-						
-						if (type == ClientType.SmartFridge) {
-							communicationFridge proxy = 
-									(communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiver);
-							active = proxy.aliveAndKicking();
-						} else if (type == ClientType.User) {
-							communicationUser proxy = 
-									(communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
-							active = proxy.aliveAndKicking();
-						}
-						transceiver.close();					
-						if (active == true) {
-							break;
-						}
-						throw new IOException();
-					} catch (IOException | NullPointerException e) {
-						f_nextCandidateOffset += 1;
-					}
-					
-					if (f_nextCandidateOffset > participants.size()) {
-						/// should not be able to get here
-						/// if it gets here though, it means that all the participants (including this object itself) are not reachable
-						return null;
-					}
+				Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+				
+				if (type == ClientType.SmartFridge) {
+					communicationFridge proxy = 
+							(communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiver);
+					active = proxy.aliveAndKicking();
+				} else if (type == ClientType.User) {
+					communicationUser proxy = 
+							(communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
+					active = proxy.aliveAndKicking();
 				}
-				return new ConnectionTypeData(nextIP, nextCandidateID.intValue(), type);
+				transceiver.close();					
+				if (active == true) {
+					break;
+				}
+				throw new IOException();
+			} catch (IOException | NullPointerException e) {
+				f_nextCandidateOffset += 1;
+			}
+			
+			if (f_nextCandidateOffset > participants.size()) {
+				/// should not be able to get here
+				/// if it gets here though, it means that all the participants (including this object itself) are not reachable
+				
+				// TODO Make sure this is the desired effect
+				System.exit(1);
+				return null;
+			}
+		}
+		return new ConnectionTypeData(nextIP, nextCandidateID.intValue(), type);
 	}
 	
 	
@@ -756,7 +756,6 @@ public class DistSmartFridge extends SmartFridge {
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		
 		/// This is written in a general way, need to make some changes in order to make this more general
-		// TODO write this more generic if time allows it
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
 				participants.add(clientIDs.get(i));
@@ -809,14 +808,12 @@ public class DistSmartFridge extends SmartFridge {
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
 		/// This is written in a general way, need to make some changes in order to make this more general
-		// TODO write this more generic if time allows it
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.Light || clientTypes.get(i) == ClientType.TemperatureSensor) {
 				nonParticipants.put(clientIDs.get(i), clientTypes.get(i));
 			}
 		}
 		
-		// TODO test this extensively
 		
 		// This part is not asynchronous, since it is not really part of the Roberts-Chang algorithm
 		Iterator it = nonParticipants.entrySet().iterator();
@@ -839,12 +836,8 @@ public class DistSmartFridge extends SmartFridge {
 					proxy.newServer(f_ownIP, this.getID());
 				}
 				transceiver.close();
-			} catch (AvroRemoteException e) {
-				// TODO handle this more appropriately
-				System.err.println("AvroRemoteException at sendNonCandidatesNewServer() in DistSmartFridge.");
 			} catch (IOException e) {
-				// TODO handle this more appropriately
-				System.err.println("IOException at sendNonCandidatesNewServer() in DistSmartFridge.");
+				// do nothing if the specific client cannot be reached
 			}
 		}
 	}
@@ -855,10 +848,7 @@ public class DistSmartFridge extends SmartFridge {
 			this.closeFridge();
 			
 			/// notify the user that the direct connection should be stopped, if the user has send his address already, too bad otherwise
-			// TODO find out why this part throws a ClosedByInterruptException
-			
 			this.notifyUserClosingFridge();
-
 			this.stopUserServer();
 		}
 		this.stopServerController();

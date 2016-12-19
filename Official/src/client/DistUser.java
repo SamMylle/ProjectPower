@@ -28,9 +28,9 @@ import client.util.ConnectionTypeData;
 import client.util.LightState;
 
 
-// TODO add method to handle notifications of empty fridges (some type of buffer storing messages?)
 // TODO add fault tolerence between user and fridge directly
-// TODO be able to start a DistController when being elected
+// TODO make a difference between a fridge server being taken over or just disconnecting
+// TODO add exception to notify the user that the election has started
 public class DistUser extends User implements communicationUser, Runnable {
 	
 	private String f_ownIP;	
@@ -67,9 +67,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	public DistUser(String name, String ownIP, String controllerIP, int controllerPort) throws IOControllerException {
 		super(name);
-		assert controllerPort >= 1000;
 		
-		// TODO check IP arguments to be valid
 		f_ownIP = ownIP;
 		
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
@@ -102,10 +100,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			this.setID(proxy.LogOn(User.type, f_ownIP));
 			transceiver.close();
 		}
-		catch (IOException e) {
-			// TODO server not reachable, start election
-//			System.err.println("IOException in constructor for DistUser (getID).");
-		}
+		catch (IOException e) {	}
+		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -136,12 +132,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 			return true;
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at logOff() in Distuser.");
-			return false;
-		}
 		catch (IOException e) {
-			System.err.println("IOException at logOff() in DistUser.");
 			return false;
 		}
 	}
@@ -160,7 +151,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 				e.printStackTrace();
 			}
 		}
-		this.notifySuccessfulLogin();
 	}
 	
 	/**
@@ -200,6 +190,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (AvroRemoteException e) {
+			// TODO handle more appropriately
 			System.err.println("AvroRemoteException at notifySuccessfulLogin() in DistUser.");
 		}
 		catch (IOException e) {
@@ -221,38 +212,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void reLogin() {
-		// TODO same concern as in DistSmartFridge
 		this.stopServer();
 		this.setupID();
 		this.startServer();
 	}
-	
-	// TODO make sure exception handling isn't screwed up when using this method
-	private SaslSocketTransceiver getControllerTransceiver() throws Exception {
-		SaslSocketTransceiver transceiver = null;
-		try {
-			transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
-		}
-		catch (IOException e) {
-			System.err.println("Could not establish connection with the controller.");
-			throw new Exception("");
-		}
-		
-		return transceiver;
-	}
-	
-	// TODO same as above
-	private SaslSocketTransceiver getSmartFridgeTransciever() throws Exception {
-		SaslSocketTransceiver transceiver = null;
-		try {
-			transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
-		} catch (IOException e) {
-			System.err.println("Could not establish connection with the smartfridge.");
-			throw new Exception("");
-		}
-		
-		return transceiver;
-	}
+
 	
 	
 	/**
@@ -293,11 +257,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			}
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at requestLightStates() in DistUser.");
-		} 
 		catch (IOException e) {
-			System.err.println("IOException at requestLightStates() in DistUser.");
+			this.startElection();
 		}
 		
 		return lightStates;
@@ -326,11 +287,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			proxy.setLight(newState, lightID);
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at setLightState() in DistUser.");
-		} 
 		catch (IOException e) {
-			System.err.println("IOException at setLightState() in DistUser.");
+			this.startElection();
 		}
 	}
 	
@@ -358,11 +316,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			_items = proxy.getFridgeInventory(fridgeID);
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at getFridgeItems() in DistUser.");
-		} 
 		catch (IOException e) {
-			System.err.println("IOException at getFridgeItems() in DistUser.");
+			this.startElection();
 		}
 		List<String> items = new Vector<String>();
 		for (CharSequence item : _items) {
@@ -379,9 +334,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws NoTemperatureMeasures if no temperature measures are available yet.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
-	public double getCurrentTemperatureHouse() throws MultipleInteractionException, AbsentException, NoTemperatureMeasures, TakeoverException {
+	public double getCurrentTemperatureHouse() 
+			throws MultipleInteractionException, AbsentException, NoTemperatureMeasures, TakeoverException {
 		this.checkInvariantExceptions();
-
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -397,11 +352,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 			hasTemperatures = proxy.hasValidTemperatures();
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at getCurrentTemperatureHouse() in DistUser.");
-		} 
 		catch (IOException e) {
-			System.err.println("IOException at getCurrentTemperatureHouse() in DistUser.");
+			this.startElection();
 		}
 		if (currentTemp != 0) {
 			return currentTemp;
@@ -409,7 +361,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			return currentTemp;
 		}
 		
-		throw new NoTemperatureMeasures("No temperature measures are available yet.");
+		throw new NoTemperatureMeasures("No temperature measures are available at this moment.");
 	}
 	
 	/**
@@ -420,7 +372,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	public List<Double> getTemperatureHistory() throws MultipleInteractionException, AbsentException, TakeoverException {
 		this.checkInvariantExceptions();
-
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
 		}
@@ -433,15 +384,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 			ControllerComm proxy = 
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			values = proxy.getTempHistory();
-			
-			//TODO add call to get the history of all the stored temperatures.
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at getCurrentTemperatureHouse() in DistUser.");
-		} 
 		catch (IOException e) {
-			System.err.println("IOException at getCurrentTemperatureHouse() in DistUser.");
+			this.startElection();
 		}
 		
 		return values;
@@ -470,12 +416,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			clients = proxy.getAllClients();
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at getAllClients() in DistUser.");
-			this.startElection();
-		} 
 		catch (IOException e) {
-			System.err.println("IOException at getAllClients() in DistUser.");
 			this.startElection();
 		}
 		return clients;
@@ -491,7 +432,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws TakeoverException if the user has been elected to be the new controller.
 	 */
 	public void communicateWithFridge(int fridgeID) 
-		throws MultipleInteractionException, AbsentException, FridgeOccupiedException, TakeoverException {
+		throws MultipleInteractionException, AbsentException, FridgeOccupiedException, TakeoverException, NoFridgeConnectionException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is already connected to a fridge, cannot start another connection.");
@@ -506,7 +447,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (AvroRemoteException e) {
 			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
 		} catch (IOException e) {
-			System.err.println("IOException at communicateWithFridge() in DistUser.");
+			this.startElection();
+			// TODO replace this with exception?
+			return;
 		}
 		
 		if (connection.getID() == -1) {
@@ -520,14 +463,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.registerUserIP(f_ownIP, this.getID());
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			// TODO handle this more appropriately
-			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
-			f_fridgeConnection = null;
 		} catch (IOException e) {
-			// TODO handle this more appropriately
-			System.err.println("IOException at communicateWithFridge() in DistUser.");
 			f_fridgeConnection = null;
+			throw new NoFridgeConnectionException("The connection with the fridge has been lost.");
 		}
 	}
 	
@@ -552,12 +490,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.addItemRemote(item);
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			// TODO handle this more appropriately
-			System.err.println("AvroRemoteException at addItemFridge() in DistUser.");
 		} catch (IOException e) {
-			// TODO handle this more appropriately
-			System.err.println("IOException at addItemFridge() in DistUser.");
+			f_fridgeConnection = null;
+			throw new NoFridgeConnectionException("The connection with the fridge has been lost.");
 		}
 	}
 	
@@ -582,12 +517,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.removeItemRemote(item);
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			// TODO handle this more appropriately
-			System.err.println("AvroRemoteException at removeItemRemote() in DistUser.");
 		} catch (IOException e) {
-			// TODO handle this more appropriately
-			System.err.println("IOException at removeItemRemote() in DistUser.");
+			f_fridgeConnection = null;
+			throw new NoFridgeConnectionException("The connection with the fridge has been lost.");
 		}
 	}
 	
@@ -613,12 +545,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			_items = proxy.getItemsRemote();
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			// TODO handle this more appropriately
-			System.err.println("AvroRemoteException at getFridgeItemsDirectly() in DistUser.");
 		} catch (IOException e) {
-			// TODO handle this more appropriately
-			System.err.println("IOException at getFridgeItemsDirectly() in DistUser.");
+			f_fridgeConnection = null;
+			throw new NoFridgeConnectionException("The connection with the fridge has been lost.");
 		}
 		
 		for (CharSequence item : _items) {
@@ -646,12 +575,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.openFridgeRemote();
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			// TODO handle this more appropriately
-			System.err.println("AvroRemoteException at openFridge() in DistUser.");
 		} catch (IOException e) {
-			// TODO handle this more appropriately
-			System.err.println("IOException at openFridge() in DistUser.");
+			f_fridgeConnection = null;
+			throw new NoFridgeConnectionException("The connection with the fridge has been lost.");
 		}
 	}
 	
@@ -674,12 +600,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					(communicationFridgeUser) SpecificRequestor.getClient(communicationFridgeUser.class, transceiver);
 			proxy.closeFridgeRemote();
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			// TODO handle this more appropriately
-			System.err.println("AvroRemoteException at closeFridge() in DistUser.");
 		} catch (IOException e) {
-			// TODO handle this more appropriately
-			System.err.println("IOException at closeFridge() in DistUser.");
+			f_fridgeConnection = null;
+			throw new NoFridgeConnectionException("The connection to the fridge has been lost.");
 		}
 		f_fridgeConnection = null;
 	}
@@ -956,7 +879,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
 		/// This is written in a general way, need to make some changes in order to make this more general
-		// TODO write this more generic if time allows it
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
 				participants.put(clientIDs.get(i), clientTypes.get(i));
@@ -964,7 +886,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			}
 		}
 		
-		/// TODO NEW: tests the next candidates untill it finds one that is still alive
 		f_nextCandidateOffset = 1;
 		Integer nextCandidateID = new Integer(-1);
 		String nextIP = "";
@@ -1001,6 +922,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 			if (f_nextCandidateOffset > participants.size()) {
 				/// should not be able to get here
 				/// if it gets here though, it means that all the participants (including this object itself) are not reachable
+				
+				// TODO check if this is the desired effect
+				System.exit(1);
 				return null;
 			}
 		}
@@ -1017,7 +941,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		
-		// TODO write this more generic if time allows it
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
 				participants.add(clientIDs.get(i));
@@ -1069,14 +992,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
 		/// This is written in a general way, need to make some changes in order to make this more general
-		// TODO write this more generic if time allows it
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.Light || clientTypes.get(i) == ClientType.TemperatureSensor) {
 				nonParticipants.put(clientIDs.get(i), clientTypes.get(i));
 			}
 		}
-		
-		// TODO test this extensively
 		
 		// This part is not asynchronous, since it is not really part of the Roberts-Chang algorithm
 		Iterator it = nonParticipants.entrySet().iterator();
@@ -1098,13 +1018,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 					proxy.newServer(f_ownIP, this.getID());
 				}
 				transceiver.close();
-			} catch (AvroRemoteException e) {
-				// TODO handle this more appropriately
-				System.err.println("AvroRemoteException at sendNonCandidatesNewServer() in DistUser.");
 			} catch (IOException e) {
-				// TODO handle this more appropriately
-				System.err.println("IOException at sendNonCandidatesNewServer() in DistUser.");
-			}
+				// skip the client if it cannot be reached
+			} 
 		}
 	}
 

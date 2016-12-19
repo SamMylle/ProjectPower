@@ -35,10 +35,6 @@
 			"request" : [],
 			"response" : {"type" : "array", "items" : "string"}
 		},
-		"testMethod" : {
-			"request" : [{"name" : "clienttype", "type" : "ClientType"}],
-			"response" : "boolean"
-		},
 		"requestFridgeCommunication":{
 			"request": [{"name" : "userServerPort", "type" : "int"}],
 			"response": "int"

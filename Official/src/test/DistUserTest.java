@@ -43,8 +43,7 @@ public class DistUserTest {
 		} catch (AvroRemoteException e) {
 			return;
 		}
-		user.logOffController();
-		user.stopServer();
+		user.disconnect();
 		
 		user = new DistUser("", clientIP, serverIP, controllerPort);
 		try {
@@ -202,7 +201,7 @@ public class DistUserTest {
 		
 		try {
 			user.communicateWithFridge(fridge.getID());
-		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | TakeoverException e) {
+		} catch (MultipleInteractionException | AbsentException | FridgeOccupiedException | TakeoverException | NoFridgeConnectionException e) {
 			ex = e;
 		}
 		assertEquals(ex, null);
