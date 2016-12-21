@@ -10,6 +10,9 @@ import client.exception.MultipleInteractionException;
 import client.exception.AbsentException;
 import client.exception.*;
 import gui.PanelInterface;
+import java.text.DecimalFormat;
+import javax.swing.BorderFactory;
+import java.awt.Color;
 
 /**
  *
@@ -57,6 +60,8 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
         });
 
         lblHistoryTempText.setText("History of temperatures:");
+
+        lblCurrentTemp.setFont(new java.awt.Font("Ubuntu", 1, 15)); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -112,7 +117,8 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
             return;
         }
         
-        lblCurrentTemp.setText(String.valueOf(currentTemp));
+        // lblCurrentTemp.setText(String.valueOf(currentTemp));
+        lblCurrentTemp.setText(new DecimalFormat(".##").format(currentTemp));
     }
     
     @Override

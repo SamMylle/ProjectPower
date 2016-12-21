@@ -15,10 +15,13 @@ import javax.swing.table.*;
 import javax.swing.JTable;
 import gui.ClientsPanel;
 import avro.ProjectPower.ControllerComm;
+import client.DistLight;
 import java.awt.Component;
 import client.DistSmartFridge;
 import java.awt.Color;
 import java.awt.Font;
+import java.util.Vector;
+import javax.swing.JOptionPane;
 import org.apache.avro.AvroRemoteException;
 
 /**
@@ -32,18 +35,34 @@ public class WindowUser extends javax.swing.JFrame {
     private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
     private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
     private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
+    private DistLight f_light1; /// TODO remove this, here for debugging
+    private List<DistLight> f_lights;
     
     /**
      * Creates new form MainWindow
      */
     public WindowUser() {
         initComponents();
-        String localIP = "192.168.1.7";
+        String localIP = "192.168.1.4";
         f_controller = new DistController(5000, 10, localIP);
-        f_user = new DistUser("", localIP, localIP, 5000);
+        try {
+            f_user = new DistUser("", localIP, localIP, 5000);
+        } catch (IOControllerException e) {
+            JOptionPane.showMessageDialog(this,
+                "Could not connect to the controller on startup... aborting.",
+                "Error: could not connect",
+                JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
         f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
         f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
         f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
+        
+        f_lights = new Vector<DistLight>();
+        for (int i = 0; i < 100; i++) {
+            f_lights.add(new DistLight(localIP, localIP));
+            f_lights.get(i).connectToServer(5000, localIP);
+        }
         
         f_fridge1.addItem("butter");
         f_fridge2.addItem("cheese");
@@ -52,6 +71,7 @@ public class WindowUser extends javax.swing.JFrame {
         jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
         jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));
+        jtpPanelSwitch.addTab("Lights", new LightsPanel(f_user));
     }
 
     /**

@@ -10,4 +10,7 @@ public class LightState {
 		State = _State;
 	}
 
+        public String toString() {
+            return "ID = " + Integer.toString(ID) + ", State = " + Integer.toString(State);
+        }
 }

@@ -36,7 +36,7 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
         f_user = user;
         txtaNotifications.append("Notifications:\n\n");
         f_timer = new Timer();
-        f_timer.schedule(new updateNotifications(), 50, 100);
+        f_timer.schedule(new updateNotifications(), 50, 1000);
     }
 
     /**
