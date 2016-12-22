@@ -172,6 +172,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Log off at the controller and stop the server.
 	 */
 	public void disconnect() {
+		if (f_controller != null) {
+			f_controller.stopServer();
+			this.stopServer();
+			return;
+		}
+		
 		this.logOffController();
 		this.stopServer();
 	}
