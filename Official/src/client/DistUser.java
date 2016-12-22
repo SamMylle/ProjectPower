@@ -50,6 +50,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private boolean f_isParticipantElection;				// Equivalent to participant_i in slides
 	private int f_electionID;								// The index of the client in the election
 	private int f_nextCandidateOffset;						// Offset used when the next Candidate in line cannot be used
+	private boolean f_electionBusy;
 	
 	
 	
@@ -79,6 +80,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_isParticipantElection = false;
 		f_electionID = -1;
 		f_nextCandidateOffset = 1;
+		f_electionBusy = false;
 		
 		this.setupID();
 		if (this.getID() == -1) {
@@ -692,11 +694,14 @@ public class DistUser extends User implements communicationUser, Runnable {
 	}
 	
 	private void checkInvariantExceptions() throws AbsentException, TakeoverException {
+		if (f_controller != null) {
+			throw new TakeoverException("The user has been elected to act as the controller of the system.");
+		}
 		if (this._getStatus() != UserStatus.present) {
 			throw new AbsentException("The user is not present in the house.");
 		}
-		if (f_controller != null) {
-			throw new TakeoverException("The user has been elected to act as the controller of the system.");
+		if (f_electionBusy == true) {
+			throw new TakeoverException();
 		}
 	}
 	
@@ -785,6 +790,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Starts an election with all the other users/smartfridges.
 	 */
 	public void startElection() {
+		
+		if (f_electionBusy == true) {
+			return;
+		}
+		
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		int count = 0;
 		for (ClientType clientType : clientTypes) {
@@ -847,6 +857,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
 			this.startControllerTakeOver();
 			f_electionID = -1;
+			f_electionBusy = false;
 			return;
 		}
 		final ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection();
@@ -879,6 +890,20 @@ public class DistUser extends User implements communicationUser, Runnable {
 				}
 			}
 		}.start();
+		
+		this.pollControllerAlive();
+	}
+	
+	private void pollControllerAlive() {
+		while (f_electionBusy == true) {
+			try {
+				Transceiver trans = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+				ControllerComm proxy = SpecificRequestor.getClient(ControllerComm.class, trans);
+				proxy.getAllClients();
+				trans.close();
+				f_electionBusy = false;
+			} catch (Exception e) {}
+		}
 	}
 
 	/**
@@ -890,6 +915,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void electNewController(final int index, final int clientID) {
+		f_electionBusy = true;
+		
 		// Setup index in case of first call
 		if (f_electionID == -1) {
 			f_electionID = this.getElectionIndex();

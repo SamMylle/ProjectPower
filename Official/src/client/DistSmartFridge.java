@@ -65,6 +65,7 @@ public class DistSmartFridge extends SmartFridge {
 	private boolean f_isParticipantElection;				// Equivalent to participant_i in slides
 	private int f_electionID;								// The index of the client in the election
 	private int f_nextCandidateOffset;						// The offset used for the next participant in the election
+	private boolean f_electionBusy;
 	
 	
 	
@@ -104,6 +105,7 @@ public class DistSmartFridge extends SmartFridge {
 		f_electionID = -1;
 		f_isParticipantElection = false;
 		f_nextCandidateOffset = 1;
+		f_electionBusy = false;
 		
 		this.setupID();
 		this.startControllerServer();
@@ -273,7 +275,7 @@ public class DistSmartFridge extends SmartFridge {
 	 * This class implements all the methods that the controller needs, 
 	 * 		aswell as running the thread for the DistSmartFridge server respectively.
 	 */
-	public class controllerServer implements Runnable, communicationFridge {
+	private class controllerServer implements Runnable, communicationFridge {
 		
 		controllerServer() { }
 		
@@ -362,6 +364,7 @@ public class DistSmartFridge extends SmartFridge {
 			if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
 				DistSmartFridge.this.startControllerTakeOver();
 				f_electionID = -1;
+				f_electionBusy = false;
 				return;
 			}
 			final ConnectionTypeData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
@@ -394,6 +397,7 @@ public class DistSmartFridge extends SmartFridge {
 					}
 				}
 			}.start();
+			DistSmartFridge.this.pollControllerAlive();
 		}
 		
 		/**
@@ -633,6 +637,9 @@ public class DistSmartFridge extends SmartFridge {
 	 * Starts an election with all the other users/smartfridges.
 	 */
 	public void startElection() {
+		if (f_electionBusy == true) {
+			return;
+		}
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		int count = 0;
 		for (ClientType clientType : clientTypes) {
@@ -879,6 +886,18 @@ public class DistSmartFridge extends SmartFridge {
 		}
 	}
 	
+	
+	private void pollControllerAlive() {
+		while (f_electionBusy == true) {
+			try {
+				Transceiver trans = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+				ControllerComm proxy = SpecificRequestor.getClient(ControllerComm.class, trans);
+				proxy.getAllClients();
+				trans.close();
+				f_electionBusy = false;
+			} catch (Exception e) {}
+		}
+	}
 	
 	
 	public static void main(String[] args) {
