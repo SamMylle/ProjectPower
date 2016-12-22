@@ -9,7 +9,14 @@ import java.util.List;
 import java.util.Vector;
 import client.util.*;
 import client.exception.*;
+import java.awt.Component;
+import java.awt.Color;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
 import javax.swing.event.ListDataListener;
 
@@ -32,6 +39,7 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
         
         f_user = user;
         f_lightsModel = new LightsListModel();
+        // lstLights.setCellRenderer(new customCellListRenderer());
     }
 
     /**
@@ -50,11 +58,7 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
 
         setPreferredSize(new java.awt.Dimension(600, 400));
 
-        lstLights.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
+        lstLights.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         lstLights.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 lstLightsMouseClicked(evt);
@@ -121,83 +125,66 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
             
             try {
                 f_user.setLightState(newState, lightID);
+                this.getLights();
             } catch (MultipleInteractionException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "You are currently connected to a fridge, close the connection first.",
-                    "Error: fridge connection",
-                    JOptionPane.ERROR_MESSAGE);
+                DialogExceptions.notifyMultipleInteraction(this);
+                return;
             } catch (AbsentException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "You should be present in the house before you try to close the fridge.",
-                    "Error: not present",
-                    JOptionPane.ERROR_MESSAGE);
+                DialogExceptions.notifyAbsent(this, "setting a light state");
+                return;
             } catch (TakeoverException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "You are currently acting as the backup controller of the system, due to a failure of the main controller. During this time, you cannot perform any actions.",
-                    "Error: controller takeover",
-                    JOptionPane.ERROR_MESSAGE);
+                DialogExceptions.notifyTakeover(this);
+                return;
             }
             
-            this.getLights();
         }
     }//GEN-LAST:event_lstLightsMouseClicked
 
     private void btnLightsOnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnLightsOnMouseClicked
-        this.setAllLights(100);
-        this.getLights();
+        try {
+            this.setAllLights(100);
+            this.getLights();
+        } catch (MultipleInteractionException ex) {
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
+        } catch (AbsentException ex) {
+            DialogExceptions.notifyAbsent(this, "setting the states of lights");
+            return;
+        } catch (TakeoverException ex) {
+            DialogExceptions.notifyTakeover(this);
+            return;
+        }
     }//GEN-LAST:event_btnLightsOnMouseClicked
 
     private void btnLightsOffMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnLightsOffMouseClicked
-        this.setAllLights(0);
-        this.getLights();
+        try {
+            this.setAllLights(0);
+            this.getLights();
+        } catch (MultipleInteractionException ex) {
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
+        } catch (AbsentException ex) {
+            DialogExceptions.notifyAbsent(this, "setting the states of lights");
+            return;
+        } catch (TakeoverException ex) {
+            DialogExceptions.notifyTakeover(this);
+            return;
+        }
     }//GEN-LAST:event_btnLightsOffMouseClicked
 
-    public void setAllLights(int state) {
+    public void setAllLights(int state) throws MultipleInteractionException, AbsentException, TakeoverException {
         List<LightState> lightstates = f_lightsModel.getStates();
         
         for (LightState lightstate : lightstates) {
-            try {
-                f_user.setLightState(state, lightstate.ID);
-            } catch (MultipleInteractionException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "You are currently connected to a fridge, close the connection first.",
-                    "Error: fridge connection",
-                    JOptionPane.ERROR_MESSAGE);
-            } catch (AbsentException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "You should be present in the house before you try to close the fridge.",
-                    "Error: not present",
-                    JOptionPane.ERROR_MESSAGE);
-            } catch (TakeoverException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "You are currently acting as the backup controller of the system, due to a failure of the main controller. During this time, you cannot perform any actions.",
-                    "Error: controller takeover",
-                    JOptionPane.ERROR_MESSAGE);
-            }
+            f_user.setLightState(state, lightstate.ID);
         }
     }
     
-    public void getLights() {
+    public void getLights() throws MultipleInteractionException, AbsentException, TakeoverException {
         List<LightState> lightstates = null;
+
+        lightstates = f_user.getLightStates();
         
-        try {
-            lightstates = f_user.getLightStates();
-        } catch (MultipleInteractionException ex) {
-            JOptionPane.showMessageDialog(this,
-                "You are currently connected to a fridge, close the connection first.",
-                "Error: fridge connection",
-                JOptionPane.ERROR_MESSAGE);
-        } catch (AbsentException ex) {
-            JOptionPane.showMessageDialog(this,
-                "You should be present in the house before you try to close the fridge.",
-                "Error: not present",
-                JOptionPane.ERROR_MESSAGE);
-        } catch (TakeoverException ex) {
-            JOptionPane.showMessageDialog(this,
-                "You are currently acting as the backup controller of the system, due to a failure of the main controller. During this time, you cannot perform any actions.",
-                "Error: controller takeover",
-                JOptionPane.ERROR_MESSAGE);
-        }
         f_lightsModel = new LightsListModel();
         for (LightState state : lightstates) {
             f_lightsModel.addItem(state);
@@ -207,8 +194,39 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
     
     @Override
     public void update() {
-        this.getLights();
+        try {
+            this.getLights();
+        } catch (MultipleInteractionException ex) {
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
+        } catch (AbsentException ex) {
+            DialogExceptions.notifyAbsent(this, "getting the states of lights");
+            return;
+        } catch (TakeoverException ex) {
+            DialogExceptions.notifyTakeover(this);
+            return;
+        }
     }
+    
+    private class customCellListRenderer extends JLabel implements ListCellRenderer {
+
+        public customCellListRenderer() {
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            // Assumes the stuff in the list has a pretty toString
+            setText(value.toString());
+
+            // based on the index you set the color.  This produces the every other effect.
+            if (index % 2 == 0) setBackground(Color.WHITE);
+            else setBackground(new Color(192,192,192));
+
+            return this;
+        }
+    }
+    
     
     private class LightsListModel implements ListModel {
 

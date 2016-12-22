@@ -68,10 +68,11 @@ public class WindowUser extends javax.swing.JFrame {
         f_fridge2.addItem("cheese");
         f_fridge2.addItem("milk");
        
+        jtpPanelSwitch.addTab("General", new GeneralPanel(f_user));
         jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
-        jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));
         jtpPanelSwitch.addTab("Lights", new LightsPanel(f_user));
+        jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));
     }
 
     /**
@@ -84,9 +85,6 @@ public class WindowUser extends javax.swing.JFrame {
     private void initComponents() {
 
         jtpPanelSwitch = new javax.swing.JTabbedPane();
-        pnlUserStatus = new javax.swing.JPanel();
-        lblStatusText = new javax.swing.JLabel();
-        lblStatus = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(800, 500));
@@ -102,50 +100,20 @@ public class WindowUser extends javax.swing.JFrame {
             }
         });
 
-        lblStatusText.setText("Status:");
-        lblStatusText.setToolTipText("");
-
-        javax.swing.GroupLayout pnlUserStatusLayout = new javax.swing.GroupLayout(pnlUserStatus);
-        pnlUserStatus.setLayout(pnlUserStatusLayout);
-        pnlUserStatusLayout.setHorizontalGroup(
-            pnlUserStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pnlUserStatusLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(lblStatusText)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(lblStatus)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        pnlUserStatusLayout.setVerticalGroup(
-            pnlUserStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pnlUserStatusLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(pnlUserStatusLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblStatusText)
-                    .addComponent(lblStatus))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        lblStatusText.getAccessibleContext().setAccessibleName("lblStatusText");
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jtpPanelSwitch)
+                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 776, Short.MAX_VALUE)
                 .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(0, 716, Short.MAX_VALUE)
-                .addComponent(pnlUserStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(pnlUserStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 456, Short.MAX_VALUE)
+                .addContainerGap()
+                .addComponent(jtpPanelSwitch, javax.swing.GroupLayout.DEFAULT_SIZE, 476, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -158,38 +126,12 @@ public class WindowUser extends javax.swing.JFrame {
         Component comp = jtpPanelSwitch.getSelectedComponent();
         PanelInterface panelinterface = (PanelInterface) comp;
         panelinterface.update();
-        this.updateStatus(); // TODO maybe remove this here
     }//GEN-LAST:event_jtpPanelSwitchStateChanged
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         f_user.disconnect();
     }//GEN-LAST:event_formWindowClosing
 
-    
-    private void updateStatus() {
-        UserStatus status = null;
-        
-        // should not throw the exception since this is not a remote call
-        try {
-            status = f_user.getStatus();
-        } catch (AvroRemoteException e) { }
-        
-        lblStatusText.setFont(new Font(lblStatusText.getName(), Font.PLAIN, 18));
-        lblStatus.setFont(new Font(lblStatus.getName(), Font.PLAIN, 18));
-        
-        switch (status) {
-            case present:
-                lblStatus.setText("Present");
-                lblStatus.setForeground(new Color(0,153,0));
-                break;
-            case absent:
-                lblStatus.setText("Absent");
-                lblStatus.setForeground(Color.red);
-                break;
-            default:
-                break;
-        }
-    }
     
     /**
      * @param args the command line arguments
@@ -231,8 +173,5 @@ public class WindowUser extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTabbedPane jtpPanelSwitch;
-    private javax.swing.JLabel lblStatus;
-    private javax.swing.JLabel lblStatusText;
-    private javax.swing.JPanel pnlUserStatus;
     // End of variables declaration//GEN-END:variables
 }

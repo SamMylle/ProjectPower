@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -25,7 +26,6 @@ import java.util.TimerTask;
 public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
 
     private DistUser f_user;
-    private Timer f_timer;
     /**
      * Creates new form ClientsPanel
      */
@@ -34,9 +34,6 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
         initComponents();
         
         f_user = user;
-        txtaNotifications.append("Notifications:\n\n");
-        f_timer = new Timer();
-        f_timer.schedule(new updateNotifications(), 50, 1000);
     }
 
     /**
@@ -48,28 +45,9 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        pnlNotifications = new javax.swing.JPanel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        txtaNotifications = new javax.swing.JTextArea();
         mainWindow = new javax.swing.JScrollPane();
         tblClients = new javax.swing.JTable();
         btnGetClients = new javax.swing.JButton();
-
-        txtaNotifications.setEditable(false);
-        txtaNotifications.setColumns(20);
-        txtaNotifications.setRows(5);
-        jScrollPane1.setViewportView(txtaNotifications);
-
-        javax.swing.GroupLayout pnlNotificationsLayout = new javax.swing.GroupLayout(pnlNotifications);
-        pnlNotifications.setLayout(pnlNotificationsLayout);
-        pnlNotificationsLayout.setHorizontalGroup(
-            pnlNotificationsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 388, Short.MAX_VALUE)
-        );
-        pnlNotificationsLayout.setVerticalGroup(
-            pnlNotificationsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1)
-        );
 
         mainWindow.setViewportView(tblClients);
 
@@ -87,41 +65,21 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
             .addGroup(layout.createSequentialGroup()
                 .addGap(22, 22, 22)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnGetClients)
-                    .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, 322, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(pnlNotifications, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, 499, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnGetClients))
+                .addContainerGap(229, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pnlNotifications, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(mainWindow, javax.swing.GroupLayout.PREFERRED_SIZE, 273, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnGetClients)
-                        .addContainerGap(73, Short.MAX_VALUE))))
+                .addComponent(mainWindow, javax.swing.GroupLayout.DEFAULT_SIZE, 328, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
+                .addComponent(btnGetClients)
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    
-    private class updateNotifications extends TimerTask {
-        public updateNotifications() {}
-        
-        public void run() {
-            // TODO resolve potential concurrency issues here
-            List<String> notifications = f_user.getNotifications();
-            if (notifications.isEmpty() == false) {
-                for (String notification : notifications) {
-                    txtaNotifications.append("\n[" + new SimpleDateFormat("dd/MM/yyyy - HH:mm:ss").format(Calendar.getInstance().getTime())  + "] " + notification);
-                    f_user.removeFirstNotification();
-                }
-            }
-        }
-    }
-    
     private void btnGetClientsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGetClientsMouseClicked
         this.updateClients();
     }//GEN-LAST:event_btnGetClientsMouseClicked
@@ -141,11 +99,14 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
             this.tblClients.setModel(model);
             
         } catch(MultipleInteractionException e) {
-            System.out.println("error multiple interactions at user.");
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
         } catch(AbsentException e) {
-            System.out.println("the user is not present in the system.");
+            DialogExceptions.notifyAbsent(this, "trying to get all the clients");
+            return;
         } catch(TakeoverException e) {
-            // TODO do something here
+            DialogExceptions.notifyTakeover(this);
+            return;
         }
     }
     
@@ -157,10 +118,7 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGetClients;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane mainWindow;
-    private javax.swing.JPanel pnlNotifications;
     private javax.swing.JTable tblClients;
-    private javax.swing.JTextArea txtaNotifications;
     // End of variables declaration//GEN-END:variables
 }

@@ -12,6 +12,9 @@ import client.exception.*;
 import java.util.List;
 import java.util.Vector;
 import avro.ProjectPower.ClientType;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 /**
  *
@@ -32,10 +35,13 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         initComponents();
         
         f_user = user;
-        this.updateFridges();
+        this.update();
         scpScrollPaneFridgeInventory.setVisible(false);
         f_directFrame = null;
-
+        
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Items");
+        tblFridgeInventory.setModel(model);
     }
 
     /**
@@ -118,17 +124,38 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
     
     private void directWindowClosing(java.awt.event.WindowEvent evt) {
         if (cbbSelectFridge.getSelectedIndex() != -1) {
-            this.updateTableFridgeInventory(cbbSelectFridge.getSelectedIndex());
+            try {
+                this.updateTableFridgeInventory(cbbSelectFridge.getSelectedIndex());
+            } catch (AbsentException ex) {
+                DialogExceptions.notifyAbsent(this, "trying to update the fridge item list");
+                return;
+            } catch (MultipleInteractionException ex) {
+                DialogExceptions.notifyMultipleInteraction(this);
+                return;
+            } catch (TakeoverException ex) {
+                DialogExceptions.notifyTakeover(this);
+                return;
+            }
         }
         f_directFrame = null;
     }
     
     private void cbbSelectFridgeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbbSelectFridgeItemStateChanged
-        // TODO add your handling code here:
-        if (this.cbbSelectFridge.getSelectedIndex() == -1) {
+        try {
+            if (this.cbbSelectFridge.getSelectedIndex() == -1) {
+                return;
+            }
+            this.updateTableFridgeInventory(this.cbbSelectFridge.getSelectedIndex());
+        } catch (AbsentException ex) {
+            DialogExceptions.notifyAbsent(this, "getting the item list of a fridge");
+            return;
+        } catch (MultipleInteractionException ex) {
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
+        } catch (TakeoverException ex) {
+            DialogExceptions.notifyTakeover(this);
             return;
         }
-        this.updateTableFridgeInventory(this.cbbSelectFridge.getSelectedIndex());
     }//GEN-LAST:event_cbbSelectFridgeItemStateChanged
 
     private void btnCommunicateMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCommunicateMouseClicked
@@ -137,15 +164,20 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
             f_user.communicateWithFridge(f_fridges.get(fridgeVectorIndex).getID());
             f_user.openFridge();
         } catch (AbsentException e) {
-            // TODO do something here
+            DialogExceptions.notifyAbsent(this, "trying to communicate with the fridge");
+            return;
         } catch (TakeoverException e) {
-            // TODO do something here
+            DialogExceptions.notifyTakeover(this);
+            return;
         } catch (MultipleInteractionException e) {
-            // TODO do something here
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
         } catch (NoFridgeConnectionException e) {
-            // TODO do something here
+            DialogExceptions.notifyNoFridgeConnection(this);
+            return;
         } catch (FridgeOccupiedException e) {
-            // TODO do something here
+            DialogExceptions.notifyFridgeOccupied(this);
+            return;
         }
         
         f_directFrame = new DirectFridgeFrame(f_user);
@@ -157,21 +189,13 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         });
     }//GEN-LAST:event_btnCommunicateMouseClicked
 
-    private void updateFridges() {
+    private void updateFridges() throws AbsentException, MultipleInteractionException, TakeoverException {
         f_fridges = new Vector<Client>();
-        try {
-            List<Client> clients = f_user.getAllClients();
-            for (Client client : clients) {
-                if (client.getClientType() == ClientType.SmartFridge) {
-                    f_fridges.add(client);
-                }
+        List<Client> clients = f_user.getAllClients();
+        for (Client client : clients) {
+            if (client.getClientType() == ClientType.SmartFridge) {
+                f_fridges.add(client);
             }
-        } catch (AbsentException e) {
-            // TODO do something here
-        } catch (MultipleInteractionException e) {
-            // TODO do something here
-        } catch (TakeoverException e) {
-            // TODO do something here
         }
         
         cbbSelectFridge.removeAllItems();
@@ -184,36 +208,35 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         }
     }
     
-    private void updateTableFridgeInventory (int fridgeVectorIndex) {
+    private void updateTableFridgeInventory (int fridgeVectorIndex) throws AbsentException, MultipleInteractionException, TakeoverException {
         scpScrollPaneFridgeInventory.setVisible(true);
         List<String> items = null;
-        try {
-            items = f_user.getFridgeItems(f_fridges.get(fridgeVectorIndex).getID());
-        } catch (AbsentException e) {
-            // TODO do something here
-        } catch (MultipleInteractionException e) {
-            // TODO do something here
-        } catch (TakeoverException e) {
-            // TODO do something here
-        }
-        
-        DefaultTableModel model = new DefaultTableModel();
-            
-        model.addColumn("Items");
+        items = f_user.getFridgeItems(f_fridges.get(fridgeVectorIndex).getID());
 
+        DefaultTableModel model = (DefaultTableModel) tblFridgeInventory.getModel();
+        model.setRowCount(0);
         for (String item : items) {
             model.addRow(new Object[]{item});
-            // System.out.println("trying to add a row with a client");
         }
-        this.tblFridgeInventory.setModel(model);
     }
     
     @Override
     public void update() {
-        // TODO add method here for updating when this panel is being focused
-        this.updateFridges();
-        if (f_fridges.isEmpty() == false) {
-            this.updateTableFridgeInventory(0);
+        try {
+            // TODO add method here for updating when this panel is being focused
+            this.updateFridges();
+            if (f_fridges.isEmpty() == false) {
+                this.updateTableFridgeInventory(0);
+            }
+        } catch (AbsentException ex) {
+            DialogExceptions.notifyAbsent(this, "trying to get all the fridges");
+            return;
+        } catch (MultipleInteractionException ex) {
+            DialogExceptions.notifyMultipleInteraction(this);
+            return;
+        } catch (TakeoverException ex) {
+            DialogExceptions.notifyTakeover(this);
+            return;
         }
     }
 

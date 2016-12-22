@@ -135,12 +135,7 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         try {
             f_user.closeFridge();
         } catch (AbsentException e) {
-            JOptionPane.showMessageDialog(this,
-                "You should be present in the house before you try to close the fridge.",
-                "Error: not present",
-                JOptionPane.ERROR_MESSAGE);
         } catch (TakeoverException e) {
-            // Do nothing here, since the takeover results in the direct communication being closed
         } catch (NoFridgeConnectionException e) {
             // In theory, do nothing here since no connection is available anymore already.
         }
@@ -165,15 +160,22 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
                 null, 
                 "");
         
-         try {
+        try {
             f_user.addItemFridge(newItem);
         } catch (NoFridgeConnectionException e) {
-            // TODO do something here
+            DialogExceptions.notifyNoFridgeConnection(null);
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         } catch (AbsentException e) {
-            // TODO do something here
+            DialogExceptions.notifyAbsent(null, "trying to communicate with the fridge");
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         } catch (TakeoverException e) {
-            // TODO do something here
+            DialogExceptions.notifyTakeover(null);
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         }
+        
         this.updateFridgeItems();
     }//GEN-LAST:event_btnAddMouseClicked
 
@@ -195,11 +197,17 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         try {
             f_user.removeItemFridge(f_fridgeItems.get(selectedIndex));
         } catch (NoFridgeConnectionException e) {
-            // TODO do something here
+            DialogExceptions.notifyNoFridgeConnection(null);
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         } catch (AbsentException e) {
-            // TODO do something here
+            DialogExceptions.notifyAbsent(null, "trying to communicate with the fridge");
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         } catch (TakeoverException e) {
-            // TODO do something here
+            DialogExceptions.notifyTakeover(null);
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         }
         this.updateFridgeItems();
     }
@@ -209,11 +217,17 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         try {
             items = f_user.getFridgeItemsDirectly();
         } catch (NoFridgeConnectionException e) {
-            // TODO do something here
+            DialogExceptions.notifyNoFridgeConnection(null);
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         } catch (AbsentException e) {
-            // TODO do something here
+            DialogExceptions.notifyAbsent(null, "trying to communicate with the fridge");
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         } catch (TakeoverException e) {
-            // TODO do something here
+            DialogExceptions.notifyTakeover(null);
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+            return;
         }
          DefaultTableModel model = new DefaultTableModel();
             
