@@ -592,6 +592,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// TODO test
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
+			/// TODO Check if transceiver == null
 			
 			if (type == ClientType.SmartFridge){
 				communicationFridge.Callback proxy;
