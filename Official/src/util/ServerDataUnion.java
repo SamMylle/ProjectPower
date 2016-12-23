@@ -3,6 +3,7 @@ package util;
 import java.awt.List;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Set;
 
 import org.apache.avro.AvroRemoteException;
 
@@ -37,6 +38,45 @@ public class ServerDataUnion {
 		ret.setTemperaturesIDs(new LinkedList<Integer>());
 		
 		return ret;
+	}
+	
+	public static boolean narrowEquals(ServerData data1, ServerData data2){
+		try{
+			for (int i = 0; i < data2.getIPsIP().size(); i++){
+				if (! data1.getIPsIP().contains(data2.getIPsIP().get(i))){
+					System.out.println("NOPE");
+					return false;
+				}
+				for (int j = 0; j < data1.getIPsIP().size(); j++){
+					if (data1.getIPsIP().get(j).equals(data2.getIPsIP().get(i))){
+						if (! data1.getIPsID().get(j).equals(data2.getIPsID().get(i))){
+							System.out.println("NOPE2");
+							return false;
+						}
+						break;
+					}
+				}
+			}
+			
+			for (int i = 0; i < data2.getNamesID().size(); i++){
+				if (! data1.getNamesID().contains(data2.getNamesID().get(i))){
+					return false;
+				}
+				for (int j = 0; j < data1.getNamesID().size(); j++){
+					if (data1.getNamesID().get(j).equals(data2.getNamesID().get(i))){
+						if (! data1.getNamesClientType().get(j).equals(data2.getNamesClientType().get(i))){
+							return false;
+						}
+						break;
+					}
+				}
+			}
+			
+			return true;
+		}catch(Exception e){
+			System.out.println("false by except");
+			return false;
+		}
 	}
 
 	/**
@@ -91,7 +131,9 @@ public class ServerDataUnion {
 		DistController controller = new DistController(5000, 20, "192.168.0.128");
 		try {
 			controller.LogOn(ClientType.Light, "Derp");
+			controller.LogOn(ClientType.Light, "Derp2");
 			controller.loginSuccessful(5001);
+			controller.loginSuccessful(5002);
 		} catch (AvroRemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -106,9 +148,11 @@ public class ServerDataUnion {
 			e.printStackTrace();
 		}
 
-		controller = new DistController(50001, 20, "192.168.0.128");
+		controller = new DistController(5000, 20, "192.168.0.128");
 		try {
-			controller.LogOn(ClientType.TemperatureSensor, "DerpSecundo");
+			controller.LogOn(ClientType.Light, "Derp");
+			controller.LogOn(ClientType.Light, "Derp2");
+			controller.loginSuccessful(5002);
 			controller.loginSuccessful(5001);
 		} catch (AvroRemoteException e) {
 			// TODO Auto-generated catch block
@@ -129,6 +173,9 @@ public class ServerDataUnion {
 		System.out.println(copy);
 		System.out.println(copy2);
 		System.out.println(copy3);
+		System.out.println("STUFF " + narrowEquals(copy, copy2));
+//		System.out.println(narrowEquals(copy, copy));
+//		System.out.println(narrowEquals(copy2, copy2));
 		controller.stopServer();
 		
 	}
