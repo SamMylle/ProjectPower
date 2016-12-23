@@ -650,6 +650,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Enters the house.
 	 */
 	public void enterHouse() {
+		if (super._getStatus() == UserStatus.present) {
+			return;
+		}
 		super.enter();
 		this.notifyControllerEnter();
 	}
@@ -795,7 +798,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	/**
 	 * Starts an election with all the other users/smartfridges.
 	 */
-	public void startElection() {
+	private void startElection() {
 		
 		if (f_electionBusy == true) {
 			return;
@@ -818,6 +821,15 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_electionID = this.getElectionIndex();
 		
 		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
+		
+		if (nextCandidate == null) {
+			this.sendNonCandidatesNewServer();
+			this.startControllerTakeOver();
+			f_isParticipantElection = false;
+			f_electionID = -1;
+			return;
+		}
+		
 		new Thread() {
 			public void run() {				
 				try {
@@ -866,6 +878,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 			f_electionBusy = false;
 			return;
 		}
+		
+		if (f_electionID == -1) {
+			return;
+		}
+		
 		final ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection();
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 		f_isParticipantElection = false;
@@ -908,7 +925,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 				proxy.getAllClients();
 				trans.close();
 				f_electionBusy = false;
-			} catch (Exception e) {}
+			} catch (Exception e) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e1) {}
+			}
 		}
 	}
 
@@ -921,14 +942,18 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void electNewController(final int index, final int clientID) {
-		f_electionBusy = true;
+		
+		if (f_isParticipantElection == false) {
+			return;
+		}
 		
 		// Setup index in case of first call
 		if (f_electionID == -1) {
 			f_electionID = this.getElectionIndex();
+			f_electionBusy = true;
 		}
 		
-		if (index == f_electionID) {
+		if (index == f_electionID && f_isParticipantElection == true) {
 			f_isParticipantElection = false;
 			// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
 			// This is in order to fully replicate the algorithm described in the theory.
@@ -1013,6 +1038,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 				nextCandidateID = participantIDs.get((f_electionID+f_nextCandidateOffset) % participantIDs.size());
 				nextIP = clientIPsIP.get( clientIPsID.indexOf(nextCandidateID) ).toString();
 				type = participants.get(nextCandidateID);
+				
+				if (new ConnectionData(nextIP, nextCandidateID).equals(new ConnectionData(f_ownIP, this.getID()))) {
+					return null;
+				}
+				
 				ConnectionData nextCandidate = new ConnectionData(nextIP, nextCandidateID.intValue());
 				boolean active = false;
 				
@@ -1071,6 +1101,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	private void sendSelfElectedNextCandidate() {
 		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
+		
+		if (nextCandidate == null) {
+			this.startControllerTakeOver();
+			f_electionID = -1;
+			f_electionBusy = false;
+			return;
+		}
 
 		new Thread() {
 			public void run() {				
@@ -1093,6 +1130,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					// TODO handle this more appropriately
 					System.err.println("IOException at sendSelfElectedNextCandidate() in DistUser.");
 				}
+				// If you get an UndeclaredThrowableException, it is probably here, catch with base class Exception
 			}
 		}.start();
 	}

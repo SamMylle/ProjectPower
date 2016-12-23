@@ -362,11 +362,17 @@ public class DistSmartFridge extends SmartFridge {
 		public void newServerElected(final CharSequence newServerIP, final int newServerID) {
 			
 			if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
+				System.out.println("got here...");
 				DistSmartFridge.this.startControllerTakeOver();
 				f_electionID = -1;
 				f_electionBusy = false;
 				return;
 			}
+			
+			if (f_electionID == -1) {
+				return;
+			}
+			
 			final ConnectionTypeData nextCandidate = DistSmartFridge.this.getNextCandidateConnection();
 			DistSmartFridge.this.f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 			DistSmartFridge.this.f_isParticipantElection = false;
@@ -409,9 +415,15 @@ public class DistSmartFridge extends SmartFridge {
 		 */
 		@Override
 		public void electNewController(final int index, final int clientID) {
+			
+			if (f_isParticipantElection == false) {
+				return;
+			}
+			
 			// Setup index in case of first call
 			if (f_electionID == -1) {
 				f_electionID = DistSmartFridge.this.getElectionIndex();
+				f_electionBusy = true;
 			}
 			
 			if (index == f_electionID) {
@@ -636,7 +648,7 @@ public class DistSmartFridge extends SmartFridge {
 	/**
 	 * Starts an election with all the other users/smartfridges.
 	 */
-	public void startElection() {
+	private void startElection() {
 		if (f_electionBusy == true) {
 			return;
 		}
@@ -895,7 +907,11 @@ public class DistSmartFridge extends SmartFridge {
 				proxy.getAllClients();
 				trans.close();
 				f_electionBusy = false;
-			} catch (Exception e) {}
+			} catch (Exception e) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e1) {	}
+			}
 		}
 	}
 	
