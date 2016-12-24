@@ -31,20 +31,20 @@ import org.apache.avro.AvroRemoteException;
 public class WindowUser extends javax.swing.JFrame {
 
     private DistUser f_user;
-    private DistController f_controller; /// TODO remove this, here for debugging
-    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
-    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
-    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
-    private DistLight f_light1; /// TODO remove this, here for debugging
-    private List<DistLight> f_lights;
+//    private DistController f_controller; /// TODO remove this, here for debugging
+//    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
+//    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
+//    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
+//    private DistLight f_light1; /// TODO remove this, here for debugging
+//    private List<DistLight> f_lights;
     
     /**
      * Creates new form MainWindow
      */
     public WindowUser() {
         initComponents();
-        String localIP = "192.168.1.4";
-        f_controller = new DistController(5000, 10, localIP);
+        String localIP = "192.168.1.5";
+//        f_controller = new DistController(5000, 10, localIP);
         try {
             f_user = new DistUser("", localIP, localIP, 5000);
         } catch (IOControllerException e) {
@@ -54,20 +54,20 @@ public class WindowUser extends javax.swing.JFrame {
                 JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
-        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
-        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
-        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
+//        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
+//        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
+//        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
+//        
+//        f_lights = new Vector<DistLight>();
+//        for (int i = 0; i < 100; i++) {
+//            f_lights.add(new DistLight(localIP, localIP));
+//            f_lights.get(i).connectToServer(5000, localIP);
+//        }
+//        
+//        f_fridge1.addItem("butter");
+//        f_fridge2.addItem("cheese");
+//        f_fridge2.addItem("milk");
         
-        f_lights = new Vector<DistLight>();
-        for (int i = 0; i < 100; i++) {
-            f_lights.add(new DistLight(localIP, localIP));
-            f_lights.get(i).connectToServer(5000, localIP);
-        }
-        
-        f_fridge1.addItem("butter");
-        f_fridge2.addItem("cheese");
-        f_fridge2.addItem("milk");
-       
         jtpPanelSwitch.addTab("General", new GeneralPanel(f_user));
         jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));

@@ -801,7 +801,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	synchronized public boolean recoverData(ServerData data) throws AvroRemoteException {
+	public boolean recoverData(ServerData data) throws AvroRemoteException {
 		// TODO Recover data, tell everyone to listen to me, request relogin if needed
 		/// TODO test
 		Logger.getLogger().log("Came to the recover part.\nData:\n");
@@ -863,7 +863,10 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				communicationUser.Callback proxy;
 				try {
 					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-					proxy.reLogin();
+					System.out.println("data recovered - ID = " + currentID);
+					proxy.reLogin();					
+					System.out.println("data recovered2");
+
 				} catch (Exception e) {}
 			}
 			
@@ -875,7 +878,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				} catch (Exception e) {}
 			}
 		}
-		
 		
 		return true;
 	}

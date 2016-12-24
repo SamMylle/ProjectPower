@@ -1,6 +1,7 @@
 package client;
 
 import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
 import util.Logger;
+import util.ServerDataUnion;
 import controller.DistController;
 
 import avro.ProjectPower.*;
@@ -49,8 +51,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	private boolean f_isParticipantElection;				// Equivalent to participant_i in slides
 	private int f_electionID;								// The index of the client in the election
-	private int f_nextCandidateOffset;						// Offset used when the next Candidate in line cannot be used
 	private boolean f_electionBusy;
+	private boolean f_requestedUnion;
 	
 	
 	
@@ -79,8 +81,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_controller = null;
 		f_isParticipantElection = false;
 		f_electionID = -1;
-		f_nextCandidateOffset = 1;
 		f_electionBusy = false;
+		f_requestedUnion = false;
 		
 		this.setupID();
 		if (this.getID() == -1) {
@@ -251,9 +253,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void reLogin() {
+		System.out.println("1 testing");
 		this.stopServer();
+		System.out.println("2 testing");
 		this.setupID();
+		System.out.println("3 testing");
 		this.startServer();
+		System.out.println("4 testing");
 	}
 
 	
@@ -297,7 +303,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 		
 		return lightStates;
@@ -327,7 +333,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 	}
 	
@@ -356,7 +362,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 		List<String> items = new Vector<String>();
 		for (CharSequence item : _items) {
@@ -392,7 +398,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 		if (currentTemp != 0) {
 			return currentTemp;
@@ -426,7 +432,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 		
 		return values;
@@ -456,7 +462,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 		return clients;
 	}
@@ -486,7 +492,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (AvroRemoteException e) {
 			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
 		} catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 			// TODO replace this with exception?
 			return;
 		}
@@ -684,7 +690,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			proxy.leftHome(this.getID());
 			transceiver.close();
 		} catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 	}
 	
@@ -698,7 +704,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			proxy.enteredHome(this.getID());
 			transceiver.close();
 		} catch (IOException e) {
-			this.startElection();
+			this.setupElection();
 		}
 	}
 	
@@ -787,72 +793,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return null;
 	}
 	
-	
-	
-	/// |===================================|
-	/// |	Replication & Fault Tolerance	|
-	/// |		Enter at your own risk		|
-	/// |===================================|
-	
-	
-	/**
-	 * Starts an election with all the other users/smartfridges.
-	 */
-	private void startElection() {
-		
-		if (f_electionBusy == true) {
-			return;
-		}
-		
-		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
-		int count = 0;
-		for (ClientType clientType : clientTypes) {
-			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
-				count++;
-			}
-		}
-		if (count <= 1) {
-			this.sendNonCandidatesNewServer();
-			this.startControllerTakeOver();
-			return;
-		}
-		
-		f_isParticipantElection = true;
-		f_electionID = this.getElectionIndex();
-		
-		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
-		
-		if (nextCandidate == null) {
-			this.sendNonCandidatesNewServer();
-			this.startControllerTakeOver();
-			f_isParticipantElection = false;
-			f_electionID = -1;
-			return;
-		}
-		
-		new Thread() {
-			public void run() {				
-				try {
-					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					if (nextCandidate.getType() == ClientType.SmartFridge) {
-						communicationFridge proxy = (communicationFridge) 
-								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
-					} else if (nextCandidate.getType() == ClientType.User) {
-						communicationUser proxy = (communicationUser) 
-								SpecificRequestor.getClient(communicationUser.class, transceiver);
-						proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
-					}
-					transceiver.close();
-				} catch (IOException e) {
-					// TODO handle this more appropriately
-					System.err.println("IOException at startElection() in DistUser.");
-				}
-			}
-		}.start();
-		
-	}
-	
 	/**
 	 * Checks whether this client is still alive.
 	 * @return true
@@ -863,6 +803,166 @@ public class DistUser extends User implements communicationUser, Runnable {
 		return true;
 	}
 
+	
+	
+	
+	
+	
+	/// |===================================|
+	/// |	Replication & Fault Tolerance	|
+	/// |		Enter at your own risk		|
+	/// |===================================|
+	
+	/**
+	 * Sets up the election by sending the serverdata around and unifying it in all the clients.
+	 */
+	private void setupElection() {
+		synchronized(this) {
+			if (f_electionBusy == true) {
+				return;
+			}
+			f_electionBusy = true;
+		}
+		f_requestedUnion = true;
+		f_electionID = this.getElectionIndex();
+		f_isParticipantElection = true;
+		
+		new Thread() {
+			public void run() {
+				
+				while (true) {
+					ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(false);
+					try {
+						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+						if (nextCandidate.getType() == ClientType.SmartFridge) {
+							communicationFridge proxy = (communicationFridge) 
+									SpecificRequestor.getClient(communicationFridge.class, transceiver);
+							// TODO uncomment when implemented
+							//proxy.unifyServerData(f_replicatedServerData);
+						} else if (nextCandidate.getType() == ClientType.User) {
+							communicationUser proxy = (communicationUser) 
+									SpecificRequestor.getClient(communicationUser.class, transceiver);
+							proxy.unifyServerData(f_replicatedServerData);
+						}
+						transceiver.close();
+						return;
+					} catch (IOException e) {
+						// do nothing, just try again
+					} catch (NullPointerException e) {
+						System.out.println("wonElection1");
+						DistUser.this.wonElection(false);
+						return;
+					} catch (Exception e) {
+						return;
+					}
+				}
+			}
+		}.start();
+	}
+	
+	@Override
+	public void unifyServerData(ServerData serverData) {
+		
+		if (ServerDataUnion.narrowEquals(f_replicatedServerData, serverData) == true && f_requestedUnion == true) {
+			this.startElection();
+			return;
+		}
+		f_replicatedServerData = ServerDataUnion.getUnion(f_replicatedServerData, serverData);
+		
+		f_electionID = this.getElectionIndex();
+		f_electionBusy = true;
+		
+		new Thread() {
+			public void run() {
+				
+				while (true) {
+					ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(false);
+					try {
+						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+						if (nextCandidate.getType() == ClientType.SmartFridge) {
+							communicationFridge proxy = (communicationFridge) 
+									SpecificRequestor.getClient(communicationFridge.class, transceiver);
+							// TODO uncomment when implemented
+							//proxy.unifyServerData(f_replicatedServerData);
+						} else if (nextCandidate.getType() == ClientType.User) {
+							communicationUser proxy = (communicationUser) 
+									SpecificRequestor.getClient(communicationUser.class, transceiver);
+							proxy.unifyServerData(f_replicatedServerData);
+						}
+						transceiver.close();
+						return;
+					} catch (IOException e) {
+						// do nothing, just try again
+					} catch (Exception e) {
+						System.out.println("wonElection2");
+						DistUser.this.wonElection(false);
+						return;
+					}
+				}
+			}
+		}.start();
+	}
+	
+	/**
+	 * Starts an election with all the other users/smartfridges.
+	 */
+	private void startElection() {
+		System.out.println("started an election");
+		
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		int count = 0;
+		for (ClientType clientType : clientTypes) {
+			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
+				count++;
+			}
+		}
+		if (count <= 1) {
+			System.out.println("wonElection3");
+			this.wonElection(false);
+			return;
+		}
+		
+		if (this.getNextCandidateConnection(false) == null) {
+			// this means that no other candidate was reachable => start controller in this client
+			System.out.println("wonElection4");
+			this.wonElection(false);
+			return;
+		}
+		
+		new Thread() {
+			
+			public void run() {
+				ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(false);
+				while (true) {
+					try {
+						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+						if (nextCandidate.getType() == ClientType.SmartFridge) {
+							communicationFridge proxy = (communicationFridge) 
+									SpecificRequestor.getClient(communicationFridge.class, transceiver);
+							proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+						} else if (nextCandidate.getType() == ClientType.User) {
+							communicationUser proxy = (communicationUser) 
+									SpecificRequestor.getClient(communicationUser.class, transceiver);
+							proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+						}
+						transceiver.close();
+						return;
+					} catch (Exception e) {
+						nextCandidate = DistUser.this.getNextCandidateConnection(false);
+						if (nextCandidate == null) {
+							System.out.println("wonElection5");
+							DistUser.this.wonElection(false);
+							return;
+						}
+					}					
+				}
+			}
+			
+		}.start();
+		
+	}
+
+	
 	/**
 	 * Equivalent to elected function from slides theory (slide 54 - Coordination)
 	 * @param newServerIP
@@ -873,58 +973,69 @@ public class DistUser extends User implements communicationUser, Runnable {
 	public void newServerElected(final CharSequence newServerIP, final int newServerID) {
 		
 		if (new ConnectionData(newServerIP.toString(), newServerID).equals(new ConnectionData(f_ownIP, getID()))) {
+			while (f_isParticipantElection == true) {
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {}
+			}
+			System.out.println("before starting the server");
 			this.startControllerTakeOver();
-			f_electionID = -1;
-			f_electionBusy = false;
+			this.cleanupElection();
 			return;
 		}
 		
-		if (f_electionID == -1) {
-			return;
-		}
-		
-		final ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection();
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
-		f_isParticipantElection = false;
-		f_electionID = -1;
-		
 		
 		// TODO push this to separate method, where it can also be used for sendSelfElectedNextCandidate
 		new Thread() {
-			public void run() {				
-				try {
-					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-					if (nextCandidate.getType() == ClientType.SmartFridge) {
-						communicationFridge proxy = (communicationFridge) 
-								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						proxy.newServerElected(newServerIP, newServerID);
-					} else if (nextCandidate.getType() == ClientType.User) {
-						communicationUser proxy = (communicationUser) 
-								SpecificRequestor.getClient(communicationUser.class, transceiver);
-						proxy.newServerElected(newServerIP, newServerID);
+			
+			public void run() {
+				ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(false);
+				while (true) {
+					try {
+						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+						if (nextCandidate.getType() == ClientType.SmartFridge) {
+							communicationFridge proxy = (communicationFridge) 
+									SpecificRequestor.getClient(communicationFridge.class, transceiver);
+							proxy.newServerElected(newServerIP, newServerID);
+						} else if (nextCandidate.getType() == ClientType.User) {
+							communicationUser proxy = (communicationUser) 
+									SpecificRequestor.getClient(communicationUser.class, transceiver);
+							proxy.newServerElected(newServerIP, newServerID);
+						}
+						transceiver.close();
+						return;
+					} catch (IOException e) {
+						nextCandidate = DistUser.this.getNextCandidateConnection(false);						
+						if (nextCandidate == null) {
+							return;
+						}
+					} catch (Exception e) {
+						return;
 					}
-					transceiver.close();
-				} catch (AvroRemoteException e) {
-					// TODO handle this more appropriately
-					System.err.println("AvroRemoteException at sendSelfElectedNextCandidate() in DistUser.");
-				} catch (IOException e) {
-					// TODO handle this more appropriately
-					System.err.println("IOException at sendSelfElectedNextCandidate() in DistUser.");
+					
 				}
 			}
+			
 		}.start();
+		
+		System.out.println("is it broken?");
 		
 		this.pollControllerAlive();
 	}
 	
 	private void pollControllerAlive() {
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e2) {
+		}
 		while (f_electionBusy == true) {
 			try {
 				Transceiver trans = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 				ControllerComm proxy = SpecificRequestor.getClient(ControllerComm.class, trans);
 				proxy.getAllClients();
 				trans.close();
-				f_electionBusy = false;
+				this.cleanupElection();
 			} catch (Exception e) {
 				try {
 					Thread.sleep(100);
@@ -942,76 +1053,89 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void electNewController(final int index, final int clientID) {
-		
-		if (f_isParticipantElection == false) {
-			return;
-		}
-		
-		// Setup index in case of first call
-		if (f_electionID == -1) {
-			f_electionID = this.getElectionIndex();
-			f_electionBusy = true;
-		}
+		System.out.println("index = "  + index + ", ID = " + clientID);
+		f_electionID = this.getElectionIndex();
+		f_electionBusy = true;
 		
 		if (index == f_electionID && f_isParticipantElection == true) {
-			f_isParticipantElection = false;
 			// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
 			// This is in order to fully replicate the algorithm described in the theory.
 			this.sendSelfElectedNextCandidate();
 			this.sendNonCandidatesNewServer();
+			f_isParticipantElection = false;
 			return;
 		}
 		
-		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
+		
 		new Thread() {
+			
 			public void run() {
-				if (clientID > DistUser.this.getID()) {
-					try {
-						Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-						if (nextCandidate.getType() == ClientType.SmartFridge) {
-							communicationFridge proxy = (communicationFridge) 
-									SpecificRequestor.getClient(communicationFridge.class, transceiver);
-							proxy.electNewController(index, clientID);
-						} else if (nextCandidate.getType() == ClientType.User) {
-							communicationUser proxy = (communicationUser) 
-									SpecificRequestor.getClient(communicationUser.class, transceiver);
-							proxy.electNewController(index, clientID);
-						}
-						transceiver.close();
-					} catch (IOException e) {
-						// TODO handle this more appropriately
-						System.err.println("IOException at electNewController() in DistUser.");
-					}
-				} else if (clientID <= DistUser.this.getID()) {
-					if (DistUser.this.f_isParticipantElection == false) {
-						DistUser.this.f_isParticipantElection = true;
+				while (true) {
+					System.out.println("stuck here?");
+					ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(false);
+					if (clientID > DistUser.this.getID()) {
 						try {
 							Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
 							if (nextCandidate.getType() == ClientType.SmartFridge) {
 								communicationFridge proxy = (communicationFridge) 
 										SpecificRequestor.getClient(communicationFridge.class, transceiver);
-								proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+								proxy.electNewController(index, clientID);
 							} else if (nextCandidate.getType() == ClientType.User) {
 								communicationUser proxy = (communicationUser) 
 										SpecificRequestor.getClient(communicationUser.class, transceiver);
-								proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+								proxy.electNewController(index, clientID);
 							}
 							transceiver.close();
+							return;
 						} catch (IOException e) {
-							// TODO handle this more appropriately
-							System.err.println("IOException at electNewController() in DistUser.");
+						} catch (NullPointerException e) {
+							System.out.println("wonElection7");
+							DistUser.this.wonElection(false);
+							return;
+						} catch (Exception e) {
+							System.out.println("got here..." + e.getClass().toString());
+						}
+						
+						
+					} else if (clientID <= DistUser.this.getID()) {
+						if (DistUser.this.f_isParticipantElection == false) {
+							DistUser.this.f_isParticipantElection = true;
+							Transceiver transceiver = null;
+							try {
+								transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
+								if (nextCandidate.getType() == ClientType.SmartFridge) {
+									communicationFridge proxy = (communicationFridge) 
+											SpecificRequestor.getClient(communicationFridge.class, transceiver);
+									proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+								} else if (nextCandidate.getType() == ClientType.User) {
+									communicationUser proxy = (communicationUser) 
+											SpecificRequestor.getClient(communicationUser.class, transceiver);
+									proxy.electNewController(DistUser.this.f_electionID, DistUser.this.getID());
+								}
+								transceiver.close();
+								return;
+							} catch (IOException e) {
+							} catch (NullPointerException e) {
+								System.out.println("wonElection8");
+								DistUser.this.wonElection(false);
+								return;
+							} catch (Exception e) {
+								System.out.println("got here..." + e.getClass().toString());
+							}
 						}
 					}
 				}
 			}
+			
 		}.start();
 	}
 	
 	/**
 	 * Gets the ConnectionTypeData of the next client in the ring (IP, Port, Type).
+	 * @param checkNewController TODO
 	 * @return The ConnectionTypeData of the next client in the ring (that is accessible).
 	 */
-	private ConnectionTypeData getNextCandidateConnection() {
+	private ConnectionTypeData getNextCandidateConnection(boolean checkNewController) {
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
 		List<Integer> participantIDs = new Vector<Integer>();
 		
@@ -1028,7 +1152,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			}
 		}
 		
-		f_nextCandidateOffset = 1;
+		int f_nextCandidateOffset = 1;
 		Integer nextCandidateID = new Integer(-1);
 		String nextIP = "";
 		ClientType type = null;
@@ -1044,34 +1168,29 @@ public class DistUser extends User implements communicationUser, Runnable {
 				}
 				
 				ConnectionData nextCandidate = new ConnectionData(nextIP, nextCandidateID.intValue());
-				boolean active = false;
+				
+				if (nextCandidate.equals(f_controllerConnection) && checkNewController) {
+					return new ConnectionTypeData(nextCandidate.getIP(), nextCandidate.getPort(), null);
+				}
 				
 				Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
 				
 				if (type == ClientType.SmartFridge) {
 					communicationFridge proxy = 
 							(communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiver);
-					active = proxy.aliveAndKicking();
+					proxy.aliveAndKicking();
 				} else if (type == ClientType.User) {
 					communicationUser proxy = 
 							(communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
-					active = proxy.aliveAndKicking();
+					proxy.aliveAndKicking();
 				}
-				transceiver.close();					
-				if (active == true) {
-					break;
-				}
-				throw new IOException();
-			} catch (IOException | NullPointerException e) {
+				transceiver.close();
+				break;
+			} catch (Exception e) {
 				f_nextCandidateOffset += 1;
 			}
 			
 			if (f_nextCandidateOffset > participants.size()) {
-				/// should not be able to get here
-				/// if it gets here though, it means that all the participants (including this object itself) are not reachable
-				
-				// TODO check if this is the desired effect
-				System.exit(1);
 				return null;
 			}
 		}
@@ -1100,12 +1219,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Notifies the next participant in the ring that this client has been elected.
 	 */
 	private void sendSelfElectedNextCandidate() {
-		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection();
+		System.out.println("send next candidate i'm server");
+		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection(false);
 		
 		if (nextCandidate == null) {
-			this.startControllerTakeOver();
-			f_electionID = -1;
-			f_electionBusy = false;
+//			this.startControllerTakeOver();
+//			this.cleanupElection();
 			return;
 		}
 
@@ -1114,6 +1233,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				try {
 					Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
 					if (nextCandidate.getType() == ClientType.SmartFridge) {
+						System.out.println("Somethings broken");
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
 						proxy.newServerElected(f_ownIP, DistUser.this.getID());
@@ -1129,6 +1249,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 				} catch (IOException e) {
 					// TODO handle this more appropriately
 					System.err.println("IOException at sendSelfElectedNextCandidate() in DistUser.");
+				} catch (UndeclaredThrowableException e) {
+					
+				} catch (Exception e) {
+					System.out.println("got here222... " + e.getClass().toString());
+					e.printStackTrace();
 				}
 				// If you get an UndeclaredThrowableException, it is probably here, catch with base class Exception
 			}
@@ -1178,7 +1303,32 @@ public class DistUser extends User implements communicationUser, Runnable {
 			} 
 		}
 	}
+	
+	/**
+	 * Function called when this client has won the election.
+	 * Sends all the non participants a notification that this client is the new controller, aswell as starting the controller and cleaning up the election.
+	 * @param sendNext TODO
+	 */
+	private void wonElection(boolean sendNext) {
+		System.out.println("won the election...");
+		this.startControllerTakeOver();
+		if (sendNext == true) {
+			this.sendSelfElectedNextCandidate();
+		}
+		this.sendNonCandidatesNewServer();
+		this.cleanupElection();
+	}
 
+	/**
+	 * 	Cleans up all the class variables used in the election
+	 */
+	private void cleanupElection() {
+		f_isParticipantElection = false;
+		f_electionID = -1;
+		f_electionBusy = false;
+		f_requestedUnion = false;
+	}
+	
 	
 	private void startControllerTakeOver() {
 		this.stopServer();
@@ -1195,12 +1345,15 @@ public class DistUser extends User implements communicationUser, Runnable {
 			public void run() {
 				DistUser.this.f_replicatedServerData.setPort(DistUser.this.getID());
 				DistUser.this.f_replicatedServerData.setIp(DistUser.this.f_ownIP);
+				
+				System.out.println("starting a controller");
 				DistUser.this.f_controller = new DistController(DistUser.this.f_replicatedServerData);
 				while (DistUser.this.f_controller.serverIsActive() == true) {
 					try {
 						Thread.sleep(50);
 					} catch (InterruptedException e) { }
 				}
+				System.out.println("stopped the controller");
 				DistUser.this.f_controller = null;
 				DistUser.this.setupID();
 				DistUser.this.startServer();
@@ -1278,5 +1431,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 //		
 //		System.exit(0);
 	}
+
+
 
 }

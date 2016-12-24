@@ -50,6 +50,11 @@
 			],
 			"response": "null"
 		},
+		"unifyServerData" : {
+			"request" : [{"name" : "serverData", "type" : "ServerData"}],
+			"response" : "null",
+			"one-way" : true
+		},
 		"newServerElected" : {
 			"request": [
 				{"name": "newServerIP", "type": "string"},

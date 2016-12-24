@@ -42,14 +42,14 @@ public class ServerDataUnion {
 	
 	public static boolean narrowEquals(ServerData data1, ServerData data2){
 		try{
-			for (int i = 0; i < data2.getIPsIP().size(); i++){
-				if (! data1.getIPsIP().contains(data2.getIPsIP().get(i))){
+			for (int i = 0; i < data2.getIPsID().size(); i++){
+				if (! data1.getIPsID().contains(data2.getIPsID().get(i))){
 					System.out.println("NOPE");
 					return false;
 				}
-				for (int j = 0; j < data1.getIPsIP().size(); j++){
-					if (data1.getIPsIP().get(j).equals(data2.getIPsIP().get(i))){
-						if (! data1.getIPsID().get(j).equals(data2.getIPsID().get(i))){
+				for (int j = 0; j < data1.getIPsID().size(); j++){
+					if (data1.getIPsID().get(j).equals(data2.getIPsID().get(i))){
+						if (! data1.getIPsIP().get(j).equals(data2.getIPsIP().get(i))){
 							System.out.println("NOPE2");
 							return false;
 						}

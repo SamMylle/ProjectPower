@@ -67,6 +67,11 @@
 			"response": "null", 
 			"one-way" : true
 		},
+		"unifyServerData" : {
+			"request" : [{"name" : "serverData", "type" : "ServerData"}],
+			"response" : "null",
+			"one-way" : true
+		},
 		"electNewController" : {
 			"request" : [{"name" : "index", "type" : "int"},{"name" : "clientID", "type" : "int"}],
 			"response" : "null",
