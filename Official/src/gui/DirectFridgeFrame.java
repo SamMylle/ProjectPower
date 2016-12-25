@@ -138,7 +138,8 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
         } catch (TakeoverException e) {
         } catch (NoFridgeConnectionException e) {
             // In theory, do nothing here since no connection is available anymore already.
-        }
+        } catch (ElectionBusyException e) {
+		}
     }//GEN-LAST:event_formWindowClosing
 
     private void tblFridgeInventoryKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tblFridgeInventoryKeyPressed
@@ -174,7 +175,10 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
             DialogExceptions.notifyTakeover(null);
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(null);
+			return;
+		}
         
         this.updateFridgeItems();
     }//GEN-LAST:event_btnAddMouseClicked
@@ -208,7 +212,10 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
             DialogExceptions.notifyTakeover(null);
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(null);
+			return;
+		}
         this.updateFridgeItems();
     }
     
@@ -228,7 +235,10 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
             DialogExceptions.notifyTakeover(null);
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(null);
+			return;
+		}
          DefaultTableModel model = new DefaultTableModel();
             
         model.addColumn("Items");

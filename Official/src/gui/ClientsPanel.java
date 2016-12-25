@@ -7,6 +7,7 @@ package gui;
 
 import avro.ProjectPower.Client;
 import client.exception.AbsentException;
+import client.exception.ElectionBusyException;
 import client.exception.TakeoverException;
 import client.exception.MultipleInteractionException;
 import java.util.List;
@@ -107,7 +108,10 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
         } catch(TakeoverException e) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }
     
     @Override

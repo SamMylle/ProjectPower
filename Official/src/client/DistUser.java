@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 
 import org.apache.avro.AvroRemoteException;
@@ -53,6 +55,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private int f_electionID;								// The index of the client in the election
 	private boolean f_electionBusy;
 	private boolean f_requestedUnion;
+	private Timer f_waitForController;
 	
 	
 	
@@ -277,8 +280,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
-	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException, TakeoverException {
+	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
@@ -316,8 +320,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
-	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException, TakeoverException {
+	public void setLightState(int newState, int lightID) throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
@@ -344,8 +349,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
-	public List<String> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException, TakeoverException {
+	public List<String> getFridgeItems(int fridgeID) throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
@@ -378,9 +384,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws NoTemperatureMeasures if no temperature measures are available yet.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public double getCurrentTemperatureHouse() 
-			throws MultipleInteractionException, AbsentException, NoTemperatureMeasures, TakeoverException {
+			throws MultipleInteractionException, AbsentException, NoTemperatureMeasures, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -398,7 +405,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.setupElection();
+//			if (f_electionBusy == false && f_waitForController == null) {
+//				this.startPollTimer(1500);
+//			}
+//			this.setupElection();
 		}
 		if (currentTemp != 0) {
 			return currentTemp;
@@ -414,8 +424,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
-	public List<Double> getTemperatureHistory() throws MultipleInteractionException, AbsentException, TakeoverException {
+	public List<Double> getTemperatureHistory() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -432,7 +443,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			this.setupElection();
+//			if (f_electionBusy == false && f_waitForController == null) {
+//				this.startPollTimer(1500);
+//			}
+//			this.setupElection();
 		}
 		
 		return values;
@@ -445,8 +459,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws MultipleInteractionException if the user is connected to a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
-	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException, TakeoverException {
+	public List<Client> getAllClients() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -475,9 +490,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws FridgeOccupiedException if the fridge is occupied by another user.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public void communicateWithFridge(int fridgeID) 
-		throws MultipleInteractionException, AbsentException, FridgeOccupiedException, TakeoverException, NoFridgeConnectionException {
+		throws MultipleInteractionException, AbsentException, FridgeOccupiedException, TakeoverException, NoFridgeConnectionException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is already connected to a fridge, cannot start another connection.");
@@ -521,9 +537,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public void addItemFridge(String item) 
-			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+			throws NoFridgeConnectionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
@@ -548,9 +565,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public void removeItemFridge(String item) 
-			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+			throws NoFridgeConnectionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
@@ -574,9 +592,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public List<String> getFridgeItemsDirectly() 
-			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+			throws NoFridgeConnectionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
@@ -606,9 +625,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
  	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public void openFridge() 
-			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+			throws NoFridgeConnectionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
@@ -631,9 +651,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws NoFridgeConnectionException if no connection has been established with a fridge.
 	 * @throws AbsentException if the user is not present in the house.
 	 * @throws TakeoverException if the user has been elected to be the new controller.
+	 * @throws ElectionBusyException 
 	 */
 	public void closeFridge() 
-			throws NoFridgeConnectionException, AbsentException, TakeoverException {
+			throws NoFridgeConnectionException, AbsentException, TakeoverException, ElectionBusyException {
 		this.checkInvariantExceptions();
 		if (f_fridgeConnection == null) {
 			throw new NoFridgeConnectionException("The user is not connected to a fridge, need to establish connection first.");
@@ -654,8 +675,14 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	/**
 	 * Enters the house.
+	 * @throws ElectionBusyException 
+	 * @throws TakeoverException 
+	 * @throws  
 	 */
-	public void enterHouse() {
+	public void enterHouse() throws TakeoverException, ElectionBusyException {
+		try {
+			this.checkInvariantExceptions();
+		} catch (AbsentException e) {}
 		if (super._getStatus() == UserStatus.present) {
 			return;
 		}
@@ -665,8 +692,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	/**
 	 * Leaves the house, as well as closing the direct communication if this is setup, and notifying the controller.
+	 * @throws ElectionBusyException 
+	 * @throws TakeoverException 
 	 */
-	public void leaveHouse() {
+	public void leaveHouse() throws TakeoverException, ElectionBusyException {
+		try {
+			this.checkInvariantExceptions();
+		} catch (AbsentException e) {}
 		if (super._getStatus() == UserStatus.absent) {
 			return;
 		}
@@ -674,7 +706,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		if (f_fridgeConnection != null) {
 			try {
 				this.closeFridge();
-			} catch (NoFridgeConnectionException | AbsentException | TakeoverException e) {	}
+			} catch (NoFridgeConnectionException | AbsentException | TakeoverException | ElectionBusyException e) {	}
 		}
 		super.leave();
 		this.notifyControllerLeave();
@@ -708,7 +740,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 	}
 	
-	private void checkInvariantExceptions() throws AbsentException, TakeoverException {
+	private void checkInvariantExceptions() throws AbsentException, TakeoverException, ElectionBusyException {
 		if (f_controller != null) {
 			throw new TakeoverException("The user has been elected to act as the controller of the system.");
 		}
@@ -716,7 +748,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new AbsentException("The user is not present in the house.");
 		}
 		if (f_electionBusy == true) {
-			throw new TakeoverException();
+			throw new ElectionBusyException("The user is busy setting up a new controller.");
 		}
 	}
 	
@@ -800,6 +832,13 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public boolean aliveAndKicking() throws AvroRemoteException {
+		if (f_electionBusy == true) {
+			this.cleanupElection();
+		}
+		if (f_waitForController != null) {
+			f_waitForController.cancel();
+			f_waitForController = null;			
+		}
 		return true;
 	}
 
@@ -813,10 +852,18 @@ public class DistUser extends User implements communicationUser, Runnable {
 	/// |		Enter at your own risk		|
 	/// |===================================|
 	
+	
+	private void startPollTimer(int interval) {
+		f_waitForController = new Timer();
+		f_waitForController.schedule(new controllerPollTimer(), 0, interval);
+	}
+	
+	
 	/**
 	 * Sets up the election by sending the serverdata around and unifying it in all the clients.
 	 */
 	private void setupElection() {
+
 		synchronized(this) {
 			if (f_electionBusy == true) {
 				return;
@@ -985,6 +1032,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+		f_isParticipantElection = false;
 		
 		// TODO push this to separate method, where it can also be used for sendSelfElectedNextCandidate
 		new Thread() {
@@ -1019,31 +1067,31 @@ public class DistUser extends User implements communicationUser, Runnable {
 			
 		}.start();
 		
-		System.out.println("is it broken?");
+		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
+		int countParticipants = 0;
+		for (ClientType clientType : clientTypes) {
+			if (clientType == ClientType.SmartFridge || clientType == ClientType.User) {
+				countParticipants++;
+			}
+		}
+		int waitTime = (countParticipants * 200) + 1000;
 		
-		this.pollControllerAlive();
+		this.startPollTimer(waitTime);
 	}
 	
-	private void pollControllerAlive() {
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e2) {
-		}
-		while (f_electionBusy == true) {
-			try {
-				Transceiver trans = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
-				ControllerComm proxy = SpecificRequestor.getClient(ControllerComm.class, trans);
-				proxy.getAllClients();
-				trans.close();
-				this.cleanupElection();
-			} catch (Exception e) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e1) {}
+	
+	private class controllerPollTimer extends TimerTask {
+		public controllerPollTimer() {}
+
+		@Override
+		public void run() {
+			if (f_electionBusy == true) {
+				DistUser.this.setupElection();				
 			}
 		}
 	}
-
+	
+	
 	/**
 	 * Equivalent to election function from slides theory (slide 54 - Coordination)
 	 * @param index
@@ -1057,7 +1105,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_electionID = this.getElectionIndex();
 		f_electionBusy = true;
 		
-		if (index == f_electionID && f_isParticipantElection == true) {
+		if (index == f_electionID) {
 			// Send newServer to all the clients who did not participate in the election, and only to the next client who was involved in the election
 			// This is in order to fully replicate the algorithm described in the theory.
 			this.sendSelfElectedNextCandidate();
@@ -1074,6 +1122,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					System.out.println("stuck here?");
 					ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(false);
 					if (clientID > DistUser.this.getID()) {
+						f_isParticipantElection = true;
 						try {
 							Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
 							if (nextCandidate.getType() == ClientType.SmartFridge) {
@@ -1178,11 +1227,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 				if (type == ClientType.SmartFridge) {
 					communicationFridge proxy = 
 							(communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiver);
-					proxy.aliveAndKicking();
+					proxy.getItemsRemote();
 				} else if (type == ClientType.User) {
 					communicationUser proxy = 
 							(communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
-					proxy.aliveAndKicking();
+					proxy.getName();
 				}
 				transceiver.close();
 				break;
@@ -1337,7 +1386,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 				this.closeFridge();
 			} catch (NoFridgeConnectionException e) {} 
 			  catch (AbsentException e) {} 
-			  catch (TakeoverException e) {}
+			  catch (TakeoverException e) {} 
+			  catch (ElectionBusyException e) {}
 		}
 		this.f_fridgeConnection = null;
 		
@@ -1404,13 +1454,23 @@ public class DistUser extends User implements communicationUser, Runnable {
 			System.in.read();
 		} catch (IOException e) {}
 		
-		remoteUser.leaveHouse();
+		try {
+			remoteUser.leaveHouse();
+		} catch (TakeoverException | ElectionBusyException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		try {
 			System.in.read();
 		} catch (IOException e) {}
 		
-		remoteUser.enterHouse();
+		try {
+			remoteUser.enterHouse();
+		} catch (TakeoverException | ElectionBusyException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		try {
 			System.in.read();

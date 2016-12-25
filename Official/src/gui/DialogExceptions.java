@@ -15,7 +15,7 @@ import javax.swing.JPanel;
 public class DialogExceptions {
     static public void notifyTakeover(JPanel panel) {
         JOptionPane.showMessageDialog(panel,
-            "You are currently acting as the backup controller of the system, due to a failure of the main controller. During this time, you cannot perform any actions.",
+            "You are currently acting as the backup controller of the system, due to a failure of the main controller.\nDuring this time, you cannot perform any actions.",
             "Error: controller takeover",
             JOptionPane.ERROR_MESSAGE);
     }
@@ -46,5 +46,12 @@ public class DialogExceptions {
             "The fridge you are trying to communicate with is already occupied by another user.",
             "Error: fridge occupied",
             JOptionPane.ERROR_MESSAGE);
+    }
+    
+    static public void notifyElectionBusy(JPanel panel) {
+        JOptionPane.showMessageDialog(panel,
+            "You are currently participating in an election.",
+            "Error: controller election",
+            JOptionPane.INFORMATION_MESSAGE);
     }
 }

@@ -135,7 +135,10 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
             } catch (TakeoverException ex) {
                 DialogExceptions.notifyTakeover(this);
                 return;
-            }
+            } catch (ElectionBusyException e) {
+    			DialogExceptions.notifyElectionBusy(this);
+    			return;
+    		}
         }
         f_directFrame = null;
     }
@@ -155,7 +158,10 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         } catch (TakeoverException ex) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }//GEN-LAST:event_cbbSelectFridgeItemStateChanged
 
     private void btnCommunicateMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCommunicateMouseClicked
@@ -178,7 +184,10 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         } catch (FridgeOccupiedException e) {
             DialogExceptions.notifyFridgeOccupied(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
         
         f_directFrame = new DirectFridgeFrame(f_user);
         f_directFrame.setVisible(true);
@@ -189,7 +198,7 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         });
     }//GEN-LAST:event_btnCommunicateMouseClicked
 
-    private void updateFridges() throws AbsentException, MultipleInteractionException, TakeoverException {
+    private void updateFridges() throws AbsentException, MultipleInteractionException, TakeoverException, ElectionBusyException {
         f_fridges = new Vector<Client>();
         List<Client> clients = f_user.getAllClients();
         for (Client client : clients) {
@@ -208,7 +217,7 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         }
     }
     
-    private void updateTableFridgeInventory (int fridgeVectorIndex) throws AbsentException, MultipleInteractionException, TakeoverException {
+    private void updateTableFridgeInventory (int fridgeVectorIndex) throws AbsentException, MultipleInteractionException, TakeoverException, ElectionBusyException {
         scpScrollPaneFridgeInventory.setVisible(true);
         List<String> items = null;
         items = f_user.getFridgeItems(f_fridges.get(fridgeVectorIndex).getID());
@@ -237,7 +246,10 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
         } catch (TakeoverException ex) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

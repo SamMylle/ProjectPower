@@ -6,8 +6,6 @@
 package gui;
 
 import client.DistUser;
-import client.exception.MultipleInteractionException;
-import client.exception.AbsentException;
 import client.exception.*;
 import gui.PanelInterface;
 import java.text.DecimalFormat;
@@ -134,7 +132,7 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
         this.update();
     }//GEN-LAST:event_btnGetCurrentTempMouseClicked
 
-    private void updateCurrentTemp() throws MultipleInteractionException, AbsentException, TakeoverException {
+    private void updateCurrentTemp() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
         double currentTemp = 0;
         try {
             currentTemp = f_user.getCurrentTemperatureHouse();
@@ -147,7 +145,7 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
         lblCurrentTemp.setText(new DecimalFormat(".##").format(currentTemp));
     }
     
-    private void updateHistoryTemp() throws MultipleInteractionException, AbsentException, TakeoverException {
+    private void updateHistoryTemp() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
         List<Double> temperatures = f_user.getTemperatureHistory();
         
         DefaultTableModel model = (DefaultTableModel) tblTemperatureHistory.getModel();
@@ -173,7 +171,10 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
         } catch (TakeoverException ex) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }
     
     private class UpdateTemperatureTask extends TimerTask {
@@ -184,7 +185,7 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
             try {
                 TemperaturePanel.this.updateCurrentTemp();
                 TemperaturePanel.this.updateHistoryTemp();
-            } catch (MultipleInteractionException | AbsentException | TakeoverException ex) { }
+            } catch (MultipleInteractionException | AbsentException | TakeoverException | ElectionBusyException ex) { }
         }
     }
     

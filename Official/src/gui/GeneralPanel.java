@@ -116,14 +116,29 @@ public class GeneralPanel extends javax.swing.JPanel implements PanelInterface {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnEnterMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnEnterMouseClicked
-        // TODO add your handling code here:
-        f_user.enterHouse();
+        try {
+			f_user.enterHouse();
+		} catch (TakeoverException e) {
+			DialogExceptions.notifyTakeover(this);
+			return;
+		} catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
         this.updateStatus();
     }//GEN-LAST:event_btnEnterMouseClicked
 
     private void btnLeaveMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnLeaveMouseClicked
         // TODO add your handling code here:
-        f_user.leaveHouse();
+        try {
+			f_user.leaveHouse();
+		} catch (TakeoverException e) {
+			DialogExceptions.notifyTakeover(this);
+			return;
+		} catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
         this.updateStatus();
     }//GEN-LAST:event_btnLeaveMouseClicked
 

@@ -135,7 +135,10 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
             } catch (TakeoverException ex) {
                 DialogExceptions.notifyTakeover(this);
                 return;
-            }
+            } catch (ElectionBusyException e) {
+    			DialogExceptions.notifyElectionBusy(this);
+    			return;
+    		}
             
         }
     }//GEN-LAST:event_lstLightsMouseClicked
@@ -153,7 +156,10 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
         } catch (TakeoverException ex) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }//GEN-LAST:event_btnLightsOnMouseClicked
 
     private void btnLightsOffMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnLightsOffMouseClicked
@@ -169,10 +175,13 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
         } catch (TakeoverException ex) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }//GEN-LAST:event_btnLightsOffMouseClicked
 
-    public void setAllLights(int state) throws MultipleInteractionException, AbsentException, TakeoverException {
+    public void setAllLights(int state) throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
         List<LightState> lightstates = f_lightsModel.getStates();
         
         for (LightState lightstate : lightstates) {
@@ -180,7 +189,7 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
         }
     }
     
-    public void getLights() throws MultipleInteractionException, AbsentException, TakeoverException {
+    public void getLights() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
         List<LightState> lightstates = null;
 
         lightstates = f_user.getLightStates();
@@ -205,7 +214,10 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
         } catch (TakeoverException ex) {
             DialogExceptions.notifyTakeover(this);
             return;
-        }
+        } catch (ElectionBusyException e) {
+			DialogExceptions.notifyElectionBusy(this);
+			return;
+		}
     }
     
     private class customCellListRenderer extends JLabel implements ListCellRenderer {
