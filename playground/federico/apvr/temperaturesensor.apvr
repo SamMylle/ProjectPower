@@ -1,0 +1,36 @@
+{
+	"namespace" : "avro.ProjectPower",
+	"protocol" : "communicationTempSensor",
+	"doc" : "Methods for the TemperatureSensor class",
+
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		}
+	],
+
+	"messages" : {
+		"aliveAndKicking" : {
+			"request": [],
+			"response": "boolean"
+		},
+		"newServer" : {
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null"
+		},
+		"getTemperatureRecords" : {
+			"request" : [],
+			"response" : {"type" : "array", "items" : "double"}
+		},
+		"reLogin" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		}
+	}
+}

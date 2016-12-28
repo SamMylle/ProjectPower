@@ -1,0 +1,220 @@
+{
+	"namespace": "avro.ProjectPower",
+	"protocol": "ControllerComm",
+
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		},
+		{
+			"type": "record",
+			"name": "Client",
+			"fields": [
+				{"name": "clientType", "type": "ClientType"},
+				{"name": "ID", "type": "int"}
+			]
+		},
+		{
+			"type": "record",
+			"name": "CommData",
+			"fields": [
+				{"name": "ID", "type": "int"},
+				{"name": "IP", "type": "string"}
+			]
+		},
+		{
+			"type": "record",
+			"name": "ServerData",
+			"fields": [
+				{"name": "port", "type": "int"},
+				{"name": "originalControllerPort", "type": "int"},
+				{"name": "maxTemperatures", "type": "int"},
+				{"name": "currentMaxPort", "type": "int"},
+				{"name": "ip", "type": "string"},
+				{"name": "previousControllerIP", "type": "string"},
+				{"name": "usedFridgePorts", "type": {"type": "array", "items": "int"}},
+				{"name": "IPsID", "type": {"type": "array", "items": "int"}},
+				{"name": "IPsIP", "type": {"type": "array", "items": "string"}},
+				{"name": "namesID", "type": {"type": "array", "items": "int"}},
+				{"name": "namesClientType", "type": {"type": "array", "items": "ClientType"}},
+				{"name": "temperatures", "type": {"type": "array", "items": {"type": "array", "items": "double"}}},
+				{"name": "temperaturesIDs", "type": {"type": "array", "items": "int"}}
+			]
+		}
+	],
+
+	"messages":{
+		"LogOn":{
+			"request": [{
+				"name": "type",
+				"type": "ClientType"
+			},
+			{
+				"name": "ip",
+				"type": "string"
+			}],
+			"response": "int"
+		},
+		"retryLogin":{
+			"request": [
+			{
+				"name": "oldID",
+				"type": "int"
+			},
+			{
+				"name": "type",
+				"type": "ClientType"
+			}
+			],
+			"response": "int"
+		},
+		"getClientType":{
+			"request": [{
+				"name": "ID",
+				"type": "int"
+			}],
+			"response": "ClientType"
+		},
+		"logOff":{
+			"request": [{
+				"name": "ID",
+				"type": "int"
+			}],
+			"response": "null"
+		},
+		"addTemperature":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			},
+			{
+				"name": "temperature",
+				"type": "double"
+			}],
+			"response": "null"
+		},
+		"averageCurrentTemperature":{
+			"request": [],
+			"response": "double"
+		},
+		"hasValidTemperatures":{
+			"request": [],
+			"response": "boolean"
+		},
+		"setupFridgeCommunication":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": "CommData"
+		},
+		"reSetupFridgeCommunication":{
+			"request": [
+			{
+				"name": "myID",
+				"type": "int"
+			},
+			{
+				"name": "wrongID",
+				"type": "int"
+			}
+			],
+			"response": "CommData"
+		},
+		"endFridgeCommunication":{
+			"request": [
+			{
+				"name": "usedPort",
+				"type": "int"
+			}
+			],
+			"response": "null"
+		},
+		"listenToMe":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			},
+			{
+				"name": "type",
+				"type": "ClientType"
+			}
+			],
+			"response": "null"
+		},
+		"getFridgeInventory":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": {"type": "array", "items": "string"}
+		},
+		"setLight":{
+			"request": [
+			{
+				"name": "newState",
+				"type": "int"
+			},
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": "int"
+		},
+		"getLightState":{
+			"request": [
+			{
+				"name": "ID",
+				"type": "int"
+			}
+			],
+			"response": "int"
+		},
+		"getAllClients":{
+			"request": [],
+			"response": {"type": "array", "items": "Client"}
+		},
+		"areYouTheOriginalController":{
+			"request": [],
+			"response": {"type": "boolean"}
+		},
+		"recoverData":{
+			"request": [{"name": "data", "type": "ServerData"}],
+			"response": {"type": "boolean"}
+		},
+		"loginSuccessful":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
+		},
+		"fridgeIsEmpty":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
+		},
+		"getTempHistory":{
+			"request": [],
+			"response": {"type": "array", "items": "double"}
+		},
+		"leftHome":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
+		},
+		"enteredHome":{
+			"request": [{"name": "ID", "type": "int"}],
+			"response": {"type": "null"},
+			"one-way": true
+		}
+	}
+
+}

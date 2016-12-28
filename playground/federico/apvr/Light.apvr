@@ -1,0 +1,50 @@
+{
+	"namespace" : "avro.ProjectPower",
+	"protocol" : "LightComm",
+	"doc" : "Methods for the Light class",
+
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		}
+	],
+
+	"messages" : {
+		"setState" : {
+			"request" : [{"name" : "state", "type" : "int"}],
+			"response" : "null"
+		},
+		"getState" : {
+			"request" : [],
+			"response" : "int"
+		},
+		"aliveAndKicking":{
+			"request": [],
+			"response": "boolean"
+		},
+		"newServer":{
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null"
+		},
+		"reLogin" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		},
+		"powerSavingMode" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		},
+		"powerWastingMode" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		}
+	}
+}

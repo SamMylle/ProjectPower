@@ -4,37 +4,59 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import avro.ProjectPower.ClientType;
+
 
 public class TemperatureSensor {
 	
-	private int ID;
-	private double temperature;
-	private Timer timer;
+	private int f_ID;
+	private double f_temperature;
+	private Timer f_timer;
+	protected Double[] f_measures;
+	private int f_measureIndex;
+	
+	public static final ClientType type = ClientType.TemperatureSensor;
 	
 	public TemperatureSensor(double lowTempRange, double highTempRange) {
-		assert highTempRange > lowTempRange; //replace with normal check and possibly costum exception
+		assert highTempRange > lowTempRange; //replace with normal check and possibly custom exception
 		
-		ID = -1;
+		f_ID = -1;
 		if (lowTempRange != highTempRange)
-			temperature = lowTempRange + (Math.random() * (highTempRange - lowTempRange));
+			f_temperature = lowTempRange + (Math.random() * (highTempRange - lowTempRange));
 		else
-			temperature = lowTempRange;
+			f_temperature = lowTempRange;
 		
-		timer = new Timer();
-		timer.schedule(new generateTempTask(this), 1000, 1000);
+		f_measures = new Double[20];		// ARBITRARY BUFFER SIZE
+		for (int i = 0; i < 20; i++) {
+			f_measures[i] = null;
+		}
+		
+		f_measureIndex = 0;
+		
+		f_timer = new Timer();
+		f_timer.schedule(new generateTempTask(this), 1000, 1000);
 	}
 	
 	public void setID(int _ID) {
-		assert _ID >= 0; //replace with normal check and possibly costum exception
-		ID = _ID;
+		assert _ID >= 0; //replace with normal check and possibly custom exception
+		f_ID = _ID;
 	}
 	
-	public double generateTemperature() {
-		assert ID >= 0;
+	public int getID() {
+		return f_ID;
+	}
+	
+	public double getTemperature() {
+		return f_temperature;
+	}
+	
+	public void generateTemperature() {
+		assert f_ID >= 0;
 		double randomValue = Math.random();
 		
-		this.temperature = this.temperature - 1 + (2 * randomValue);
-		return this.temperature;
+		this.f_measures[f_measureIndex % f_measures.length] = new Double(f_temperature - 1 + (2 * randomValue));
+		f_measureIndex = f_measureIndex + 1;
+		this.f_temperature = this.f_temperature - 1 + (2 * randomValue);
 	}
 	
 	class generateTempTask extends TimerTask {
@@ -50,15 +72,14 @@ public class TemperatureSensor {
 	}
 	
 	public String toString() {
-		assert ID >= 0;
+		assert f_ID >= 0;
 		
-		return "ID: " + ID + ", temperature: " + temperature;
+		return "ID: " + f_ID + ", Temperature: " + f_temperature;
 	}
 	
 	
 	
 	public static void main(String[] args) throws InterruptedException {
-		// TODO Auto-generated method stub
 		
 		TemperatureSensor test = new TemperatureSensor(10,15);
 		test.setID(1);

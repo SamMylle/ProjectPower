@@ -2,11 +2,12 @@ package client;
 
 public class Light {
 	/// Represents exactly what you think it does
-	
+	/// TODO adjust tests involving the old statu
 	private int status;
 	/// An integer instead of a boolean to support all possibilities (e.g. dimming light)
 	private int ID;
 	/// A unique ID, uniqueness is guaranteed by the controller
+	private int oldStatus;
 	
 	
 	public Light(){
@@ -14,7 +15,15 @@ public class Light {
 		/// The standard status is 0
 		/// The standard ID is invalid (-1)
 		status = 0;
+		oldStatus = 0;
 		ID = -1;
+	}
+	
+	public void reset(){
+		/// TODO write test
+		ID = -1;
+		status = 0;
+		oldStatus = 0;
 	}
 	
 	public boolean setID(int _id){
@@ -39,6 +48,7 @@ public class Light {
 		/// _status must be non-negative
 		if(_status >= 0){
 			status = _status;
+			oldStatus = status;
 			util.Logger.getLogger().log("Status set to " + status + "\n");
 			return true;
 		}else{
@@ -52,6 +62,15 @@ public class Light {
 		}else{
 			return "Light:\n\tID = " + ID + "\n\tStatus = " + status;
 		}
+	}
+	
+	public void powSavingMode(){
+		oldStatus = status;
+		status = 0;
+	}
+	
+	public void recoverFromPowerSavingMode(){
+		status = oldStatus;
 	}
 	
 	public String toString(){

@@ -1,0 +1,13 @@
+{
+	"namespace" : "avro.ProjectPower",
+	"protocol" : "ControllerCandidate",
+	"doc" : "Methods that need to be implemented in the client if it is a candidate for controller election",
+
+	"messages" : {
+		"electNewController" : {
+			"request" : [{"name" : "index", "type" : "int"},{"name" : "clientID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
+		}
+	}
+}

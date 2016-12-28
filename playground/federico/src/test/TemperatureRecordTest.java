@@ -25,7 +25,7 @@ public class TemperatureRecordTest {
 			record.addValue(i);
 			LinkedList<Double> list = record.getRecord();
 			for (int j = 0; j < list.size(); j++){
-				assertEquals(list.get(j), new Double(i + 1 - list.size() + j));
+				assertEquals(list.get(list.size() - 1 - j), new Double(i + 1 - list.size() + j));
 			}
 		}
 	}

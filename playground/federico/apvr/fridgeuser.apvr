@@ -1,0 +1,32 @@
+{
+	"namespace" : "avro.ProjectPower",
+	"protocol" : "communicationFridgeUser",
+	"doc" : "Methods for the SmartFridge class, specifically destined for the USER",
+
+	"messages" : {
+		"addItemRemote" : {
+			"request" : [{"name" : "itemName", "type" : "string"}],
+			"response" : "null"
+		},
+		"removeItemRemote" : {
+			"request" : [{"name" : "itemName", "type" : "string"}],
+			"response" : "null"
+		},
+		"getItemsRemote" : {
+			"request" : [],
+			"response" : {"type" : "array", "items" : "string"}
+		},
+		"openFridgeRemote" : {
+			"request" : [],
+			"response" : "null"
+		},
+		"closeFridgeRemote" : {
+			"request" : [],
+			"response" : "null"
+		},
+		"registerUserIP" : {
+			"request" : [{"name" : "userIP", "type" : "string"}, {"name" : "userPort", "type" : "int"}],
+			"response" : "null"
+		}
+	}
+}

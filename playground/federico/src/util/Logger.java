@@ -4,32 +4,38 @@ public class Logger {
 	/// Instead of writing to the output medium yourself, use this logger
 	/// That way you can write to e.g. a file instead of the terminal without changing a lot of code
 
-	static private Logger logger;
-	static private boolean initialized;
+	static private Logger f_logger;
+	public boolean f_active;
+	static private boolean f_initialized;
 	
 	private Logger(){}
 	
 	public static final Logger getLogger(){
-		if(initialized){
-			return logger;
+		if(f_initialized){
+			return f_logger;
 		}else{
-			logger = new Logger();
-			initialized = true;
-			return logger;
+			f_logger = new Logger();
+			f_logger.f_active = false;
+			f_initialized = true;
+			return f_logger;
 		}
 	}
 
 	public void log(String arg){
 		/// Writes your string to the terminal (at least for now)
-		System.out.print(arg + "\n");
+		if (f_active){
+			System.out.print(arg + "\n");
+		}
 	}
 
 	public void log(String arg, boolean newLine){
 		/// Writes your string to the terminal (at least for now)
-		if (newLine){
-			System.out.print(arg + "\n");
-		}else{
-			System.out.print(arg);
+		if (f_active){
+			if (newLine){
+				System.out.print(arg + "\n");
+			}else{
+				System.out.print(arg);
+			}
 		}
 	}
 

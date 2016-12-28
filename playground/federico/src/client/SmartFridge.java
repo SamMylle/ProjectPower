@@ -1,139 +1,81 @@
 package client;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
-import java.lang.Void;
-import util.Logger;
-
-import org.apache.avro.AvroRemoteException;
-import org.apache.avro.ipc.SaslSocketServer;
-import org.apache.avro.ipc.Server;
-import org.apache.avro.ipc.specific.SpecificResponder;
-
-import avro.ProjectPower.communicationFridge;
 import avro.ProjectPower.ClientType;
+
 
 
 enum FridgeStatus {closed, open};
 
-public class SmartFridge implements communicationFridge {
+public class SmartFridge {
 
-	private Set<String> items;
-	private FridgeStatus status;
-	private Server fridgeserver;
+	private Set<String> f_items;
+	private FridgeStatus f_status;
+	private int f_ID;
+	public static final ClientType type = ClientType.SmartFridge;
 	
 	
 	public SmartFridge() {
-		items = new HashSet<String>();
-		status = FridgeStatus.closed;
-		fridgeserver = null;
+		f_items = new HashSet<String>();
+		f_status = FridgeStatus.closed;
+		f_ID = 0;
+	}
+	
+	public void setID(int ID) {
+		assert ID != 0;
+		
+		f_ID = ID;
+	}
+	
+	public int getID() {
+		return f_ID;
 	}
 	
 	public void addItem(String newItem) {
-		assert status == FridgeStatus.open;
+		assert f_status == FridgeStatus.open;
 		
-		items.add(newItem); //returns boolean to see if the element was added, might be useful later
+		f_items.add(newItem); //returns boolean to see if the element was added, might be useful later
 	}
 	
-	public void removeItem(String oldItem) {
-		assert items.isEmpty() == false;
+	public boolean removeItem(String oldItem) {
+		assert f_items.isEmpty() == false;
 		
-		if (items.contains(oldItem) == false) {
-			return;
+		if (f_items.contains(oldItem) == false) {
+			return false;
 		}
-		items.remove(oldItem);
+		f_items.remove(oldItem);
+		return true;
+	}
+	
+	public boolean hasItem(String item) {
+		assert item != "";
 		
-		if (items.isEmpty() == true) {
-			System.out.println("send broadcast"); //placeholder function
-		}
+		return f_items.contains(item);
+	}
+	
+	public Set<String> getItems() {
+		return f_items;
+	}
+	
+	boolean emptyInventory() {
+		return f_items.isEmpty();
 	}
 	
 	public void openFridge() {
-		status = FridgeStatus.open;
+		f_status = FridgeStatus.open;
 	}
 	
 	public void closeFridge() {
-		status = FridgeStatus.closed;
+		f_status = FridgeStatus.closed;
+	}
+	
+	public boolean isOpen() {
+		return f_status == FridgeStatus.open;
 	}
 	
 	public String toString() {
-		return "items: " + items;
-	}
-	
-	@Override
-	public boolean addItemRemote(CharSequence itemName) {
-		try {
-			this.addItem(itemName.toString());
-		} catch(Exception e) {
-			return false;
-		}
-		Logger.getLogger().log(this.toString());
-		return true;
-	}
-	
-	@Override
-	public boolean openFridgeRemote() {
-		try {
-			this.openFridge();
-		} catch(Exception e) {
-			return false;
-		}
-		Logger.getLogger().log("The fridge has been opened.");
-		return true;
-	}
-	
-	@Override
-	public boolean closeFridgeRemote() {
-		try {
-			this.closeFridge();
-		} catch(Exception e) {
-			return false;
-		}
-		Logger.getLogger().log("The fridge has been closed.");
-		return true;
-	}
-	
-	@Override
-	public Void setupServer(int port) {
-		assert fridgeserver == null;
-		
-		try {
-			fridgeserver = new SaslSocketServer(new SpecificResponder(communicationFridge.class, this), new InetSocketAddress(port));
-		} catch(IOException e) {
-			System.err.println("[error] Failed to start SmartFridge server");
-			e.printStackTrace(System.err);
-			System.exit(1);
-		}
-		
-		fridgeserver.start();
-		try {
-			fridgeserver.join();
-		} catch (InterruptedException e) {
-			System.err.println("Couldn't join the SmartFridge server.");
-		}
-		
-		return null;
-	}
-	
-	@Override
-	public Void closeServer() {
-		assert fridgeserver != null;
-		
-		fridgeserver.close();
-		return null;
-	}
-
-	@Override
-	public boolean testMethod(ClientType clienttype) throws AvroRemoteException {
-		// TODO Auto-generated method stub
-		
-		if (clienttype == ClientType.User) {
-			System.out.println("User used this method.");
-		}
-		
-		return false;
+		return "items: " + f_items;
 	}
 	
 	public static void main(String[] args) {
@@ -143,11 +85,6 @@ public class SmartFridge implements communicationFridge {
 		/// temporarily to test functionality
 		/// 
 		/// server should be opened in separate remote method, invoked by the server to allow direct communication with a user
-		
-		
-		SmartFridge fridge = new SmartFridge();
-		
-		fridge.setupServer(6789);
 		
 		
 		/*
@@ -169,8 +106,6 @@ public class SmartFridge implements communicationFridge {
 		catch (InterruptedException e) {}
 		*/
 		
-		
-		/*
 		SmartFridge fridge = new SmartFridge();
 		fridge.openFridge();
 		fridge.addItem("a");
@@ -178,7 +113,6 @@ public class SmartFridge implements communicationFridge {
 		fridge.addItem("a");
 		fridge.addItem("c");
 		System.out.println(fridge);
-		*/
 	}
 
 

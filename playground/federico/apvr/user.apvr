@@ -1,0 +1,109 @@
+{
+	"namespace" : "avro.ProjectPower",
+	"protocol" : "communicationUser",
+	"doc" : "Methods for the User class",
+
+	"types" : [
+		{
+			"type" : "enum",
+			"name" : "ClientType",
+			"symbols" : ["Light", "SmartFridge", "User", "TemperatureSensor"]
+		},
+		{
+			"type" : "enum",
+			"name" : "UserStatus",
+			"symbols" : ["present", "absent"]
+		},
+		{
+			"type": "record",
+			"name": "ServerData",
+			"fields": [
+				{"name": "port", "type": "int"},
+				{"name": "originalControllerPort", "type": "int"},
+				{"name": "maxTemperatures", "type": "int"},
+				{"name": "currentMaxPort", "type": "int"},
+				{"name": "ip", "type": "string"},
+				{"name": "previousControllerIP", "type": "string"},
+				{"name": "usedFridgePorts", "type": {"type": "array", "items": "int"}},
+				{"name": "IPsID", "type": {"type": "array", "items": "int"}},
+				{"name": "IPsIP", "type": {"type": "array", "items": "string"}},
+				{"name": "namesID", "type": {"type": "array", "items": "int"}},
+				{"name": "namesClientType", "type": {"type": "array", "items": "ClientType"}},
+				{"name": "temperatures", "type": {"type": "array", "items": {"type": "array", "items": "double"}}},
+				{"name": "temperaturesIDs", "type": {"type": "array", "items": "int"}}
+			]
+		}
+	],
+
+	"messages" : {
+		"getStatus" : {
+			"request" : [],
+			"response" : "UserStatus"
+		},
+		"getName" : {
+			"request" : [],
+			"response" : "string"
+		},
+		"notifyFridgeClosed" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		},
+		"aliveAndKicking":{
+			"request": [],
+			"response": "boolean"
+		},
+		"newServer":{
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null"
+		},
+		"makeBackup":{
+			"request": [
+				{"name": "data", "type": "ServerData"}
+			],
+			"response": "null", 
+			"one-way" : true
+		},
+		"unifyServerData" : {
+			"request" : [{"name" : "serverData", "type" : "ServerData"}],
+			"response" : "null",
+			"one-way" : true
+		},
+		"electNewController" : {
+			"request" : [{"name" : "index", "type" : "int"},{"name" : "clientID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
+		},
+		"newServerElected" : {
+			"request": [
+				{"name": "newServerIP", "type": "string"},
+				{"name": "newServerID", "type": "int"}
+			],
+			"response": "null", 
+			"one-way" : true
+		},
+		"notifyFridgeEmpty" : {
+			"request" : [{"name" : "fridgeID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
+		},
+		"notifyUserEntered" : {
+			"request" : [{"name" : "userID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
+		},
+		"notifyUserLeft" : {
+			"request" : [{"name" : "userID", "type" : "int"}],
+			"response" : "null",
+			"one-way" : true
+		},
+		"reLogin" : {
+			"request" : [],
+			"response" : "null",
+			"one-way" : true
+		}
+	}
+}
