@@ -236,14 +236,7 @@ public class DistTemperatureSensor
 
 	@Override
 	public List<Double> getTemperatureRecords() throws AvroRemoteException {
-		List<Double> measures = new ArrayList<Double>();
-		
-		for (Double measure : f_measures) {
-			if (measure != null) {
-				measures.add(measure);
-			}
-		}
-		return measures;
+		return super.getHistory();
 	}
 
 	

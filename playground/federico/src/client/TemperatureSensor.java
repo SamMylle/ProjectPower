@@ -1,5 +1,7 @@
 package client;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +50,19 @@ public class TemperatureSensor {
 	
 	public double getTemperature() {
 		return f_temperature;
+	}
+	
+	synchronized public List<Double> getHistory() {
+		List<Double> returnList = new ArrayList<Double>();
+		
+		for (int i = 0; i < f_measures.length; i++) {
+			Double value  = f_measures[(f_measureIndex - 1 - i) % f_measures.length];
+			if (value != null) {
+				returnList.add(new Double(value));
+			}
+		}
+		
+		return returnList;
 	}
 	
 	public void generateTemperature() {
