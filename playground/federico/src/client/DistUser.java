@@ -58,7 +58,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	private boolean f_requestedUnion;
 	private Timer f_waitForController;
 	
-	final int WAITPERIOD = 1500;
+	private int f_WAITPERIOD;
 	
 	
 	
@@ -89,6 +89,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_electionID = -1;
 		f_electionBusy = false;
 		f_requestedUnion = false;
+		
+		f_WAITPERIOD = 1500;
 		
 		this.setupID();
 		if (this.getID() == -1) {
@@ -122,8 +124,11 @@ public class DistUser extends User implements communicationUser, Runnable {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			// TODO add handling of exception here, controller not accessible?
-			System.err.println("IOException at getNewID() in DistUser.");
+			synchronized(this) {
+				if (f_electionBusy == false && f_waitForController == null) {
+					this.startPollTimer(f_WAITPERIOD);
+				}				
+			}
 		}
 	}
 	
@@ -200,13 +205,14 @@ public class DistUser extends User implements communicationUser, Runnable {
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.loginSuccessful(this.getID());
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
-			// TODO handle more appropriately
-			System.err.println("AvroRemoteException at notifySuccessfulLogin() in DistUser.");
+			System.out.println("Notified the controller succesfull login.");
 		}
 		catch (IOException e) {
-			System.err.println("IOException at notifySuccessfulLogin() in DistUser.");
+			synchronized(this) {
+				if (f_electionBusy == false && f_waitForController == null) {
+					this.startPollTimer(f_WAITPERIOD);
+				}				
+			}
 		}
 	}
 	
@@ -312,7 +318,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -347,7 +353,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -381,7 +387,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -422,7 +428,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					System.out.println("Starting the timer in get temperature");
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -461,7 +468,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -496,7 +503,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}		
 		}
@@ -531,7 +538,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 			// TODO replace this with exception?
@@ -749,7 +756,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -767,7 +774,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		} catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
-					this.startPollTimer(WAITPERIOD);
+					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
 		}
@@ -796,6 +803,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 				f_server = new SaslSocketServer(
 						new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
 				f_server.start();
+				
+				if (f_waitForController != null) {
+					f_waitForController.cancel();
+					f_waitForController = null;
+				}
+				
 				f_serverReady = true;
 			}
 			catch (BindException e) {
@@ -854,7 +867,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public Void newServer(CharSequence newServerIP, int newServerID) {
+		System.out.println("got the new server connection (well old one technically");
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+		if (f_waitForController != null) {
+			f_waitForController.cancel();
+			f_waitForController = null;
+		}
 		return null;
 	}
 	
@@ -913,8 +931,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					if (nextCandidate.getType() == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						// TODO uncomment when implemented
-						//proxy.unifyServerData(f_replicatedServerData);
+						proxy.unifyServerData(f_replicatedServerData);
 					} else if (nextCandidate.getType() == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
@@ -932,6 +949,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			}
 		}.start();
 	}
+	
 	
 	@Override
 	public void unifyServerData(ServerData serverData) {
@@ -954,8 +972,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					if (nextCandidate.getType() == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						// TODO uncomment when implemented
-						//proxy.unifyServerData(f_replicatedServerData);
+						proxy.unifyServerData(f_replicatedServerData);
 					} else if (nextCandidate.getType() == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
@@ -1031,8 +1048,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	/**
 	 * Equivalent to elected function from slides theory (slide 54 - Coordination)
-	 * @param newServerIP
-	 * 		The IP address of the newly elected controller.
+	 * @param newServerIP The IP address of the newly elected controller.
 	 * @param newServerID The Port of the newly elected controller.
 	 */
 	@Override
@@ -1041,15 +1057,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 		new Thread() {
 			
 			public void run() {
-//				System.out.println("newServerElected:\tnewIP = " + newServerIP + ", newID = " + newServerID);
+				System.out.println("newServerElected:\tnewIP = " + newServerIP + ", newID = " + newServerID);
 				
 				f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 				f_isParticipantElection = false;
 				ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(true);
-//				System.out.println("nextCandidate: " + nextCandidate.toString());
-//				System.out.println("controllerConnection: " + f_controllerConnection.toString());
 				if (nextCandidate.getType() == null) {
-//					System.out.println("stopped sending since the next client is the new server");
 					DistUser.this.cleanupElection();
 					return;
 				}
@@ -1065,7 +1078,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
 						proxy.newServerElected(newServerIP, newServerID);
 					}
-					System.out.println("Got to this part");
 					transceiver.close();
 					
 				} catch (Exception e) {
@@ -1087,7 +1099,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 
 		@Override
 		public void run() {
-			if (f_electionBusy == false) {
+			if (f_electionBusy == false && f_serverReady == true) {
 				System.out.println("Starting the election as a result of the timer...");
 				DistUser.this.setupElection();
 			}
@@ -1106,8 +1118,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	synchronized public void electNewController(final int index, final int clientID) {
-		
-		
 		new Thread() {
 			
 			public void run() {
@@ -1115,7 +1125,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					f_waitForController.cancel();
 					f_waitForController = null;
 				}
-				System.out.println("electNewController:\tindex = "  + index + ", ID = " + clientID);
+				System.out.println("electNewController:\tindex = "  + index + ", ID = " + clientID + ", own ID = " + DistUser.this.getID());
 				f_electionID = DistUser.this.getElectionIndex();
 				f_electionBusy = true;
 				
@@ -1189,7 +1199,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return The ConnectionTypeData of the next client in the ring (that is accessible).
 	 */
 	private ConnectionTypeData getNextCandidateConnection(boolean checkNewController) {
-		System.out.println(f_replicatedServerData.toString());
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
 		List<Integer> participantIDs = new Vector<Integer>();
 		
@@ -1198,7 +1207,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<Integer> clientIPsID = f_replicatedServerData.getIPsID();
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
-		/// This is written in a general way, need to make some changes in order to make this more general
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.User || clientTypes.get(i) == ClientType.SmartFridge) {
 				participants.put(clientIDs.get(i), clientTypes.get(i));
@@ -1209,9 +1217,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		Integer nextCandidateID = new Integer(-1);
 		String nextIP = "";
 		ClientType type = null;
-		
 		try {
-			System.out.println("ElectionID = " + f_electionID);
 			nextCandidateID = participantIDs.get((f_electionID+1) % participantIDs.size());
 			nextIP = clientIPsIP.get( clientIPsID.indexOf(nextCandidateID) ).toString();
 			type = participants.get(nextCandidateID);
@@ -1220,20 +1226,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			if (nextCandidate.equals(f_controllerConnection) && checkNewController) {
 				return new ConnectionTypeData(nextCandidate.getIP(), nextCandidate.getPort(), null);
 			}
-			
-			
-			// TODO rewrite this so it does not have to call a function, just uses sockets
-//			Transceiver transceiver = new SaslSocketTransceiver(nextCandidate.toSocketAddress());
-//			if (type == ClientType.SmartFridge) {
-//				communicationFridge proxy = 
-//						(communicationFridge) SpecificRequestor.getClient(communicationFridge.class, transceiver);
-//				proxy.getItemsRemote();
-//			} else if (type == ClientType.User) {
-//				communicationUser proxy = 
-//						(communicationUser) SpecificRequestor.getClient(communicationUser.class, transceiver);
-//				proxy.getName();
-//			}
-//			transceiver.close();
 		} catch (Exception e) {
 			return null;
 		}
@@ -1257,6 +1249,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 		}
 		return participants.indexOf(new Integer(this.getID()));
 	}
+	
 	
 	/**
 	 * Notifies the next participant in the ring that this client has been elected.
@@ -1283,12 +1276,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 						proxy.newServerElected(f_ownIP, DistUser.this.getID());
 					}
 					transceiver.close();
-				} catch (AvroRemoteException e) {
-					// TODO handle this more appropriately
-					System.err.println("AvroRemoteException at sendSelfElectedNextCandidate() in DistUser.");
 				} catch (IOException e) {
-					// TODO handle this more appropriately
-					System.err.println("IOException at sendSelfElectedNextCandidate() in DistUser.");
+					return;
 				} catch (UndeclaredThrowableException e) {
 					
 				} catch (Exception e) {
@@ -1311,17 +1300,16 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<Integer> clientIPsID = f_replicatedServerData.getIPsID();
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
-		/// This is written in a general way, need to make some changes in order to make this more general
 		for (int i = 0; i < clientIDs.size(); i ++) {
 			if (clientTypes.get(i) == ClientType.Light || clientTypes.get(i) == ClientType.TemperatureSensor) {
 				nonParticipants.put(clientIDs.get(i), clientTypes.get(i));
 			}
 		}
 		
-		// This part is not asynchronous, since it is not really part of the Roberts-Chang algorithm
+		// This part is not asynchronous, since it is not really part of the Chang-Roberts algorithm
 		Iterator<Entry<Integer, ClientType>> it = nonParticipants.entrySet().iterator();
 		while (it.hasNext() == true) {
-			Map.Entry pair = (Map.Entry)it.next();
+			Map.Entry<Integer, ClientType> pair = (Entry<Integer, ClientType>)it.next();
 			String clientIP = clientIPsIP.get(clientIPsID.indexOf(pair.getKey())).toString();
 			Integer clientPort = (Integer) pair.getKey();
 			ClientType clientType = nonParticipants.get(clientPort);
@@ -1351,10 +1339,16 @@ public class DistUser extends User implements communicationUser, Runnable {
 		List<CharSequence> clientIPsIP = f_replicatedServerData.getIPsIP();
 		
 		int namesIndex = clientIDs.indexOf(new Integer(clientID));
+		if (namesIndex == -1) {
+			return;
+		}
 		clientIDs.remove(namesIndex);
 		clientTypes.remove(namesIndex);
 		
 		int IPsIDIndex = clientIPsID.indexOf(new Integer(clientID));
+		if (IPsIDIndex == -1) {
+			return;
+		}
 		clientIPsID.remove(IPsIDIndex);
 		clientIPsIP.remove(IPsIDIndex);
 		
@@ -1430,6 +1424,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				System.out.println("stopped the controller");
 				DistUser.this.setupID();
 				DistUser.this.startServer();
+				DistUser.this.cleanupElection();
 				DistUser.this.f_controller = null;
 			}
 		}.start();
@@ -1457,7 +1452,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 		if (f_electionBusy == true) {
 			return;
 		}
+		if (f_waitForController != null) {
+			f_waitForController.cancel();
+			f_waitForController = null;
+		}
 		f_replicatedServerData = data;
+		f_WAITPERIOD = 1000 + (250 * f_replicatedServerData.getNamesID().size());
 	}
 	
 	
@@ -1466,6 +1466,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Main function, used for testing
 	 */
 	public static void main(String[] args) {
+		
 		String clientip = System.getProperty("clientip");
 		String serverip = System.getProperty("ip");
 //		DistController controller = new DistController(5000, 10, serverip);

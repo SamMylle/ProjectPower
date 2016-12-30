@@ -69,7 +69,7 @@ public class UserWindow extends javax.swing.JFrame {
 //        f_fridge2.addItem("milk");
         
         jtpPanelSwitch.addTab("General", new GeneralPanel(f_user));
-        jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
+        jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user));
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
         jtpPanelSwitch.addTab("Lights", new LightsPanel(f_user));
         jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));

@@ -295,13 +295,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			
 			return null;
 		}
-		System.out.println("IP: " + ip + ", port: " + ID);
+//		System.out.println("IP: " + ip + ", port: " + ID);
 		try{
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
-			System.out.println("success.");
+//			System.out.println("success.");
 			return client;
 		}catch(Exception e){
-			System.err.println("Error lel...");
+//			System.err.println("Error lel...");
 			return null;
 		}
 	}
@@ -328,6 +328,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	synchronized public void loginSuccessful(int ID) {
+		System.out.println("Login succesfull for client with ID = " + ID);
 		f_notConfirmed.remove(new Integer(ID));
 		this.sendBackupToAll();
 	}
@@ -754,17 +755,22 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	synchronized public void sendBackupToAll(){
 		/// TODO test
 		System.out.print("Backup Start\n");
-		for(Integer currentID : f_names.keySet()){
-			if (f_notConfirmed.contains(new Integer(currentID))){
-				System.out.println("Not sending to " + f_IPs.get(currentID) + " " + currentID);
-				continue;
-			}
-			System.out.println("Sending backup to " + f_IPs.get(currentID) + " " + currentID);
+		for(final Integer currentID : f_names.keySet()){
+			new Thread(this) {
+				public void run() {
+					if (f_notConfirmed.contains(new Integer(currentID))){
+						System.out.println("Not sending to " + f_IPs.get(currentID) + " " + currentID);
+						return;
+					}
+					System.out.println("Sending backup to " + f_IPs.get(currentID) + " " + currentID);
+					
+					ClientType currentType = f_names.get(currentID);
+					String currentIP = f_IPs.get(currentID);
+					
+					DistController.this.sendBackupToSpecific(currentIP, currentID, currentType);					
+				}
+			}.start();
 			
-			ClientType currentType = f_names.get(currentID);
-			String currentIP = f_IPs.get(currentID);
-
-			this.sendBackupToSpecific(currentIP, currentID, currentType);
 		}
 	}
 	
@@ -815,6 +821,35 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		System.out.println(IPsID.toString());
 		
+		/// added this part so that all the clients get notified in a small time window that there is a new controller (well, old one taken back)
+		/// otherwise, some clients got informed very late, which means the downtime of some clients would be very big
+		for (int i = 0; i < IPsID.size(); i++) {
+			final int currentID = IPsID.get(i);
+			if (new Integer(currentID).equals(new Integer(data.getPort()))){
+				continue;
+			}
+			final String currentIP = IPsIP.get(i).toString();
+			ClientType _currentType = null;
+
+			for (int j = 0; j < namesID.size(); j++){
+				if (new Integer(namesID.get(j)).equals(new Integer(currentID))){
+					_currentType = namesClientType.get(j);
+					break;
+				}
+			}
+			final ClientType currentType = _currentType;
+			
+			if (currentIP == null || currentType == null){
+				continue;
+			}
+			
+			new Thread(this) {
+				public void run() {
+					DistController.this.notifyClientIAmServer(currentIP, currentID, currentType);
+				}
+			}.start();
+		}
+		
 		for (int i = 0; i < IPsID.size(); i++){
 			int currentID = IPsID.get(i);
 			if (new Integer(currentID).equals(new Integer(data.getPort()))){
@@ -834,7 +869,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				continue;
 			}
 			
-			this.notifyClientIAmServer(currentIP, currentID, currentType);
+//			this.notifyClientIAmServer(currentIP, currentID, currentType);
 			Transceiver client = this.setupTransceiver(currentID, currentIP);
 			
 			if (client == null){
