@@ -56,12 +56,11 @@ public class TemperatureSensor {
 		List<Double> returnList = new ArrayList<Double>();
 		
 		for (int i = 0; i < f_measures.length; i++) {
-			Double value  = f_measures[(f_measureIndex - 1 - i) % f_measures.length];
+			Double value  = f_measures[(f_measureIndex - 1 - i + f_measures.length) % f_measures.length];
 			if (value != null) {
 				returnList.add(new Double(value));
 			}
 		}
-		
 		return returnList;
 	}
 	
@@ -83,6 +82,7 @@ public class TemperatureSensor {
 		
 		public void run() {
 			sensor.generateTemperature();
+			sensor.getHistory();
 		}
 	}
 	
@@ -98,12 +98,14 @@ public class TemperatureSensor {
 		
 		TemperatureSensor test = new TemperatureSensor(10,15);
 		test.setID(1);
-		
-		for (int i = 0; i < 10; i++) {
-			System.out.println(test);
-			TimeUnit.SECONDS.sleep(1);
+		while (true) {
+			
 		}
-		System.exit(0);
+//		for (int i = 0; i < 10; i++) {
+//			System.out.println(test);
+//			TimeUnit.SECONDS.sleep(1);
+//		}
+//		System.exit(0);
 
 	}
 
