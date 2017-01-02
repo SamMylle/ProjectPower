@@ -165,7 +165,7 @@ public class DistTemperatureSensor
 		while (f_serverReady == false) {
 			try {
 				f_server = new SaslSocketServer(
-						new SpecificResponder(communicationUser.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
+						new SpecificResponder(communicationTempSensor.class, this), new InetSocketAddress(f_ownIP, this.getID()) );
 				f_server.start();
 				f_serverReady = true;
 			}
