@@ -103,14 +103,22 @@ public class DistUser extends User implements communicationUser, Runnable {
 	/**
 	 * Asks the controller for an initial ID.
 	 */
-	private void setupID() {
+	synchronized private void setupID() {
 		try {
 			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			this.setID(proxy.LogOn(User.type, f_ownIP));
 			transceiver.close();
+		} catch (Exception e) {	
+//			System.out.println("Exceptiopnsssss");
+//			e.printStackTrace();
+			System.out.println("exceptionsss.");
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e1) {
+			}
+			this.setupID();
 		}
-		catch (IOException e) {	}
 	}
 	
 	/**
@@ -866,9 +874,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Sets new connection data for the controller.
 	 */
 	@Override
-	public Void newServer(CharSequence newServerIP, int newServerID) {
-		System.out.println("got the new server connection (well old one technically");
+	synchronized public Void newServer(CharSequence newServerIP, int newServerID) {
+		System.out.println("got the new server connection (well old one technically)");
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
+		System.out.println("New ip: " + newServerIP.toString() + ", Port: " + newServerID);
 		if (f_waitForController != null) {
 			f_waitForController.cancel();
 			f_waitForController = null;
@@ -1199,6 +1208,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return The ConnectionTypeData of the next client in the ring (that is accessible).
 	 */
 	private ConnectionTypeData getNextCandidateConnection(boolean checkNewController) {
+		System.out.println(f_replicatedServerData.toString());
+		
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
 		List<Integer> participantIDs = new Vector<Integer>();
 		
