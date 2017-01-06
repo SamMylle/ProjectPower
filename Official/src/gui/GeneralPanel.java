@@ -129,7 +129,6 @@ public class GeneralPanel extends javax.swing.JPanel implements PanelInterface {
     }//GEN-LAST:event_btnEnterMouseClicked
 
     private void btnLeaveMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnLeaveMouseClicked
-        // TODO add your handling code here:
         try {
 			f_user.leaveHouse();
 		} catch (TakeoverException e) {
@@ -178,7 +177,6 @@ public class GeneralPanel extends javax.swing.JPanel implements PanelInterface {
         public UpdateNotifications() {}
         
         public void run() {
-            // TODO resolve potential concurrency issues here
             List<String> notifications = f_user.getNotifications();
             if (notifications.isEmpty() == false) {
                 for (String notification : notifications) {

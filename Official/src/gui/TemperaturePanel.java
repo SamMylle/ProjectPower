@@ -128,7 +128,6 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGetCurrentTempMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGetCurrentTempMouseClicked
-        // TODO add your handling code here:
         this.update();
     }//GEN-LAST:event_btnGetCurrentTempMouseClicked
 
@@ -141,7 +140,6 @@ public class TemperaturePanel extends javax.swing.JPanel implements PanelInterfa
             return;
         }
         
-        // lblCurrentTemp.setText(String.valueOf(currentTemp));
         lblCurrentTemp.setText(new DecimalFormat(".##").format(currentTemp));
     }
     

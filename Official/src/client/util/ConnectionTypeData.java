@@ -1,7 +1,6 @@
 package client.util;
 
 import avro.ProjectPower.ClientType;
-import avro.ProjectPower.CommData;
 
 public class ConnectionTypeData extends ConnectionData {
 

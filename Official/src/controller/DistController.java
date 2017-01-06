@@ -295,13 +295,13 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			
 			return null;
 		}
-		System.out.println("IP: " + ip + ", port: " + ID);
+//		System.out.println("IP: " + ip + ", port: " + ID);
 		try{
 			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
-			System.out.println("success.");
+//			System.out.println("success.");
 			return client;
 		}catch(Exception e){
-			System.err.println("Error lel...");
+//			System.err.println("Error lel...");
 			return null;
 		}
 	}
@@ -321,6 +321,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		this.removeID(oldID);
 		f_notConfirmed.remove(new Integer(oldID));
 		int newID = this.giveNextID(clientType);
+		f_IPs.put(newID, f_IPs.get(new Integer(oldID)));
+		f_IPs.remove(new Integer(oldID));
 		f_notConfirmed.add(new Integer(newID));
 		
 		return newID;
@@ -328,6 +330,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	synchronized public void loginSuccessful(int ID) {
+		System.out.println("Login succesfull for client with ID = " + ID);
 		f_notConfirmed.remove(new Integer(ID));
 		this.sendBackupToAll();
 	}
@@ -357,7 +360,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	synchronized public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
 		this.addTemperature(temperature, ID);
-		this.sendBackupToAll();
+//		this.sendBackupToAll();
 		return null;
 	}
 
@@ -747,24 +750,29 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		data.setTemperaturesIDs(temperatureIDs);
 		data.setTemperatures(temperatures);
-		
+		System.out.println(data.toString());
 		return data;
 	}
 	
 	synchronized public void sendBackupToAll(){
 		/// TODO test
 		System.out.print("Backup Start\n");
-		for(Integer currentID : f_names.keySet()){
-			if (f_notConfirmed.contains(new Integer(currentID))){
-				System.out.println("Not sending to " + f_IPs.get(currentID) + " " + currentID);
-				continue;
-			}
-			System.out.println("Sending backup to " + f_IPs.get(currentID) + " " + currentID);
+		for(final Integer currentID : f_names.keySet()){
+			new Thread(this) {
+				public void run() {
+					if (f_notConfirmed.contains(new Integer(currentID))){
+						System.out.println("Not sending to " + f_IPs.get(currentID) + " " + currentID);
+						return;
+					}
+					System.out.println("Sending backup to " + f_IPs.get(currentID) + " " + currentID);
+					
+					ClientType currentType = f_names.get(currentID);
+					String currentIP = f_IPs.get(currentID);
+					
+					DistController.this.sendBackupToSpecific(currentIP, currentID, currentType);					
+				}
+			}.start();
 			
-			ClientType currentType = f_names.get(currentID);
-			String currentIP = f_IPs.get(currentID);
-
-			this.sendBackupToSpecific(currentIP, currentID, currentType);
 		}
 	}
 	
@@ -815,69 +823,141 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		System.out.println(IPsID.toString());
 		
-		for (int i = 0; i < IPsID.size(); i++){
-			int currentID = IPsID.get(i);
+		/// added this part so that all the clients get notified in a small time window that there is a new controller (well, old one taken back)
+		/// otherwise, some clients got informed very late, which means the downtime of some clients would be very big
+		for (int i = 0; i < IPsID.size(); i++) {
+			final int currentID = IPsID.get(i);
 			if (new Integer(currentID).equals(new Integer(data.getPort()))){
 				continue;
 			}
-			String currentIP = IPsIP.get(i).toString();
-			ClientType currentType = null;
+			final String currentIP = IPsIP.get(i).toString();
+			ClientType _currentType = null;
 
 			for (int j = 0; j < namesID.size(); j++){
 				if (new Integer(namesID.get(j)).equals(new Integer(currentID))){
-					currentType = namesClientType.get(j);
+					_currentType = namesClientType.get(j);
 					break;
 				}
 			}
+			final ClientType currentType = _currentType;
 			
 			if (currentIP == null || currentType == null){
 				continue;
 			}
 			
-			this.notifyClientIAmServer(currentIP, currentID, currentType);
-			Transceiver client = this.setupTransceiver(currentID, currentIP);
-			
-			if (client == null){
-				continue;
-			}
+			new Thread(this) {
+				public void run() {
+					DistController.this.notifyClientIAmServer(currentIP, currentID, currentType);
+					
+					Transceiver client = DistController.this.setupTransceiver(currentID, currentIP);
+					
+					if (client == null){
+						return;
+					}
 
-			
-			if (currentType == ClientType.SmartFridge){
-				communicationFridge.Callback proxy;
-				try {
-					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
-					proxy.reLogin();
-				} catch (Exception e) {}
-			}
+					
+					if (currentType == ClientType.SmartFridge){
+						communicationFridge.Callback proxy;
+						try {
+							proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+							proxy.reLogin();
+						} catch (Exception e) {}
+					}
 
-			
-			if (currentType == ClientType.Light){
-				LightComm.Callback proxy;
-				try {
-					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
-					proxy.reLogin();
-				} catch (Exception e) {}
-			}
-			
-			if (currentType == ClientType.User){
-				communicationUser.Callback proxy;
-				try {
-					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-					System.out.println("data recovered - ID = " + currentID);
-					proxy.reLogin();					
-					System.out.println("data recovered2");
+					
+					if (currentType == ClientType.Light){
+						LightComm.Callback proxy;
+						try {
+							proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+							proxy.reLogin();
+						} catch (Exception e) {}
+					}
+					
+					if (currentType == ClientType.User){
+						communicationUser.Callback proxy;
+						try {
+							proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+							System.out.println("data recovered - ID = " + currentID);
+							proxy.reLogin();					
+							System.out.println("data recovered2");
 
-				} catch (Exception e) {}
-			}
-			
-			if (currentType == ClientType.TemperatureSensor){
-				communicationTempSensor.Callback proxy;
-				try {
-					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
-					proxy.reLogin();
-				} catch (Exception e) {}
-			}
+						} catch (Exception e) {}
+					}
+					
+					if (currentType == ClientType.TemperatureSensor){
+						communicationTempSensor.Callback proxy;
+						try {
+							proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+							proxy.reLogin();
+						} catch (Exception e) {}
+					}
+				}
+			}.start();
 		}
+		
+//		for (int i = 0; i < IPsID.size(); i++){
+//			int currentID = IPsID.get(i);
+//			if (new Integer(currentID).equals(new Integer(data.getPort()))){
+//				continue;
+//			}
+//			String currentIP = IPsIP.get(i).toString();
+//			ClientType currentType = null;
+//
+//			for (int j = 0; j < namesID.size(); j++){
+//				if (new Integer(namesID.get(j)).equals(new Integer(currentID))){
+//					currentType = namesClientType.get(j);
+//					break;
+//				}
+//			}
+//			
+//			if (currentIP == null || currentType == null){
+//				continue;
+//			}
+//			
+//			this.notifyClientIAmServer(currentIP, currentID, currentType);
+//			Transceiver client = this.setupTransceiver(currentID, currentIP);
+//			
+//			if (client == null){
+//				continue;
+//			}
+//
+//			
+//			if (currentType == ClientType.SmartFridge){
+//				communicationFridge.Callback proxy;
+//				try {
+//					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
+//					proxy.reLogin();
+//				} catch (Exception e) {}
+//			}
+//
+//			
+//			if (currentType == ClientType.Light){
+//				LightComm.Callback proxy;
+//				try {
+//					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
+//					proxy.reLogin();
+//				} catch (Exception e) {}
+//			}
+//			
+//			if (currentType == ClientType.User){
+//				communicationUser.Callback proxy;
+//				try {
+//					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
+//					System.out.println("data recovered - ID = " + currentID);
+//					proxy.reLogin();					
+//					System.out.println("data recovered2");
+//
+//				} catch (Exception e) {}
+//			}
+//			
+//			if (currentType == ClientType.TemperatureSensor){
+//				communicationTempSensor.Callback proxy;
+//				try {
+//					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+//					proxy.reLogin();
+//				} catch (Exception e) {}
+//			}
+//		}
 		
 		return true;
 	}

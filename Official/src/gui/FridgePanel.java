@@ -232,7 +232,6 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
     @Override
     public void update() {
         try {
-            // TODO add method here for updating when this panel is being focused
             this.updateFridges();
             if (f_fridges.isEmpty() == false) {
                 this.updateTableFridgeInventory(0);

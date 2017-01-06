@@ -1,16 +1,8 @@
 package client;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
-import org.apache.avro.ipc.SaslSocketTransceiver;
-import org.apache.avro.ipc.Transceiver;
-import org.apache.avro.ipc.specific.SpecificRequestor;
-
 import avro.ProjectPower.*;
 import util.Logger;
 
-//enum UserStatus {present, absent};
 
 public class User {
 	private int f_ID;

@@ -1,6 +1,5 @@
 package client.util;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import avro.ProjectPower.CommData;

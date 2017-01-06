@@ -28,25 +28,17 @@ import org.apache.avro.AvroRemoteException;
  *
  * @author federico
  */
-public class WindowUser extends javax.swing.JFrame {
+public class UserWindow extends javax.swing.JFrame {
 
     private DistUser f_user;
-//    private DistController f_controller; /// TODO remove this, here for debugging
-//    private DistTemperatureSensor f_sensor; /// TODO remove this, here for debugging
-//    private DistSmartFridge f_fridge1; /// TODO remove this, here for debugging
-//    private DistSmartFridge f_fridge2; /// TODO remove this, here for debugging
-//    private DistLight f_light1; /// TODO remove this, here for debugging
-//    private List<DistLight> f_lights;
     
     /**
      * Creates new form MainWindow
      */
-    public WindowUser() {
+    public UserWindow(String ownIP, String serverIP, int controllerPort) {
         initComponents();
-        String localIP = "192.168.1.5";
-//        f_controller = new DistController(5000, 10, localIP);
         try {
-            f_user = new DistUser("", localIP, localIP, 5000);
+            f_user = new DistUser("", ownIP, serverIP, controllerPort);
         } catch (IOControllerException e) {
             JOptionPane.showMessageDialog(this,
                 "Could not connect to the controller on startup... aborting.",
@@ -54,22 +46,9 @@ public class WindowUser extends javax.swing.JFrame {
                 JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
-//        f_sensor = new DistTemperatureSensor(20, 20, localIP, localIP, 5000);
-//        f_fridge1 = new DistSmartFridge(localIP, localIP, 5000);
-//        f_fridge2 = new DistSmartFridge(localIP, localIP, 5000);
-//        
-//        f_lights = new Vector<DistLight>();
-//        for (int i = 0; i < 100; i++) {
-//            f_lights.add(new DistLight(localIP, localIP));
-//            f_lights.get(i).connectToServer(5000, localIP);
-//        }
-//        
-//        f_fridge1.addItem("butter");
-//        f_fridge2.addItem("cheese");
-//        f_fridge2.addItem("milk");
         
         jtpPanelSwitch.addTab("General", new GeneralPanel(f_user));
-        jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user) );
+        jtpPanelSwitch.addTab("Clients", new ClientsPanel(f_user));
         jtpPanelSwitch.addTab("Temperature", new TemperaturePanel(f_user));
         jtpPanelSwitch.addTab("Lights", new LightsPanel(f_user));
         jtpPanelSwitch.addTab("Fridge", new FridgePanel(f_user));
@@ -150,13 +129,13 @@ public class WindowUser extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(WindowUser.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(UserWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(WindowUser.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(UserWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(WindowUser.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(UserWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(WindowUser.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(UserWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
         //</editor-fold>
@@ -164,9 +143,26 @@ public class WindowUser extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
+        
+		String _clientIP = "";
+		String _serverIP = "";
+		int _controllerPort = 0;
+		try {
+			_clientIP = System.getProperty("clientip");
+			_serverIP = System.getProperty("ip");
+			_controllerPort = Integer.parseInt(System.getProperty("controllerport"));			
+		} catch (Exception e) {
+			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"clientip\", \"controllerport\")");
+			System.exit(1);
+		}
+		
+		final String clientIP = _clientIP;
+		final String serverIP = _serverIP;
+		final int controllerPort = _controllerPort;
+        
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new WindowUser().setVisible(true);
+                new UserWindow(clientIP, serverIP, controllerPort).setVisible(true);
             }
         });
     }

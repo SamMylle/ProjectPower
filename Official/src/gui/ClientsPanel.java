@@ -33,7 +33,6 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
     public ClientsPanel(DistUser user) {
         
         initComponents();
-        
         f_user = user;
     }
 
@@ -94,8 +93,12 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
             model.addColumn("Client type");
             
             for (Client client : clients) {
-                model.addRow(new Object[]{(new Integer(client.ID)).toString(), (client.clientType).toString()});
-                // System.out.println("trying to add a row with a client");
+            	
+            	if (client.getID().equals(new Integer(f_user.getID()))) {
+            		model.addRow(new Object[]{(new Integer(client.getID())).toString() + " (yourself)", (client.getClientType()).toString()});
+            		continue;
+            	}
+                model.addRow(new Object[]{(new Integer(client.getID())).toString(), (client.getClientType()).toString()});
             }
             this.tblClients.setModel(model);
             
@@ -116,7 +119,6 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
     
     @Override
     public void update() {
-        // TODO add method here for updating when this panel is being focused
         this.updateClients();
     }
     
