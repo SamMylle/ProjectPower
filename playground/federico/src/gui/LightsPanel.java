@@ -111,7 +111,6 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
 
     private void lstLightsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lstLightsMouseClicked
         if (evt.getClickCount() == 2) {
-            // get dialog to update the light
             int lstIndex = lstLights.getSelectedIndex();
             int newState = Integer.parseInt( (String) JOptionPane.showInputDialog(this, 
                 "New light state: ", "Set light state", 
@@ -228,7 +227,6 @@ public class LightsPanel extends javax.swing.JPanel implements PanelInterface {
 
         @Override
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            // Assumes the stuff in the list has a pretty toString
             setText(value.toString());
 
             // based on the index you set the color.  This produces the every other effect.

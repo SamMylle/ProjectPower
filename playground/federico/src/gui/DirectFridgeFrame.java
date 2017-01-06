@@ -143,7 +143,6 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_formWindowClosing
 
     private void tblFridgeInventoryKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tblFridgeInventoryKeyPressed
-        // TODO add your handling code here:
         if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
             this.deleteSelectedItem();
         }
@@ -184,7 +183,6 @@ public class DirectFridgeFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnAddMouseClicked
 
     private void btnCloseMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCloseMouseClicked
-        // TODO add your handling code here:
         this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }//GEN-LAST:event_btnCloseMouseClicked
 

@@ -33,7 +33,6 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
     public ClientsPanel(DistUser user) {
         
         initComponents();
-        
         f_user = user;
     }
 
@@ -120,7 +119,6 @@ public class ClientsPanel extends javax.swing.JPanel implements PanelInterface {
     
     @Override
     public void update() {
-        // TODO add method here for updating when this panel is being focused
         this.updateClients();
     }
     

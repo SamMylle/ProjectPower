@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -91,6 +92,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_requestedUnion = false;
 		
 		f_WAITPERIOD = 1500;
+		
+		/// workaround for loop in setupID
+		try (Socket s = new Socket(controllerIP, controllerPort)) {
+		} catch(IOException e) {
+			throw new IOControllerException();
+		}
 		
 		this.setupID();
 		if (this.getID() == -1) {
