@@ -6,6 +6,7 @@ package client;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,6 +42,12 @@ public class DistTemperatureSensor
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
 		f_serverReady = false;
 		f_ownIP = ownIP;
+		
+		try (Socket s = new Socket(controllerIP, controllerPort)) {
+		} catch(IOException e) {
+			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
+			System.exit(1);
+		}
 		this.setupID();
 		this.startServer();
 		
@@ -56,8 +63,10 @@ public class DistTemperatureSensor
 			transceiver.close();
 		}
 		catch (Exception e) {
-			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
-			System.exit(1);
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e1) {}
+			this.setupID();
 		}
 	}
 	

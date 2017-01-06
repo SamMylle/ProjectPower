@@ -1,9 +1,9 @@
 package client;
 
 import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -40,8 +40,6 @@ import util.ServerDataUnion;
 
 
 
-// TODO add fault tolerence between user and fridge directly, notification to controller if user dies
-// TODO refactor or remove field f_safeToClose
 public class DistSmartFridge extends SmartFridge {
 
 	private String f_ownIP;									// The IP address of the client itself
@@ -52,7 +50,7 @@ public class DistSmartFridge extends SmartFridge {
 	
 	private boolean f_controllerServerReady;				// Boolean used to determine if the server for the controller has finished setting up.
 	private boolean f_userServerReady;						// Boolean used to determine if the server for the user has finished setting up.
-	private boolean f_safeToClose;							// TODO test
+	private boolean f_safeToCloseUserServer;				// Boolean used to check if it is safe to close the user server
 	
 	private Server f_fridgeControllerServer;				// The server for the SmartFridge itself
 	private Thread f_fridgeControllerThread;				// The thread used to run the server and handle the requests it gets.
@@ -98,7 +96,7 @@ public class DistSmartFridge extends SmartFridge {
 		
 		f_controllerServerReady = false;
 		f_userServerReady = false;
-		f_safeToClose = true;
+		f_safeToCloseUserServer = true;
 		
 		f_fridgeControllerServer = null;
 		f_fridgeControllerThread = null;
@@ -111,6 +109,13 @@ public class DistSmartFridge extends SmartFridge {
 		f_isParticipantElection = false;
 		f_electionBusy = false;
 		f_WAITPERIOD = 1500;
+		
+		/// workaround for loop in setupID
+		try (Socket s = new Socket(controllerIP, controllerPort)) {
+		} catch(IOException e) {
+			System.err.println("Error connecting to the controler at startup... aborting.");
+			System.exit(1);
+		}
 		
 		this.setupID();
 		this.startControllerServer();
@@ -129,8 +134,11 @@ public class DistSmartFridge extends SmartFridge {
 			transceiver.close();
 		}
 		catch (IOException e) {
-			System.err.println("Error connecting to the controller server, the port number might be wrong.");
-			System.exit(1);
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e1) {
+			}
+			this.setupID();
 		}
 	}
 	
@@ -287,7 +295,7 @@ public class DistSmartFridge extends SmartFridge {
 		
 		@Override
 		public void run() {
-			/// repeat untill the server can bind to a valid port
+			/// repeat until the server can bind to a valid port
 			while (f_controllerServerReady == false) {
 				try {
 					f_fridgeControllerServer = new SaslSocketServer(
@@ -335,7 +343,6 @@ public class DistSmartFridge extends SmartFridge {
 
 		@Override
 		public int requestFridgeCommunication(int userServerPort) throws AvroRemoteException {
-			// TODO trouble with concurrency might occur here, not sure how to fix though, send user address via this method instead of separate one
 			if (DistSmartFridge.this.userConnected() == true) {
 				return -1;
 			}
@@ -373,7 +380,6 @@ public class DistSmartFridge extends SmartFridge {
 		
 		@Override
 		public void unifyServerData(ServerData serverData) {
-			System.out.println("unifying the server data");
 			if (ServerDataUnion.narrowEquals(f_replicatedServerData, serverData) == true && f_requestedUnion == true) {
 				DistSmartFridge.this.startElection();
 				return;
@@ -420,8 +426,6 @@ public class DistSmartFridge extends SmartFridge {
 		synchronized public void newServerElected(final CharSequence newServerIP, final int newServerID) {
 			new Thread() {
 				public void run() {
-					System.out.println("newServerElected:\tnewIP = " + newServerIP + ", newID = " + newServerID);
-					
 					f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 					f_isParticipantElection = false;
 					ConnectionTypeData nextCandidate = DistSmartFridge.this.getNextCandidateConnection(true);
@@ -444,9 +448,7 @@ public class DistSmartFridge extends SmartFridge {
 						transceiver.close();
 						
 					} catch (Exception e) {
-						DistSmartFridge.this.cleanupElection();
 					} finally {
-						System.out.println("cleaning up the election");
 						DistSmartFridge.this.cleanupElection();
 					}
 				}
@@ -472,7 +474,6 @@ public class DistSmartFridge extends SmartFridge {
 						f_waitForController.cancel();
 						f_waitForController = null;
 					}
-					System.out.println("electNewController:\tindex = "  + index + ", ID = " + clientID + ", own ID = " + DistSmartFridge.this.getID());
 					f_electionID = DistSmartFridge.this.getElectionIndex();
 					f_electionBusy = true;
 					
@@ -627,15 +628,17 @@ public class DistSmartFridge extends SmartFridge {
 				} catch (BindException e) {
 					f_userServerConnection.setPort(f_userServerConnection.getPort()-1);
 				} catch (IOException e) {
-					// TODO handle more appropriately
-					System.err.println("IOException at run() in UserServer(DistSmartFridge).");
 				}
 			}
 			
 			try {
 				f_fridgeUserServer.join();
-			} catch (InterruptedException e) {
-				while (f_safeToClose == false) {
+			} catch (NullPointerException e) {
+				f_fridgeUserServer = null;
+				f_userServerReady = false;
+				f_safeToCloseUserServer = false;
+			} catch (Exception e) {
+				while (f_safeToCloseUserServer == false) {
 					try {
 						Thread.sleep(50);
 					} catch (InterruptedException e1) { }
@@ -646,7 +649,7 @@ public class DistSmartFridge extends SmartFridge {
 				f_fridgeUserServer.close();
 				f_fridgeUserServer = null;
 				f_userServerReady = false;
-				f_safeToClose = false;
+				f_safeToCloseUserServer = false;
 			}
 		}
 		
@@ -696,17 +699,14 @@ public class DistSmartFridge extends SmartFridge {
 		@Override
 		public Void registerUserIP(CharSequence userIP, int userPort) throws AvroRemoteException {
 			f_userConnection = new ConnectionData(userIP.toString(), userPort);
-			f_safeToClose = true;
+			f_safeToCloseUserServer = true;
 			return null;
 		}
 	}
 	
+
+
 	
-	
-	/// |===================================|
-	/// |	Replication & Fault Tolerance	|
-	/// |		Enter at your own risk		|
-	/// |===================================|
 	
 	private class controllerPollTimer extends TimerTask {
 		public controllerPollTimer() {}
@@ -714,7 +714,6 @@ public class DistSmartFridge extends SmartFridge {
 		@Override
 		public void run() {
 			if (f_electionBusy == false && f_controllerServerReady == true) {
-				System.out.println("Starting the election as a result of the timer...");
 				DistSmartFridge.this.setupElection();
 			}
 			this.cancel();
@@ -752,8 +751,7 @@ public class DistSmartFridge extends SmartFridge {
 					if (nextCandidate.getType() == ClientType.SmartFridge) {
 						communicationFridge proxy = (communicationFridge) 
 								SpecificRequestor.getClient(communicationFridge.class, transceiver);
-						// TODO uncomment when implemented
-						//proxy.unifyServerData(f_replicatedServerData);
+						proxy.unifyServerData(f_replicatedServerData);
 					} else if (nextCandidate.getType() == ClientType.User) {
 						communicationUser proxy = (communicationUser) 
 								SpecificRequestor.getClient(communicationUser.class, transceiver);
@@ -763,7 +761,6 @@ public class DistSmartFridge extends SmartFridge {
 				} catch (IOException e) {
 					// do nothing, just try again
 				} catch (NullPointerException e) {
-					System.out.println("wonElection1");
 					DistSmartFridge.this.wonElection(false);
 				} catch (Exception e) {
 					DistSmartFridge.this.cleanupElection();
@@ -829,7 +826,7 @@ public class DistSmartFridge extends SmartFridge {
 	
 	/**
 	 * Gets the ConnectionTypeData of the next client in the ring (IP, Port, Type).
-	 * @param checkNewController TODO
+	 * @param checkNewController If true: checks if next client is the new controller, sets type to null if this is the case
 	 * @return The ConnectionTypeData of the next client in the ring (that is accessible).
 	 */
 	private ConnectionTypeData getNextCandidateConnection(boolean checkNewController) {
@@ -889,7 +886,6 @@ public class DistSmartFridge extends SmartFridge {
 	 * Notifies the next participant in the ring that this client has been elected.
 	 */
 	private void sendSelfElectedNextCandidate() {
-		System.out.println("send next candidate i'm server");
 		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection(false);
 		if (nextCandidate == null) {
 			return;
@@ -909,15 +905,9 @@ public class DistSmartFridge extends SmartFridge {
 						proxy.newServerElected(f_ownIP, DistSmartFridge.this.getID());
 					}
 					transceiver.close();
-				} catch (IOException e) {
-					return;
-				} catch (UndeclaredThrowableException e) {
-					
 				} catch (Exception e) {
-					System.out.println("got here222... " + e.getClass().toString());
-					e.printStackTrace();
+					return;
 				}
-				// If you get an UndeclaredThrowableException, it is probably here, catch with base class Exception
 			}
 		}.start();
 	}
@@ -961,7 +951,7 @@ public class DistSmartFridge extends SmartFridge {
 				}
 				transceiver.close();
 			} catch (IOException e) {
-				// skip the client if it cannot be reached
+				// skip the client if it cannot be reached, gets handled in controller later on
 			} 
 		}
 	}
@@ -992,7 +982,6 @@ public class DistSmartFridge extends SmartFridge {
 		f_replicatedServerData.setIPsID(clientIPsID);
 		f_replicatedServerData.setIPsIP(clientIPsIP);
 		
-		/// little hack - i'm sorry
 		if (f_electionID == 0) {
 			f_electionID = clientIDs.size() - 1;
 		} else {
@@ -1007,7 +996,6 @@ public class DistSmartFridge extends SmartFridge {
 	 * @param sendNext True = notify next participant that you are elected
 	 */
 	private void wonElection(boolean sendNext) {
-		System.out.println("won the election...");
 		if (f_waitForController != null) {
 			f_waitForController.cancel();
 			f_waitForController = null;
@@ -1077,20 +1065,26 @@ public class DistSmartFridge extends SmartFridge {
 	
 	
 	public static void main(String[] args) {
-		String serverIP = System.getProperty("ip");
-		String clientIP = System.getProperty("clientip");
+		String clientIP = "";
+		String serverIP = "";
+		int controllerPort = 0;
+		try {
+			clientIP = System.getProperty("clientip");
+			serverIP = System.getProperty("ip");
+			controllerPort = Integer.parseInt(System.getProperty("controllerport"));			
+		} catch (Exception e) {
+			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"clientip\", \"controllerport\")");
+			System.exit(1);
+		}
 		
-//		DistController controller = new DistController(6789, 10, serverIP);
-		
-		DistSmartFridge remoteFridge = new DistSmartFridge(clientIP, serverIP, 5000);
+		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
 
 		try {
 			System.in.read();
 		} catch (IOException e) {
-
 		}
 
-		remoteFridge.disconnect();
+		fridge.disconnect();
 		System.exit(0);
 	}
 

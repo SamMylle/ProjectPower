@@ -1,7 +1,6 @@
 package client;
 
 import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -889,13 +888,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 
 	
 	
-	
-	
-	
-	/// |===================================|
-	/// |	Replication & Fault Tolerance	|
-	/// |		Enter at your own risk		|
-	/// |===================================|
 	
 	
 	private void startPollTimer(int interval) {
