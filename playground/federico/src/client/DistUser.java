@@ -23,7 +23,6 @@ import org.apache.avro.ipc.Transceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 
-import util.Logger;
 import util.ServerDataUnion;
 import controller.DistController;
 
@@ -34,9 +33,6 @@ import client.util.ConnectionTypeData;
 import client.util.LightState;
 
 
-// TODO add fault tolerance between user and fridge directly
-// TODO make a difference between a fridge server being taken over or just disconnecting
-// TODO add exception to notify the user that the election has started
 public class DistUser extends User implements communicationUser, Runnable {
 	
 	private String f_ownIP;	
@@ -117,9 +113,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			this.setID(proxy.LogOn(User.type, f_ownIP));
 			transceiver.close();
 		} catch (Exception e) {	
-//			System.out.println("Exceptiopnsssss");
-//			e.printStackTrace();
-			System.out.println("exceptionsss.");
 			try {
 				Thread.sleep(200);
 			} catch (InterruptedException e1) {
@@ -220,7 +213,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.loginSuccessful(this.getID());
 			transceiver.close();
-			System.out.println("Notified the controller succesfull login.");
 		}
 		catch (IOException e) {
 			synchronized(this) {
@@ -280,13 +272,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void reLogin() {
-		System.out.println("1 testing");
 		this.stopServer();
-		System.out.println("2 testing");
 		this.setupID();
-		System.out.println("3 testing");
 		this.startServer();
-		System.out.println("4 testing");
 	}
 
 	
@@ -321,7 +309,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 				(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			List<Client> clients = proxy.getAllClients();
 			
-			// TODO check for different options to access fields because the following are deprecated?
 			for (Client client : clients) {
 				if (client.getClientType() == ClientType.Light) {
 					LightState state = new LightState(client.getID(), proxy.getLightState(client.getID()));
@@ -548,15 +535,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			connection = proxy.setupFridgeCommunication(fridgeID);
 			transceiver.close();
-		} catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at communicateWithFridge() in DistUser.");
 		} catch (IOException e) {
 			synchronized(this) {
 				if (f_electionBusy == false && f_waitForController == null) {
 					this.startPollTimer(f_WAITPERIOD);
 				}				
 			}
-			// TODO replace this with exception?
 			return;
 		}
 		
@@ -830,8 +814,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				this.getNewID();
 			}
 			catch (IOException e) {
-				System.err.println("Failed to start DistUser server.");
-				e.printStackTrace(System.err);
+				System.err.println("Failed to start DistUser server. Shutting down the user.");
 				System.exit(1);
 			}
 		}
@@ -882,9 +865,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	synchronized public Void newServer(CharSequence newServerIP, int newServerID) {
-		System.out.println("got the new server connection (well old one technically)");
 		f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
-		System.out.println("New ip: " + newServerIP.toString() + ", Port: " + newServerID);
 		if (f_waitForController != null) {
 			f_waitForController.cancel();
 			f_waitForController = null;
@@ -957,7 +938,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 				} catch (IOException e) {
 					// do nothing, just try again
 				} catch (NullPointerException e) {
-					System.out.println("wonElection1");
 					DistUser.this.wonElection(false);
 				} catch (Exception e) {
 					DistUser.this.cleanupElection();
@@ -999,7 +979,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 				} catch (IOException e) {
 					DistUser.this.cleanupElection();
 				} catch (Exception e) {
-					System.out.println("wonElection2");
 					DistUser.this.wonElection(false);
 					return;
 				}
@@ -1011,8 +990,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Starts an election with all the other users/smartfridges.
 	 */
 	private void startElection() {
-		System.out.println("started an election");
-		
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		int count = 0;
 		for (ClientType clientType : clientTypes) {
@@ -1021,14 +998,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 			}
 		}
 		if (count <= 1) {
-			System.out.println("wonElection3");
 			this.wonElection(false);
 			return;
 		}
 		
 		if (this.getNextCandidateConnection(false) == null) {
 			// this means that no other candidate was reachable => start controller in this client
-			System.out.println("wonElection4");
 			this.wonElection(false);
 			return;
 		}
@@ -1069,12 +1044,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	synchronized public void newServerElected(final CharSequence newServerIP, final int newServerID) {
-		
 		new Thread() {
 			
 			public void run() {
-				System.out.println("newServerElected:\tnewIP = " + newServerIP + ", newID = " + newServerID);
-				
 				f_controllerConnection = new ConnectionData(newServerIP.toString(), newServerID);
 				f_isParticipantElection = false;
 				ConnectionTypeData nextCandidate = DistUser.this.getNextCandidateConnection(true);
@@ -1097,9 +1069,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 					transceiver.close();
 					
 				} catch (Exception e) {
-					DistUser.this.cleanupElection();
 				} finally {
-					System.out.println("cleaning up the election");
 					DistUser.this.cleanupElection();
 				}
 			}
@@ -1116,7 +1086,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		@Override
 		public void run() {
 			if (f_electionBusy == false && f_serverReady == true) {
-				System.out.println("Starting the election as a result of the timer...");
 				DistUser.this.setupElection();
 			}
 			this.cancel();
@@ -1141,7 +1110,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 					f_waitForController.cancel();
 					f_waitForController = null;
 				}
-				System.out.println("electNewController:\tindex = "  + index + ", ID = " + clientID + ", own ID = " + DistUser.this.getID());
 				f_electionID = DistUser.this.getElectionIndex();
 				f_electionBusy = true;
 				
@@ -1169,11 +1137,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 						return;
 					} catch (IOException e) {
 					} catch (NullPointerException e) {
-						System.out.println("wonElection7");
 						DistUser.this.wonElection(false);
 						return;
 					} catch (Exception e) {
-						System.out.println("got here1..." + e.getClass().toString());
 					}
 					
 					
@@ -1196,11 +1162,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 							return;
 						} catch (IOException e) {
 						} catch (NullPointerException e) {
-							System.out.println("wonElection8");
 							DistUser.this.wonElection(false);
 							return;
 						} catch (Exception e) {
-							System.out.println("got here2..." + e.getClass().toString());
 						}
 					}
 				}
@@ -1211,12 +1175,10 @@ public class DistUser extends User implements communicationUser, Runnable {
 	
 	/**
 	 * Gets the ConnectionTypeData of the next client in the ring (IP, Port, Type).
-	 * @param checkNewController TODO
+	 * @param checkNewController If true: checks if next client is the new controller, sets type to null if this is the case
 	 * @return The ConnectionTypeData of the next client in the ring (that is accessible).
 	 */
 	private ConnectionTypeData getNextCandidateConnection(boolean checkNewController) {
-		System.out.println(f_replicatedServerData.toString());
-		
 		HashMap<Integer, ClientType> participants = new HashMap<Integer, ClientType>();
 		List<Integer> participantIDs = new Vector<Integer>();
 		
@@ -1273,7 +1235,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * Notifies the next participant in the ring that this client has been elected.
 	 */
 	private void sendSelfElectedNextCandidate() {
-		System.out.println("send next candidate i'm server");
 		final ConnectionTypeData nextCandidate = this.getNextCandidateConnection(false);
 		
 		if (nextCandidate == null) {
@@ -1294,15 +1255,9 @@ public class DistUser extends User implements communicationUser, Runnable {
 						proxy.newServerElected(f_ownIP, DistUser.this.getID());
 					}
 					transceiver.close();
-				} catch (IOException e) {
-					return;
-				} catch (UndeclaredThrowableException e) {
-					
 				} catch (Exception e) {
-					System.out.println("got here222... " + e.getClass().toString());
-					e.printStackTrace();
+					return;
 				}
-				// If you get an UndeclaredThrowableException, it is probably here, catch with base class Exception
 			}
 		}.start();
 	}
@@ -1345,7 +1300,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				}
 				transceiver.close();
 			} catch (IOException e) {
-				// skip the client if it cannot be reached
+				// skip the client if it cannot be reached, gets handled in controller later on
 			} 
 		}
 	}
@@ -1375,7 +1330,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 		f_replicatedServerData.setIPsID(clientIPsID);
 		f_replicatedServerData.setIPsIP(clientIPsIP);
 		
-		/// little hack - i'm sorry
 		if (f_electionID == 0) {
 			f_electionID = clientIDs.size() - 1;
 		} else {
@@ -1389,7 +1343,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @param sendNext True = notify next participant that you are elected
 	 */
 	private void wonElection(boolean sendNext) {
-		System.out.println("won the election...");
 		if (f_waitForController != null) {
 			f_waitForController.cancel();
 			f_waitForController = null;
@@ -1432,14 +1385,12 @@ public class DistUser extends User implements communicationUser, Runnable {
 				DistUser.this.removeFromReplicatedData(DistUser.this.getID());
 				
 				
-				System.out.println("starting a controller");
 				DistUser.this.f_controller = new DistController(DistUser.this.f_replicatedServerData);
 				while (DistUser.this.f_controller.serverIsActive() == true) {
 					try {
 						Thread.sleep(50);
 					} catch (InterruptedException e) { }
 				}
-				System.out.println("stopped the controller");
 				DistUser.this.setupID();
 				DistUser.this.startServer();
 				DistUser.this.cleanupElection();
@@ -1485,57 +1436,31 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	public static void main(String[] args) {
 		
-		String clientip = System.getProperty("clientip");
-		String serverip = System.getProperty("ip");
-//		DistController controller = new DistController(5000, 10, serverip);
-		DistUser remoteUser = null;
+		String clientIP = "";
+		String serverIP = "";
+		int controllerPort = 0;
 		try {
-			remoteUser = new DistUser("Federico Quin", clientip, serverip, 5000);
-			
+			clientIP = System.getProperty("clientip");
+			serverIP = System.getProperty("ip");
+			controllerPort = Integer.parseInt(System.getProperty("controllerport"));			
+		} catch (Exception e) {
+			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"clientip\", \"controllerport\")");
+			System.exit(1);
+		}
+		DistUser user = null;
+		try {
+			user = new DistUser("", clientIP, serverIP, controllerPort);
 		} catch (IOControllerException e) {
-			System.out.println(e.getMessage());
+			System.err.println("Could not reach the controller at startup... aborting.");
+			System.exit(1);
 		}
-
+			
 		try {
 			System.in.read();
 		} catch (IOException e) {}
 		
-		try {
-			remoteUser.leaveHouse();
-		} catch (TakeoverException | ElectionBusyException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		try {
-			System.in.read();
-		} catch (IOException e) {}
-		
-		try {
-			remoteUser.enterHouse();
-		} catch (TakeoverException | ElectionBusyException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		try {
-			System.in.read();
-		} catch (IOException e) {}
-		
-//		while (true) {
-//			System.out.println(remoteUser.f_notifications.toString());
-//			
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {}
-//		}
-//		
-//		try {
-//			System.in.read();
-//		} catch (IOException e) {}
-//		
-//		
-//		System.exit(0);
+		user.disconnect();
+		System.exit(0);
 	}
 
 
