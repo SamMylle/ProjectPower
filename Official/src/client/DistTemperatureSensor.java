@@ -43,16 +43,24 @@ public class DistTemperatureSensor
 		f_serverReady = false;
 		f_ownIP = ownIP;
 		
-		try (Socket s = new Socket(controllerIP, controllerPort)) {
-		} catch(IOException e) {
-			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
-			System.exit(1);
-		}
-		this.setupID();
+		this.setupIDInitial();
 		this.startServer();
 		
 		f_timer = new Timer();
 		f_timer.schedule(new sendTemperatureTask(this), generateInterval, generateInterval);
+	}
+	
+	private void setupIDInitial() {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			this.setID(proxy.LogOn(TemperatureSensor.type, f_ownIP));
+			transceiver.close();
+		}
+		catch (Exception e) {
+			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
+			System.exit(1);
+		}
 	}
 
 	private void setupID() {

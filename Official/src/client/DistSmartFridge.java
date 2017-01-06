@@ -2,6 +2,7 @@ package client;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -110,15 +111,26 @@ public class DistSmartFridge extends SmartFridge {
 		f_electionBusy = false;
 		f_WAITPERIOD = 1500;
 		
-		/// workaround for loop in setupID
-		try (Socket s = new Socket(controllerIP, controllerPort)) {
-		} catch(IOException e) {
+		this.setupIDInitial();
+		this.startControllerServer();
+	}
+	
+	/**
+	 * Summary: gets an ID for the SmartFridge, requesting one from the controller.
+	 */
+	private void setupIDInitial() {
+		try {
+			Transceiver transceiver = 
+					new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = 
+					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			this.setID(proxy.LogOn(SmartFridge.type, f_ownIP));
+			transceiver.close();
+		}
+		catch (IOException e) {
 			System.err.println("Error connecting to the controler at startup... aborting.");
 			System.exit(1);
 		}
-		
-		this.setupID();
-		this.startControllerServer();
 	}
 	
 	/**
