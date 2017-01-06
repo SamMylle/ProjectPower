@@ -37,7 +37,7 @@ public class DistControllerTest {
 		f_ip = (System.getProperty("ip"));
 		f_clientip = (System.getProperty("clientip"));
 		suppress = new SuppressSystemOut();
-		suppress.suppressOutput();
+//		suppress.suppressOutput();
 	}
 
 	@AfterClass

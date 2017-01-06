@@ -88,18 +88,27 @@ public class DistUser extends User implements communicationUser, Runnable {
 		
 		f_WAITPERIOD = 1500;
 		
-		/// workaround for loop in setupID
-		try (Socket s = new Socket(controllerIP, controllerPort)) {
-		} catch(IOException e) {
-			throw new IOControllerException();
-		}
-		
-		this.setupID();
+		this.setupIDInitial();
 		if (this.getID() == -1) {
 			throw new IOControllerException("Could not connect to the controller.");
 		}
 		this.startServer();
 		super._setStatus(UserStatus.present);
+	}
+	
+	
+	/**
+	 * Asks the controller for an initial ID.
+	 */
+	synchronized private void setupIDInitial() throws IOControllerException {
+		try {
+			SaslSocketTransceiver transceiver = new SaslSocketTransceiver(f_controllerConnection.toSocketAddress());
+			ControllerComm proxy = (ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
+			this.setID(proxy.LogOn(User.type, f_ownIP));
+			transceiver.close();
+		} catch (Exception e) {	
+			throw new IOControllerException("Could not connect to the controller.");
+		}
 	}
 	
 	/**
