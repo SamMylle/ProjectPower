@@ -58,7 +58,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	private Set<Integer> f_notConfirmed;
 
 	public DistController(int port, int maxTemperatures, String ip){
-		/// TODO  throws java.net.BindException
 		super(port + 1, maxTemperatures);
 		f_notConfirmed = new HashSet<Integer>();
 		f_isOriginalServer = true;
@@ -87,8 +86,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				e.printStackTrace();
 			}
 		}
-		
-		/// TODO make dynamic schedule time
+
 		f_timer = new Timer();
 		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
@@ -124,7 +122,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public DistController(int port, int originalControllerPort, int maxTemperatures, int currentMaxPort, String ip,
 			String previousControllerIP, Vector<Integer> usedFridgePorts, HashMap<Integer, String> IPs,
 			HashMap<Integer, ClientType> names, Vector<TemperatureRecord> temperatures){
-		/// TODO  throws java.net.BindException
 		super(currentMaxPort, maxTemperatures);
 		f_notConfirmed = new HashSet<Integer>();
 		f_isOriginalServer = false;
@@ -156,7 +153,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 		}
 		
-		/// TODO make dynamic schedule time
 		f_timer = new Timer();
 		f_timer.schedule(new ClientPoll(), 0, 5000);
 	}
@@ -227,11 +223,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				} catch(Exception e){
 				}
 			}
-			/// TODO notify clients i am controller if federico fails
 			
 			this.sendBackupToAll();
-			
-			/// TODO make dynamic schedule time
+			this.usersInside();
 			f_timer = new Timer();
 			f_timer.schedule(new ClientPoll(), 0, 500);    
 	    }
@@ -355,6 +349,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				}
 				
 				client.close();
+				this.usersInside();
+				this.sendBackupToAll();
 			}catch(Exception e){
 				return;
 			}
@@ -378,6 +374,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				break;
 			}
 		}
+		this.usersInside();
 		this.sendBackupToAll();
 
 		return null;
@@ -421,7 +418,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			Transceiver client = this.setupTransceiver(ID, ip);
 
 			if (client == null){
-				/// TODO error string here? => client == null if the current fridge is a controller
 				return new CommData(-1, "");
 			}
 
@@ -478,7 +474,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	
 			if (fridge == null){
 				// If connection can't be established, just say no to the other guy
-				/// TODO return error msg?
 				return new ArrayList<CharSequence>();
 			}
 	
@@ -614,6 +609,9 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		if (removed){
 			this.sendBackupToAll();
+			if (! this.usersInside()){
+				
+			}
 		}
 	}
 	
@@ -622,6 +620,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try{
 			Transceiver client = this.setupTransceiver(port, ip);
 			/// TODO Check if transceiver == null
+			// ^isn't this caught by the exception?
 			
 			if (type == ClientType.SmartFridge){
 				communicationFridge.Callback proxy;
@@ -827,7 +826,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	public boolean recoverData(ServerData data) throws AvroRemoteException {
-		// TODO Recover data, tell everyone to listen to me, request relogin if needed
 		/// TODO test
 		
 		List<java.lang.Integer> IPsID = data.getIPsID();
@@ -932,11 +930,88 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		return this.getTemperatureHistory();
 	}
 	
+	private boolean usersInside(){
+		/// TODO test
+		for (Integer currentID: f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			if (currentIP == "" || currentIP == null || currentType == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.User){
+				Transceiver client = this.setupTransceiver(currentID, currentIP);
+				
+				try {
+					communicationUser.Callback proxy =
+							SpecificRequestor.getClient(communicationUser.Callback.class, client);
+					if (proxy.getStatus() == UserStatus.present){
+						this.wasteLights();
+						return true;
+					}
+					client.close();
+					
+				} catch (Exception e) {
+					continue;
+				}
+			}
+		}
+		this.saveLights();
+		return false;
+	}
+	
+	private void saveLights(){
+		for (Integer currentID: f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			if (currentIP == "" || currentIP == null || currentType == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.Light){
+				Transceiver client = this.setupTransceiver(currentID, currentIP);
+				
+				try {
+					LightComm.Callback proxy =
+							SpecificRequestor.getClient(LightComm.Callback.class, client);
+					proxy.powerSavingMode();
+					client.close();
+				} catch (Exception e) {
+					continue;
+				}
+			}
+		}
+	}
+	
+	private void wasteLights(){
+		for (Integer currentID: f_names.keySet()){
+			ClientType currentType = f_names.get(currentID);
+			String currentIP = f_IPs.get(currentID);
+			
+			if (currentIP == "" || currentIP == null || currentType == null){
+				continue;
+			}
+			
+			if (currentType == ClientType.Light){
+				Transceiver client = this.setupTransceiver(currentID, currentIP);
+				
+				try {
+					LightComm.Callback proxy =
+							SpecificRequestor.getClient(LightComm.Callback.class, client);
+					proxy.powerWastingMode();
+					client.close();
+				} catch (Exception e) {
+					continue;
+				}
+			}
+		}
+	}
+	
 	@Override
 	synchronized public void leftHome(int ID) {
 		/// TODO test
-		/// TODO what if user crashes => check if deleted thing was user =>
-			/// if so check all users if they're in or out
 		if (f_names.get(ID) == null || f_IPs.get(ID) == null || f_IPs.get(ID) == ""){
 			return;
 		}
@@ -1062,7 +1137,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try {
 			System.in.read();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
