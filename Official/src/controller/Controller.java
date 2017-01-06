@@ -18,7 +18,6 @@ public class Controller {
 	
 	public int giveNextID(ClientType type){
 		f_names.put(f_nextID, type);
-		Logger.getLogger().log("Adding " + new Integer(f_nextID).toString() + " with type " + type.toString());
 		int ID = f_nextID;
 		f_nextID++;
 		
@@ -44,7 +43,6 @@ public class Controller {
 			
 			for (int i = 0; i < f_temperatures.size(); i++){
 				if (f_temperatures.elementAt(i).getID() == ID){
-					Logger.getLogger().log(f_temperatures.elementAt(i).toString());
 					f_temperatures.remove(i);
 				}
 			}

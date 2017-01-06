@@ -45,9 +45,6 @@ public class DistLight implements Runnable, LightComm{
 			if (f_light.getID() == -1){
 				this.connectToServer(f_serverPort, f_serverip);
 			}
-			System.out.print("Starting server at ");
-			System.out.print(f_light.getID());
-			System.out.print("\n");
 			f_server = new SaslSocketServer(
 					new SpecificResponder(LightComm.class,
 					this), new InetSocketAddress(f_light.getID()));
@@ -63,9 +60,6 @@ public class DistLight implements Runnable, LightComm{
 			f_server.join();
 		}catch(InterruptedException e){
 			f_server.close();
-			Logger.getLogger().f_active = true;
-			Logger.getLogger().log("Light server stopped");
-			Logger.getLogger().f_active = false;
 		}
 	}
 	
@@ -143,8 +137,7 @@ public class DistLight implements Runnable, LightComm{
 			e.printStackTrace(System.err);
 			System.exit(1);
 		}catch(java.lang.NullPointerException e){
-			Logger.getLogger().f_active = true;
-			Logger.getLogger().log("nullptr");
+			// TODO remove catch
 		}
 	}
 
@@ -165,7 +158,6 @@ public class DistLight implements Runnable, LightComm{
 
 	@Override
 	public boolean aliveAndKicking() throws AvroRemoteException {
-		System.out.println("Asking light if its alive\n");
 		return true;
 	}
 
@@ -191,16 +183,12 @@ public class DistLight implements Runnable, LightComm{
 	
 	@Override
 	public void powerSavingMode() {
-		System.out.println("POWERSAVINGMODE");
 		f_light.powSavingMode();
-		System.out.println("New Status: " + f_light.getState());
 	}
 	
 	@Override
 	public void powerWastingMode() {
-		System.out.println("POWERWASTINGMODE");
 		f_light.recoverFromPowerSavingMode();
-		System.out.println("New Status: " + f_light.getState());
 	}
 	
 	public static void main(String[] args) {

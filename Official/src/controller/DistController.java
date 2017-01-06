@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -83,8 +84,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				Logger.getLogger().f_active = true;
-				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
 			}
 		}
@@ -153,8 +152,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
-				Logger.getLogger().f_active = true;
-				Logger.getLogger().log("Server startup failed");
 				e.printStackTrace();
 			}
 		}
@@ -212,8 +209,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				f_temperatures.add(newRecord);
 				
 			}
-			
-			System.out.println("SET: " + f_names.toString());
 
 			/// Make a thread, the "run" method will execute in a new thread
 			/// The run method must be implemented by a Runnable object (see implements in this class)
@@ -228,11 +223,8 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				try {
 					Thread.sleep(50);
 				} catch (InterruptedException e) {
-					Logger.getLogger().f_active = true;
-					Logger.getLogger().log("Server startup failed");
 					e.printStackTrace();
 				} catch(Exception e){
-					Logger.getLogger().log("Wat\n");
 				}
 			}
 			/// TODO notify clients i am controller if federico fails
@@ -255,7 +247,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// when thread.start() is invoked, this method is ran
 		try{
 			InetAddress addr = InetAddress.getByName(f_ownIP);
-			//System.out.print(addr.toString());
 			InetSocketAddress ad = new InetSocketAddress(addr, f_myPort);
 			f_server = new SaslSocketServer(
 					new SpecificResponder(ControllerComm.class,
@@ -270,7 +261,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		try{
 			f_server.join();
 		}catch(InterruptedException e){
-			System.out.print("Closing server\n");
 			f_timer.cancel();
 			f_server.close();
 			f_server = null;
@@ -295,13 +285,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			
 			return null;
 		}
-//		System.out.println("IP: " + ip + ", port: " + ID);
 		try{
-			Transceiver client = new SaslSocketTransceiver(new InetSocketAddress(InetAddress.getByName(ip), ID));
-//			System.out.println("success.");
+			Transceiver client = new SaslSocketTransceiver(
+					new InetSocketAddress(InetAddress.getByName(ip), ID));
 			return client;
 		}catch(Exception e){
-//			System.err.println("Error lel...");
 			return null;
 		}
 	}
@@ -330,9 +318,47 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	@Override
 	synchronized public void loginSuccessful(int ID) {
-		System.out.println("Login succesfull for client with ID = " + ID);
 		f_notConfirmed.remove(new Integer(ID));
-		this.sendBackupToAll();
+		if (f_names.get(ID) == ClientType.TemperatureSensor){
+			try {
+				String ip = this.getIPAddress(ID);
+
+				if (ip == ""){
+					return;
+				}
+				
+				Transceiver client = this.setupTransceiver(ID, ip);
+
+				if (client == null){
+					return;
+				}
+
+				/// ask the sensor for its temperatures
+				communicationTempSensor.Callback proxy =
+						SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
+				
+				for (int i = 0; i < f_temperatures.size(); i++){
+					if (f_temperatures.elementAt(i).getID() == ID){
+						f_temperatures.remove(i);
+						break;
+					}
+				}
+
+				f_temperatures.addElement(new TemperatureRecord(f_maxTemperatures, ID));
+				List <Double> temperatures = proxy.getTemperatureRecords();
+				
+				ListIterator<Double> iterator = temperatures.listIterator(temperatures.size());
+				
+				while (iterator.hasPrevious()){
+					Double newTemperature = iterator.next();
+					f_temperatures.lastElement().addValue(newTemperature);
+				}
+				
+				client.close();
+			}catch(Exception e){
+				return;
+			}
+		}
 	}
 
 	@Override
@@ -716,9 +742,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			}
 			
 		}catch(Exception e){
-			System.out.println("would explain alot");
 		}
-		//}
 	}
 	
 	synchronized public ServerData makeBackup(){
@@ -750,21 +774,17 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		
 		data.setTemperaturesIDs(temperatureIDs);
 		data.setTemperatures(temperatures);
-		System.out.println(data.toString());
 		return data;
 	}
 	
 	synchronized public void sendBackupToAll(){
 		/// TODO test
-		System.out.print("Backup Start\n");
 		for(final Integer currentID : f_names.keySet()){
 			new Thread(this) {
 				public void run() {
 					if (f_notConfirmed.contains(new Integer(currentID))){
-						System.out.println("Not sending to " + f_IPs.get(currentID) + " " + currentID);
 						return;
 					}
-					System.out.println("Sending backup to " + f_IPs.get(currentID) + " " + currentID);
 					
 					ClientType currentType = f_names.get(currentID);
 					String currentIP = f_IPs.get(currentID);
@@ -795,14 +815,11 @@ public class DistController extends Controller implements ControllerComm, Runnab
 			if (type == ClientType.User){
 				communicationUser.Callback proxy;
 				proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-				System.out.println("Send backup to user on port " + port);
 				proxy.makeBackup(this.makeBackup());
 				client.close();
 				return true;
 			}
-			System.out.println("Did not send backup to " + port);
 		}catch(Exception e){
-			System.out.println("something broke");
 			return false;
 		}
 		return false;
@@ -812,16 +829,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	public boolean recoverData(ServerData data) throws AvroRemoteException {
 		// TODO Recover data, tell everyone to listen to me, request relogin if needed
 		/// TODO test
-		Logger.getLogger().log("Came to the recover part.\nData:\n");
-		Logger.getLogger().log(data.toString());
 		
 		List<java.lang.Integer> IPsID = data.getIPsID();
 		List<java.lang.CharSequence> IPsIP = data.getIPsIP();
 		List<java.lang.Integer> namesID = data.getNamesID();
 		List<avro.ProjectPower.ClientType> namesClientType = data.getNamesClientType();
 		List<java.lang.Integer> temperaturesIDs = data.getTemperaturesIDs();
-		
-		System.out.println(IPsID.toString());
 		
 		/// added this part so that all the clients get notified in a small time window that there is a new controller (well, old one taken back)
 		/// otherwise, some clients got informed very late, which means the downtime of some clients would be very big
@@ -877,9 +890,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 						communicationUser.Callback proxy;
 						try {
 							proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-							System.out.println("data recovered - ID = " + currentID);
-							proxy.reLogin();					
-							System.out.println("data recovered2");
+							proxy.reLogin();
 
 						} catch (Exception e) {}
 					}
@@ -894,70 +905,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				}
 			}.start();
 		}
-		
-//		for (int i = 0; i < IPsID.size(); i++){
-//			int currentID = IPsID.get(i);
-//			if (new Integer(currentID).equals(new Integer(data.getPort()))){
-//				continue;
-//			}
-//			String currentIP = IPsIP.get(i).toString();
-//			ClientType currentType = null;
-//
-//			for (int j = 0; j < namesID.size(); j++){
-//				if (new Integer(namesID.get(j)).equals(new Integer(currentID))){
-//					currentType = namesClientType.get(j);
-//					break;
-//				}
-//			}
-//			
-//			if (currentIP == null || currentType == null){
-//				continue;
-//			}
-//			
-//			this.notifyClientIAmServer(currentIP, currentID, currentType);
-//			Transceiver client = this.setupTransceiver(currentID, currentIP);
-//			
-//			if (client == null){
-//				continue;
-//			}
-//
-//			
-//			if (currentType == ClientType.SmartFridge){
-//				communicationFridge.Callback proxy;
-//				try {
-//					proxy = SpecificRequestor.getClient(communicationFridge.Callback.class, client);
-//					proxy.reLogin();
-//				} catch (Exception e) {}
-//			}
-//
-//			
-//			if (currentType == ClientType.Light){
-//				LightComm.Callback proxy;
-//				try {
-//					proxy = SpecificRequestor.getClient(LightComm.Callback.class, client);
-//					proxy.reLogin();
-//				} catch (Exception e) {}
-//			}
-//			
-//			if (currentType == ClientType.User){
-//				communicationUser.Callback proxy;
-//				try {
-//					proxy = SpecificRequestor.getClient(communicationUser.Callback.class, client);
-//					System.out.println("data recovered - ID = " + currentID);
-//					proxy.reLogin();					
-//					System.out.println("data recovered2");
-//
-//				} catch (Exception e) {}
-//			}
-//			
-//			if (currentType == ClientType.TemperatureSensor){
-//				communicationTempSensor.Callback proxy;
-//				try {
-//					proxy = SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
-//					proxy.reLogin();
-//				} catch (Exception e) {}
-//			}
-//		}
 		
 		return true;
 	}
@@ -990,7 +937,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		/// TODO test
 		/// TODO what if user crashes => check if deleted thing was user =>
 			/// if so check all users if they're in or out
-		System.out.println("USR LEFT MSG");
 		if (f_names.get(ID) == null || f_IPs.get(ID) == null || f_IPs.get(ID) == ""){
 			return;
 		}

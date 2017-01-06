@@ -115,10 +115,7 @@ public class DistControllerTest {
 			data.previousControllerIP = previousControllerIP;
 			data.usedFridgePorts = usedFridgePorts;
 			data.IPsID = new LinkedList<Integer>(IPs.keySet());
-			System.out.print(data.IPsID.toString() + "id \n");
 			data.IPsIP = new LinkedList<CharSequence>(IPs.values());
-			System.out.print(data.IPsIP.toString() + "ip \n");
-			System.out.print(IPs.toString() + "\n");
 			data.namesClientType = new LinkedList<ClientType>(names.values());
 			data.namesID = new LinkedList<Integer>(names.keySet());
 			
@@ -141,12 +138,9 @@ public class DistControllerTest {
 			OtherController.f_timer.cancel();
 			try {
 				/// TODO manually test in an environment that doesn't have the same IP
-				System.out.print("Adding to other\n");
 				OtherController.LogOn(ClientType.SmartFridge, f_ip);
 				OtherController.LogOn(ClientType.Light, f_ip);
 				OtherController.LogOn(ClientType.TemperatureSensor, f_ip);
-				System.out.println(OtherController.f_names);
-				System.out.println(controller.f_names);
 				OtherController.addTemperature(20.0, 5003);
 				OtherController.addTemperature(19.0, 5003);
 			} catch (AvroRemoteException e) {
@@ -154,23 +148,15 @@ public class DistControllerTest {
 				e.printStackTrace();
 			}
 	
-			System.out.print("\nTESTEND2\n");
-			System.out.print(controller.getRawTemperatures().toString());
-			System.out.print("\nTESTENDme\n");
-			System.out.print(OtherController.getRawTemperatures().toString());
-			System.out.print("\nTESTENDagain\n");
 			assertTrue(controller.equals(OtherController));
 	
-			System.out.print("TESTEND1\n");
 			controller.stopServer();
 			OtherController.stopServer();
-			System.out.print("TESTEND\n");
 		}catch(Exception e){
 			/// NOTE, THIS WILL THROW EXCEPTIONS WHICH ARE TO BE IGNORED
 			controller.stopServer();
 			OtherController.stopServer();
 		}
-		System.out.println("LETHAL TEST");
 	}
 
 	@Test
@@ -256,6 +242,7 @@ public class DistControllerTest {
 
 	@Test
 	public void testGetFridgeInventory() {
+		System.out.println("GETINVENTORY");
 		// I could only do it this way, no multiple fridges and actual fuckups
 		DistController controller = new DistController(5000, 10, f_ip);
 
@@ -263,15 +250,19 @@ public class DistControllerTest {
 			assertEquals(new ArrayList<CharSequence>(), controller.getFridgeInventory(5001));
 			assertEquals(new ArrayList<CharSequence>(), controller.getFridgeInventory(51223687));
 			
+			System.out.println("HERE " + f_clientip);
 			DistSmartFridge fridge = new DistSmartFridge(f_clientip, f_ip, 5000);
+			System.out.println("HERE2 " + f_ip);
+
 			fridge.addItem("Chunks_of_little_children");
 			fridge.addItem("A_dwarf_powering_the_fridge");
 			fridge.addItem("Pizza");
 			fridge.addItem("The_holocaust");
+			System.out.println("HERE");
 			
 			List<CharSequence> actual = controller.getFridgeInventory(5001);
 			List<CharSequence> expected = new ArrayList<CharSequence>(fridge.getItems());
-			
+
 			/// TODO tostring is nasty but java is being a cunt
 			assertEquals(expected.toString(), actual.toString());
 			
@@ -282,6 +273,7 @@ public class DistControllerTest {
 			e1.printStackTrace();
 		}
 		controller.stopServer();
+		System.out.println("stopinventory");
 	}
 
 	@Test
