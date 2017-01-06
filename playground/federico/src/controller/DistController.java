@@ -360,7 +360,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	@Override
 	synchronized public java.lang.Void addTemperature(int ID, double temperature) throws AvroRemoteException{
 		this.addTemperature(temperature, ID);
-		this.sendBackupToAll();
+//		this.sendBackupToAll();
 		return null;
 	}
 

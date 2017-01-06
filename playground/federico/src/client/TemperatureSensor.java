@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
 import avro.ProjectPower.ClientType;
 
@@ -19,7 +18,7 @@ public class TemperatureSensor {
 	
 	public static final ClientType type = ClientType.TemperatureSensor;
 	
-	public TemperatureSensor(double lowTempRange, double highTempRange) {
+	public TemperatureSensor(double lowTempRange, double highTempRange, int generateInterval) {
 		assert highTempRange > lowTempRange; //replace with normal check and possibly custom exception
 		
 		f_ID = -1;
@@ -36,11 +35,10 @@ public class TemperatureSensor {
 		f_measureIndex = 0;
 		
 		f_timer = new Timer();
-		f_timer.schedule(new generateTempTask(this), 1000, 1000);
+		f_timer.schedule(new generateTempTask(this), generateInterval, generateInterval);
 	}
 	
 	public void setID(int _ID) {
-		assert _ID >= 0; //replace with normal check and possibly custom exception
 		f_ID = _ID;
 	}
 	
@@ -65,7 +63,6 @@ public class TemperatureSensor {
 	}
 	
 	public void generateTemperature() {
-		assert f_ID >= 0;
 		double randomValue = Math.random();
 		
 		this.f_measures[f_measureIndex % f_measures.length] = new Double(f_temperature - 1 + (2 * randomValue));
@@ -82,31 +79,10 @@ public class TemperatureSensor {
 		
 		public void run() {
 			sensor.generateTemperature();
-			sensor.getHistory();
 		}
 	}
 	
 	public String toString() {
-		assert f_ID >= 0;
-		
 		return "ID: " + f_ID + ", Temperature: " + f_temperature;
 	}
-	
-	
-	
-	public static void main(String[] args) throws InterruptedException {
-		
-		TemperatureSensor test = new TemperatureSensor(10,15);
-		test.setID(1);
-		while (true) {
-			
-		}
-//		for (int i = 0; i < 10; i++) {
-//			System.out.println(test);
-//			TimeUnit.SECONDS.sleep(1);
-//		}
-//		System.exit(0);
-
-	}
-
 }

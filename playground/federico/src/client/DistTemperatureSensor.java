@@ -6,7 +6,6 @@ package client;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -22,7 +21,6 @@ import org.apache.avro.ipc.specific.SpecificResponder;
 import client.util.ConnectionData;
 import avro.ProjectPower.ControllerComm;
 import avro.ProjectPower.communicationTempSensor;
-import avro.ProjectPower.communicationUser;
 
 
 public class DistTemperatureSensor 
@@ -37,10 +35,8 @@ public class DistTemperatureSensor
 	private String f_ownIP;
 
 	
-	public DistTemperatureSensor(double lowTempRange, double highTempRange, String ownIP, String controllerIP, int controllerPort) {
-		super(lowTempRange, highTempRange);
-		
-		// TODO check IP arguments to be valid
+	public DistTemperatureSensor(double lowTempRange, double highTempRange, int generateInterval, String ownIP, String controllerIP, int controllerPort) {
+		super(lowTempRange, highTempRange, generateInterval);
 		
 		f_controllerConnection = new ConnectionData(controllerIP, controllerPort);
 		f_serverReady = false;
@@ -49,8 +45,7 @@ public class DistTemperatureSensor
 		this.startServer();
 		
 		f_timer = new Timer();
-		f_timer.schedule(new sendTemperatureTask(this), 1000, 1000);
-		// TODO remove magic number, argument for time period, same for superclass
+		f_timer.schedule(new sendTemperatureTask(this), generateInterval, generateInterval);
 	}
 
 	private void setupID() {
@@ -60,10 +55,9 @@ public class DistTemperatureSensor
 			this.setID(proxy.LogOn(TemperatureSensor.type, f_ownIP));
 			transceiver.close();
 		}
-		catch (IOException e) {
-			// TODO handle exception here
-			System.err.println("IOException in constructor for DistTemperatureSensor (getID).");
-			// System.exit(1);
+		catch (Exception e) {
+			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
+			System.exit(1);
 		}
 	}
 	
@@ -74,9 +68,9 @@ public class DistTemperatureSensor
 			this.setID(proxy.retryLogin(this.getID(), TemperatureSensor.type));
 			transceiver.close();
 		}
-		catch (IOException e) {
-			// TODO handle exception here
-			System.err.println("IOException at getNewID() at DistTemperatureSensor.");
+		catch (Exception e) {
+			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
+			System.exit(1);
 		}
 	}
 	
@@ -87,9 +81,7 @@ public class DistTemperatureSensor
 		while (f_serverReady == false) {
 			try {
 				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			} catch (InterruptedException e) {}
 		}
 		this.notifySuccessfulLogin();
 	}
@@ -116,13 +108,7 @@ public class DistTemperatureSensor
 					(ControllerComm) SpecificRequestor.getClient(ControllerComm.class, transceiver);
 			proxy.logOff(this.getID());
 			transceiver.close();
-		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at logOffController() in DistTemperatureSensor.");
-		}
-		catch (IOException e) {
-			System.err.println("IOException at logOffController() in DistTemperatureSensor.");
-		}
+		} catch (Exception e) {}
 	}
 	
 	public void disconnect() {
@@ -141,11 +127,9 @@ public class DistTemperatureSensor
 			proxy.loginSuccessful(this.getID());
 			transceiver.close();
 		}
-		catch (AvroRemoteException e) {
-			System.err.println("AvroRemoteException at notifySuccessfulLogin() in Distuser.");
-		}
-		catch (IOException e) {
-			System.err.println("IOException at notifySuccessfulLogin() in DistUser.");
+		catch (Exception e) {
+			System.err.println("Could not connect to the controller at startup. Shutting the sensor down.");
+			System.exit(1);
 		}
 	}
 	
@@ -154,7 +138,6 @@ public class DistTemperatureSensor
 	 */
 	@Override
 	public void reLogin() {
-		// TODO same concern as in DistSmartFridge
 		this.stopServer();
 		this.setupID();
 		this.startServer();
@@ -173,8 +156,7 @@ public class DistTemperatureSensor
 				this.getNewID();
 			}
 			catch (IOException e) {
-				System.err.println("Failed to start the DistTemperatureSensor server.");
-				e.printStackTrace(System.err);
+				System.err.println("Failed to start the DistTemperatureSensor server. Shutting down the server.");
 				System.exit(1);
 			}
 		}
@@ -196,8 +178,8 @@ public class DistTemperatureSensor
 			proxy.addTemperature(this.getID(), this.getTemperature());
 			transceiver.close();
 		}
-		catch (IOException e) {
-			System.err.println("IOException in sentTemperatureToController for DistTemperatureSensor.");
+		catch (Exception e) {
+			return;
 		}
 	}
 	
@@ -241,13 +223,20 @@ public class DistTemperatureSensor
 
 	
 	public static void main(String[] args) {
-		
-		final String clientIP = System.getProperty("clientip");
-		final String serverIP = System.getProperty("ip");
-		final int ControllerPort = 5000;
+		String clientIP = "";
+		String serverIP = "";
+		int controllerPort = 0;
+		try {
+			clientIP = System.getProperty("clientip");
+			serverIP = System.getProperty("ip");
+			controllerPort = Integer.parseInt(System.getProperty("controllerport"));			
+		} catch (Exception e) {
+			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"clientip\", \"controllerport\")");
+			System.exit(1);
+		}
 		
 		DistTemperatureSensor sensor = new DistTemperatureSensor(
-				19,22, clientIP, serverIP, ControllerPort);
+				19,22, 1000, clientIP, serverIP, controllerPort);
 		try {
 			System.in.read();
 		} catch (IOException e1) {
