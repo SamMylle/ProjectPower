@@ -100,18 +100,21 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		mustAllBeTrue.add(new Boolean(this.f_nextID == otherController.f_nextID));
 
 		if (this.f_temperatures.size() != otherController.f_temperatures.size()){
+			System.out.println("false1");
 			return false;
 		}
 
 		for (int i = 0; i < this.f_temperatures.size(); i++){
 			if(! this.f_temperatures.elementAt(i).toString().equals(
 					otherController.f_temperatures.elementAt(i).toString())){
+				System.out.println("false2 " + i);
 				return false;
 			}
 		}
 
 		for(int i = 0; i < mustAllBeTrue.size(); i++){
 			if (!mustAllBeTrue.elementAt(i)){
+				System.out.println("false3 " + i);
 				return false;
 			}
 		}
@@ -240,13 +243,15 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				if (ip == ""){
 					return;
 				}
-
+				if (f_names.get(ID) != ClientType.TemperatureSensor) {
+					continue;
+				}
 				Transceiver client = this.setupTransceiver(ID, ip);
 
 				if (client == null){
 					return;
 				}
-
+				
 				/// ask the sensor for its temperatures
 				communicationTempSensor.Callback proxy =
 						SpecificRequestor.getClient(communicationTempSensor.Callback.class, client);
@@ -394,11 +399,12 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				}
 
 				client.close();
-				this.usersInside();
 			}catch(Exception e){
 				return;
 			}
 		}
+		this.usersInside();
+		this.sendBackupToAll();
 	}
 
 	@Override
@@ -470,7 +476,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 					SpecificRequestor.getClient(communicationFridge.Callback.class, client);
 
 			/// Ask the fridge if it's okay to connect a user to it
-			int newPort = proxy.requestFridgeCommunication(f_myPort - 1);
+			int newPort = proxy.requestFridgeCommunication(f_previousControllerPort - 1);
 			if (newPort != -1){
 				return new CommData(newPort, ip);
 			}else{
@@ -976,6 +982,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	private boolean usersInside(){
 		/// TODO test
+		System.out.println("checking for present users.");
 		for (Integer currentID: f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);
@@ -990,6 +997,7 @@ public class DistController extends Controller implements ControllerComm, Runnab
 				try {
 					communicationUser.Callback proxy =
 							SpecificRequestor.getClient(communicationUser.Callback.class, client);
+					System.out.println(proxy.getStatus().toString());
 					if (proxy.getStatus() == UserStatus.present){
 						this.wasteLights();
 						return true;

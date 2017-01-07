@@ -3,7 +3,6 @@ package client;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -93,7 +92,6 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new IOControllerException("Could not connect to the controller.");
 		}
 		this.startServer();
-		super._setStatus(UserStatus.present);
 	}
 	
 	
@@ -177,6 +175,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {}
 		}
+		super._setStatus(UserStatus.present);
 		this.notifySuccessfulLogin();
 	}
 	
@@ -303,7 +302,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @throws ElectionBusyException 
 	 */
 	public List<LightState> getLightStates() throws MultipleInteractionException, AbsentException, TakeoverException, ElectionBusyException {
-		this.checkInvariantExceptions();
+//		this.checkInvariantExceptions();
 
 		if (f_fridgeConnection != null) {
 			throw new MultipleInteractionException("The user is connected to the SmartFridge, cannot connect to any other devices.");
@@ -556,6 +555,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 			throw new FridgeOccupiedException("The fridge is already occupied by another user.");
 		}
 		f_fridgeConnection = new ConnectionData(connection);
+		System.out.println(connection.getID().toString());
 		
 		try {
 			Transceiver transceiver = new SaslSocketTransceiver(f_fridgeConnection.toSocketAddress());
@@ -1218,6 +1218,7 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 * @return The index of this client in the election process.
 	 */
 	private int getElectionIndex() {
+		System.out.println(f_replicatedServerData.toString());
 		List<Integer> participants = new Vector<Integer>();
 		
 		List<Integer> clientIDs = f_replicatedServerData.getNamesID();
@@ -1419,6 +1420,8 @@ public class DistUser extends User implements communicationUser, Runnable {
 	 */
 	@Override
 	public void makeBackup(ServerData data) {
+		System.out.println("got the data");
+		System.out.println(data.toString());
 		if (f_electionBusy == true) {
 			return;
 		}

@@ -2,9 +2,7 @@ package client;
 
 import java.io.IOException;
 import java.net.BindException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -278,6 +276,8 @@ public class DistSmartFridge extends SmartFridge {
 	 */
 	private boolean userConnected() {
 		if (f_userConnection == null) {
+			return false;
+		} else if (f_userConnection.equals(f_controllerConnection)) {
 			return false;
 		}
 		
@@ -1033,7 +1033,7 @@ public class DistSmartFridge extends SmartFridge {
 	
 	
 	private void startControllerTakeOver() {
-		if (this.f_userServerConnection != null) {
+		if (this.f_userServerConnection.getPort() != -1) {
 			this.closeFridge();
 			
 			/// notify the user that the direct connection should be stopped, if the user has send his address already, too bad otherwise
@@ -1041,7 +1041,7 @@ public class DistSmartFridge extends SmartFridge {
 			this.stopUserServer();
 		}
 		this.stopServerController();
-		this.f_userServerConnection = null;
+		this.f_userServerConnection.setPort(-1);;
 		
 		new Thread() {
 			public void run() {
