@@ -100,21 +100,18 @@ public class DistController extends Controller implements ControllerComm, Runnab
 		mustAllBeTrue.add(new Boolean(this.f_nextID == otherController.f_nextID));
 
 		if (this.f_temperatures.size() != otherController.f_temperatures.size()){
-			System.out.println("false1");
 			return false;
 		}
 
 		for (int i = 0; i < this.f_temperatures.size(); i++){
 			if(! this.f_temperatures.elementAt(i).toString().equals(
 					otherController.f_temperatures.elementAt(i).toString())){
-				System.out.println("false2 " + i);
 				return false;
 			}
 		}
 
 		for(int i = 0; i < mustAllBeTrue.size(); i++){
 			if (!mustAllBeTrue.elementAt(i)){
-				System.out.println("false3 " + i);
 				return false;
 			}
 		}
@@ -982,7 +979,6 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	private boolean usersInside(){
 		/// TODO test
-		System.out.println("checking for present users.");
 		for (Integer currentID: f_names.keySet()){
 			ClientType currentType = f_names.get(currentID);
 			String currentIP = f_IPs.get(currentID);

@@ -787,8 +787,6 @@ public class DistSmartFridge extends SmartFridge {
 	 * Starts an election with all the other users/smartfridges.
 	 */
 	private void startElection() {
-		System.out.println("started an election");
-		
 		List<ClientType> clientTypes = f_replicatedServerData.getNamesClientType();
 		int count = 0;
 		for (ClientType clientType : clientTypes) {
@@ -1088,7 +1086,6 @@ public class DistSmartFridge extends SmartFridge {
 			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"clientip\", \"controllerport\")");
 			System.exit(1);
 		}
-		
 		DistSmartFridge fridge = new DistSmartFridge(clientIP, serverIP, controllerPort);
 
 		try {
