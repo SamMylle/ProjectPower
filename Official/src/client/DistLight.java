@@ -2,6 +2,8 @@ package client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 import java.util.Scanner;
 
@@ -27,8 +29,8 @@ public class DistLight implements Runnable, LightComm{
 	private int f_serverPort;
 	private String f_ip;
 	private String f_serverip;
-	
-	
+
+
 	public DistLight(String ip, String serverIP){
 		f_light = new Light();
 		f_server = null;
@@ -41,36 +43,60 @@ public class DistLight implements Runnable, LightComm{
 
 	@Override
 	public void run() {
-		try {
-			if (f_light.getID() == -1){
-				this.connectToServer(f_serverPort, f_serverip);
+		while(!f_serverActive){
+			try {
+				f_server = new SaslSocketServer(
+						new SpecificResponder(LightComm.class,
+								this), new InetSocketAddress(f_ip, f_light.getID()));
+				f_server.start();
+				f_serverActive = true;
+			} catch (IOException e) {
+				Transceiver transceiver;
+				try {
+					System.out.println("PORT " + f_serverPort);
+					transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_serverip, f_serverPort));
+					/// Get the proxy
+					ControllerComm.Callback proxy =
+							SpecificRequestor.getClient(ControllerComm.Callback.class, transceiver);
+					
+					/// Get your ID from the server
+					int ID = proxy.retryLogin(f_light.getID(), ClientType.Light);
+					
+					f_light.setID(ID);
+					
+				} catch (IOException e1) {
+					System.exit(1);
+				}
+	
 			}
-			f_server = new SaslSocketServer(
-					new SpecificResponder(LightComm.class,
-					this), new InetSocketAddress(f_light.getID()));
-		} catch (IOException e) {
-			System.err.println("[error]Failed to start light server on ID ");
-			System.err.println(f_light.getID());
-			e.printStackTrace(System.err);
-			System.exit(1);
 		}
-		f_server.start();
-		f_serverActive = true;
 		try{
 			f_server.join();
 		}catch(InterruptedException e){
 			f_server.close();
 		}
 	}
-	
+
+	public boolean addressInUse(){ 
+
+		boolean available = true; 
+		try {
+			new Socket(f_ip, f_light.getID()).close();
+		} 
+		catch (Exception e){
+			available = false;
+		}
+		return available;   
+	}
+
 	public boolean serverRunning(){
 		return f_serverActive;
 	}
-	
+
 	public int getServerPort(){
 		return f_serverPort;
 	}
-	
+
 	public void connectToServer(int port, String serverIP){
 		try{
 			/// Setup connection
@@ -85,26 +111,24 @@ public class DistLight implements Runnable, LightComm{
 			int ID = proxy.LogOn(ClientType.Light, f_ip);
 
 			f_light.setID(ID);
-			
-			
+			f_serverPort = port;
+
 			f_serverThread = new Thread(this);
-			
+
 			f_serverThread.start();
 
 			while(! f_serverActive){
 				Thread.sleep(50);
 			}
-			proxy.loginSuccessful(ID);
+			proxy.loginSuccessful(f_light.getID());
 			transceiver.close();
 
 			//Logger.getLogger().log("j21");
 			///proxy.listenToMe(f_light.getID(), ClientType.Light);
-			
-			f_serverPort = port;
-			
+
+
 		}catch(InterruptedException e){
 			System.err.println("Interrupted...");
-			e.printStackTrace(System.err);
 			System.exit(1);
 		}catch(IOException e){
 			/// Server isn't running, just return
@@ -112,11 +136,11 @@ public class DistLight implements Runnable, LightComm{
 			return;
 		}
 	}
-	
+
 	public void disconnect(){
 		try{
 			Transceiver transceiver = new SaslSocketTransceiver(new InetSocketAddress(f_serverip, f_serverPort));
-			
+
 			if (transceiver != null){
 				ControllerComm.Callback proxy =
 						SpecificRequestor.getClient(ControllerComm.Callback.class, transceiver);
@@ -127,14 +151,13 @@ public class DistLight implements Runnable, LightComm{
 			if (f_server != null){
 				f_serverThread.interrupt();
 			}
-			
+
 			f_serverPort = -1;
 			f_light.reset();
 			f_serverActive = false;
-			
+
 		}catch(IOException e){
 			System.err.println("Error logging of...");
-			e.printStackTrace(System.err);
 			System.exit(1);
 		}catch(java.lang.NullPointerException e){
 			// TODO remove catch
@@ -172,36 +195,47 @@ public class DistLight implements Runnable, LightComm{
 	@Override
 	public void reLogin() {
 		/// Assumes valid stuff 
-		
+
 		f_serverThread.interrupt();
 		f_server = null;
 		f_serverThread = null;
 		f_serverActive = false;
-		
+
 		this.connectToServer(f_serverPort, f_serverip);
 	}
-	
+
 	@Override
 	public void powerSavingMode() {
 		f_light.powSavingMode();
 	}
-	
+
 	@Override
 	public void powerWastingMode() {
 		f_light.recoverFromPowerSavingMode();
 	}
-	
+
 	public static void main(String[] args) {
-		DistLight newLight = new DistLight(System.getProperty("clientip"), System.getProperty("ip"));
-		newLight.connectToServer(5000, System.getProperty("ip"));
+		String clientIP = "";
+		String serverIP = "";
+		int controllerPort = 0;
+		try {
+			clientIP = System.getProperty("clientip");
+			serverIP = System.getProperty("ip");
+			controllerPort = Integer.parseInt(System.getProperty("controllerport"));			
+		} catch (Exception e) {
+			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"clientip\", \"controllerport\")");
+			System.exit(1);
+		}
+		
+		DistLight newLight = new DistLight(clientIP, serverIP);
+		newLight.connectToServer(controllerPort, serverIP);
 		try {
 			System.in.read();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		newLight.disconnect();
-//		Logger.getLogger().log("disconnected\n");
+		//		Logger.getLogger().log("disconnected\n");
 		System.exit(0);
 	}
 }

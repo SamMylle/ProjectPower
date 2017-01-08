@@ -59,40 +59,36 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	public DistController(int port, int maxTemperatures, String ip){
 		super(port + 1, maxTemperatures);
-		try{
-			f_notConfirmed = new HashSet<Integer>();
-			f_isOriginalServer = true;
-	
-			//f_controller = new Controller(port + 1, 10);
-			f_myPort = port;
-			f_previousControllerPort = port;
-			f_previousControllerIP = ip;
-			f_serverActive = false;
-			f_IPs = new HashMap<Integer, String>();
-			f_ownIP = new String(ip);
-	
-			/// Make a thread, the "run" method will execute in a new thread
-			/// The run method must be implemented by a Runnable object (see implements in this class)
-			/// Since the server must run on this object, "this" is passed to the thread
-			/// Below, when starting the thread (thread.start()), the thread will call this.run()
-			/// This has to be this way because the server doesn't get out of the eternal loop
-			/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
-			f_serverThread = new Thread(this);
-			f_serverThread.start();
-	
-			while (!f_serverActive){
-				try {
-					Thread.sleep(50);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+		f_notConfirmed = new HashSet<Integer>();
+		f_isOriginalServer = true;
+
+		//f_controller = new Controller(port + 1, 10);
+		f_myPort = port;
+		f_previousControllerPort = port;
+		f_previousControllerIP = ip;
+		f_serverActive = false;
+		f_IPs = new HashMap<Integer, String>();
+		f_ownIP = new String(ip);
+
+		/// Make a thread, the "run" method will execute in a new thread
+		/// The run method must be implemented by a Runnable object (see implements in this class)
+		/// Since the server must run on this object, "this" is passed to the thread
+		/// Below, when starting the thread (thread.start()), the thread will call this.run()
+		/// This has to be this way because the server doesn't get out of the eternal loop
+		/// This object wouldn't be able to do other interesting stuff if it wasn't for the threads
+		f_serverThread = new Thread(this);
+		f_serverThread.start();
+
+		while (!f_serverActive){
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-	
-			f_timer = new Timer();
-			f_timer.schedule(new ClientPoll(), 0, 500);
-		}catch(Exception e){
-			System.out.println("Couldn't start the server, make sure you gave it a correct IP and port.");
 		}
+
+		f_timer = new Timer();
+		f_timer.schedule(new ClientPoll(), 0, 500);
 	}
 
 	public boolean equals(DistController otherController){
@@ -287,32 +283,27 @@ public class DistController extends Controller implements ControllerComm, Runnab
 	}
 
 	@Override
-	public void run(){
+	public void run() {
 		/// when thread.start() is invoked, this method is ran
 		try{
-			try{
-				InetAddress addr = InetAddress.getByName(f_ownIP);
-				InetSocketAddress ad = new InetSocketAddress(addr, f_myPort);
-				f_server = new SaslSocketServer(
-						new SpecificResponder(ControllerComm.class,
-								this), ad);
-			}catch(Exception e){
-				System.err.println("[error]Failed to start server");
-				System.exit(1);
-			}
-			f_server.start();
-			f_serverActive = true;
-			try{
-				f_server.join();
-			}catch(InterruptedException e){
-				f_timer.cancel();
-				f_server.close();
-				f_server = null;
-			}
-		}catch(Exception e){
+			InetAddress addr = InetAddress.getByName(f_ownIP);
+			InetSocketAddress ad = new InetSocketAddress(addr, f_myPort);
+			f_server = new SaslSocketServer(
+					new SpecificResponder(ControllerComm.class,
+							this), ad);
+		}catch(IOException e){
 			System.err.println("[error]Failed to start server");
 			e.printStackTrace(System.err);
 			System.exit(1);
+		}
+		f_server.start();
+		f_serverActive = true;
+		try{
+			f_server.join();
+		}catch(InterruptedException e){
+			f_timer.cancel();
+			f_server.close();
+			f_server = null;
 		}
 	}
 
@@ -1180,24 +1171,16 @@ public class DistController extends Controller implements ControllerComm, Runnab
 
 	public static void main(String[] args) {
 		Logger.getLogger().f_active = true;
-		DistController controller = new DistController(1, 10, System.getProperty("ip"));
-
-
+		String serverIP = "";
+		int controllerPort = 0;
 		try {
-			System.in.read();
-		} catch (IOException e) {
-			e.printStackTrace();
+			serverIP = System.getProperty("ip");
+			controllerPort = Integer.parseInt(System.getProperty("controllerport"));			
+		} catch (Exception e) {
+			System.err.println("Not all arguments have been given (correctly) when running the program.\nNeeded arguments:(\"ip\", \"controllerport\")");
+			System.exit(1);
 		}
-
-		controller.stopServer();
-
-		try {
-			System.in.read();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		controller = new DistController(5000, 10, System.getProperty("ip"));
+		DistController controller = new DistController(controllerPort, 10, serverIP);
 	}
 
 }
