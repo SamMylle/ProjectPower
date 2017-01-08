@@ -1,3 +1,5 @@
+mkdir bin > /dev/null 2>&1
+
 if [ "$#" -ne 4 ]; then
 	echo "Enter an argument with a file (including its package(s)) that you want to run, aswell as the client IP address, the server IP address and the server port."
 	echo "For example: client.DistUser 192.168.1.10 192.168.1.11 5000"
