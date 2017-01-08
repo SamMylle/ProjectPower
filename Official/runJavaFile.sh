@@ -1,8 +1,8 @@
 # To all the poor bastards who have no better option than to use this script, I feel your pain.
 
-if [ "$#" -ne 3 ]; then
-	echo "Enter an argument with a file (including its package(s)) that you want to run, aswell as the client IP address and the server IP address."
-	echo "For example: client.DistUser 192.168.1.10 192.168.1.11"
+if [ "$#" -ne 4 ]; then
+	echo "Enter an argument with a file (including its package(s)) that you want to run, aswell as the client IP address, the server IP address and the server port."
+	echo "For example: client.DistUser 192.168.1.10 192.168.1.11 5000"
 	exit 1
 else
 	stringClass="$1"
@@ -19,7 +19,7 @@ else
 
 	echo "Running the file..."
 	echo ""
-	java -Dip="$3" -Dclientip="$2" -cp bin:lib/avro-1.7.7.jar:lib/avro-ipc-1.7.7.jar:lib/hamcrest-core-1.3.jar:lib/jackson-core-asl-1.9.13.jar:lib/jackson-mapper-asl-1.9.13.jar:lib/junit-4.12.jar:lib/slf4j-api-1.7.7.jar:lib/slf4j-simple-1.7.7.jar "$1"
+	java -Dcontrollerport="$4" -Dip="$3" -Dclientip="$2" -cp bin:lib/avro-1.7.7.jar:lib/avro-ipc-1.7.7.jar:lib/hamcrest-core-1.3.jar:lib/jackson-core-asl-1.9.13.jar:lib/jackson-mapper-asl-1.9.13.jar:lib/junit-4.12.jar:lib/slf4j-api-1.7.7.jar:lib/slf4j-nop-1.7.7.jar "$1"
 fi
 
 exit 0

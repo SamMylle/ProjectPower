@@ -166,6 +166,9 @@ public class FridgePanel extends javax.swing.JPanel implements PanelInterface{
 
     private void btnCommunicateMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCommunicateMouseClicked
         int fridgeVectorIndex = this.cbbSelectFridge.getSelectedIndex();
+        if (fridgeVectorIndex == -1) {
+            return;
+        }
         try {
             f_user.communicateWithFridge(f_fridges.get(fridgeVectorIndex).getID());
             f_user.openFridge();
