@@ -27,7 +27,12 @@ The arguments needed to run the scripts are the following:
 2. Structure/Architecture
 -------------------------
 
+Everything is synchronous except for the following:
+ * The Chang-Roberts algorithm.
+ * The sending of backup data.
+ * The notification the server sends to the user to tell them he is the new Controller.
 
+Each component has a part that should work in a non-distributed environment. We split every component in a distributed part and a non-distributed part. So the controller has a class DistController (which works in a distributed environment) which inherits from Controller (which works in a non-distributed environment)
 
 
 
