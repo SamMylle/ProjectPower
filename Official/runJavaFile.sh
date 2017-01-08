@@ -18,7 +18,7 @@ else
 	echo "Running the file..."
 	echo ""
 
-	java -Dcontrollerport="$4" -Dip="$3" -Dclientip="$2" -cp bin:lib/avro-1.7.7.jar:lib/avro-ipc-1.7.7.jar:lib/hamcrest-core-1.3.jar:lib/jackson-core-asl-1.9.13.jar:lib/jackson-mapper-asl-1.9.13.jar:lib/junit-4.12.jar:lib/slf4j-api-1.7.7.jar:lib/slf4j-nop-1.7.7.jar "$1"
+	java -Dcontrollerport="$4" -Dip="$3" -Dclientip="$2" -cp bin:lib/avro-1.7.7.jar:lib/avro-ipc-1.7.7.jar:lib/hamcrest-core-1.3.jar:lib/jackson-core-asl-1.9.13.jar:lib/jackson-mapper-asl-1.9.13.jar:lib/junit-4.12.jar:lib/slf4j-api-1.7.7.jar:lib/slf4j-simple-1.7.7.jar "$1"
 fi
 
 exit 0

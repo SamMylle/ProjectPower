@@ -40,3 +40,5 @@ Each component has a part that should work in a non-distributed environment. We 
 ----------------
 
 * When disconnecting/closing a client, an IOException gets thrown somewhere within avro. We were unable to catch this exception anywhere, and have reported this to the assistant.
+
+* We weren't sure how to disable the avro INFO logging (when setting up transceivers etc.), other than using the slf4j-nop jar to disable all logging. We have included this jar in our lib folder, but it is not used by default when running everything via the shell scripts. In order to accomplish this, change this part in the runJavaFile.sh script: lib/slf4j-simple-1.7.7.jar    ->    lib/slf4j-nop-1.7.7.jar
